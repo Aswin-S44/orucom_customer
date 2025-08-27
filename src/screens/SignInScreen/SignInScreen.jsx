@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import {
   View,
   Text,
@@ -14,6 +14,9 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import Feather from 'react-native-vector-icons/Feather';
 import { primaryColor } from '../../constants/colors';
 import { login, resetPassword } from '../../apis/auth';
+import { Loader } from '../../assets/images/Loading';
+import { AuthContext } from '../../context/AuthContext';
+import { ActivityIndicator } from 'react-native';
 
 const SignInScreen = ({ navigation, route }) => {
   const { signIn } = route.params;
@@ -29,7 +32,11 @@ const SignInScreen = ({ navigation, route }) => {
   const [isFormValid, setIsFormValid] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
+  const { user, loading } = useContext(AuthContext);
   // ✅ Validate only after submit
+
+  console.log('loading _____________________________________________', user);
+
   useEffect(() => {
     if (!submitted) return;
 
@@ -47,6 +54,37 @@ const SignInScreen = ({ navigation, route }) => {
     setIsFormValid(Object.keys(newErrors).length === 0);
   }, [email, password, submitted]);
 
+  // const handleSignIn = async () => {
+  //   setSubmitted(true);
+
+  //   let newErrors = {};
+
+  //   if (!email) newErrors.email = 'Email is required';
+  //   else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
+  //     newErrors.email = 'Invalid email format';
+
+  //   if (!password) newErrors.password = 'Password is required';
+  //   else if (password.length < 6)
+  //     newErrors.password = 'Password must be at least 6 characters';
+
+  //   setErrors(newErrors);
+
+  //   if (Object.keys(newErrors).length > 0) {
+  //     return; // stop if errors exist
+  //   }
+
+  //   setIsLoading(true);
+  //   try {
+  //     const user = await login(email, password);
+  //     console.log('user --------------------->>>', user);
+  //     // maybe navigate to main screen here
+  //   } catch (error) {
+  //     Alert.alert('Login Failed', error.message);
+  //   } finally {
+  //     setIsLoading(false);
+  //   }
+  // };
+
   const handleSignIn = async () => {
     setSubmitted(true);
 
@@ -62,15 +100,14 @@ const SignInScreen = ({ navigation, route }) => {
 
     setErrors(newErrors);
 
-    if (Object.keys(newErrors).length > 0) {
-      return; // stop if errors exist
-    }
+    if (Object.keys(newErrors).length > 0) return;
 
     setIsLoading(true);
     try {
-      const user = await login(email, password);
-      console.log('user --------------------->>>', user);
-      // maybe navigate to main screen here
+      const userCred = await login(email, password);
+      console.log('user --------------------->>>', userCred);
+      // you can navigate after success
+      // navigation.replace("MainAppStack")
     } catch (error) {
       Alert.alert('Login Failed', error.message);
     } finally {
@@ -229,8 +266,13 @@ const SignInScreen = ({ navigation, route }) => {
               submitted && !isFormValid && { backgroundColor: '#ccc' },
             ]}
             onPress={handleSignIn}
+            disabled={isLoading}
           >
-            <Text style={styles.signInButtonText}>SIGN IN ACCOUNT</Text>
+            {isLoading ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <Text style={styles.signInButtonText}>SIGN IN ACCOUNT</Text>
+            )}
           </TouchableOpacity>
 
           <View style={styles.signUpContainer}>

@@ -5,6 +5,8 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { primaryColor } from '../../constants/colors';
 import { AuthContext } from '../../context/AuthContext';
+import { signOut } from 'firebase/auth';
+import { auth } from '../../config/firebase';
 
 const DrawerItem = ({ icon, label, onPress }) => (
   <TouchableOpacity onPress={onPress} style={styles.drawerItem}>
@@ -67,7 +69,17 @@ const CustomDrawerContent = props => {
                 color={primaryColor}
               />
             }
-            onPress={logout}
+            onPress={async () => {
+              try {
+                await logout();
+                props.navigation.reset({
+                  index: 0,
+                  routes: [{ name: 'SignIn' }],
+                });
+              } catch (error) {
+                console.error('Error signing out:', error);
+              }
+            }}
           />
         </View>
       </DrawerContentScrollView>
