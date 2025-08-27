@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
 import { DrawerContentScrollView } from '@react-navigation/drawer';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { primaryColor } from '../../constants/colors';
+import { AuthContext } from '../../context/AuthContext';
 
 const DrawerItem = ({ icon, label, onPress }) => (
   <TouchableOpacity onPress={onPress} style={styles.drawerItem}>
@@ -13,6 +14,8 @@ const DrawerItem = ({ icon, label, onPress }) => (
 );
 
 const CustomDrawerContent = props => {
+  const { logout } = useContext(AuthContext);
+
   return (
     <View style={styles.container}>
       <DrawerContentScrollView {...props}>
@@ -64,7 +67,7 @@ const CustomDrawerContent = props => {
                 color={primaryColor}
               />
             }
-            onPress={() => {}}
+            onPress={logout}
           />
         </View>
       </DrawerContentScrollView>

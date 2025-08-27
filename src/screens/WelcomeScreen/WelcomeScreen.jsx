@@ -8,7 +8,11 @@ import {
   StatusBar,
 } from 'react-native';
 import Feather from 'react-native-vector-icons/Feather';
-import { lightPurple, primaryColor } from '../../constants/colors';
+import {
+  lightPurple,
+  primaryColor,
+  primaryGradient,
+} from '../../constants/colors';
 
 const WelcomeScreen = ({ navigation }) => {
   return (
@@ -41,7 +45,7 @@ const WelcomeScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: lightPurple,
+    backgroundColor: primaryColor,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useContext, useEffect } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { createDrawerNavigator } from '@react-navigation/drawer';
 import { createMaterialBottomTabNavigator } from '@react-navigation/material-bottom-tabs';
@@ -27,10 +27,13 @@ import SignInScreen from './screens/SignInScreen/SignInScreen';
 import SignUpScreen from './screens/SignUpScreen/SignUpScreen';
 
 import { primaryColor } from './constants/colors';
+import { AuthContext, AuthProvider } from './context/AuthContext';
 
 const Tab = createMaterialBottomTabNavigator();
 const Drawer = createDrawerNavigator();
 const Stack = createStackNavigator();
+
+// const { user, loading } = useContext(AuthContext);
 
 function HomeStack() {
   return (
@@ -150,6 +153,8 @@ function MainAppStack() {
 export default function App() {
   const [isSignedIn, setIsSignedIn] = useState(false);
 
+  const { user, loading } = useContext(AuthContext);
+
   const authContext = useMemo(
     () => ({
       signIn: () => setIsSignedIn(true),
@@ -162,7 +167,7 @@ export default function App() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <NavigationContainer>
         <Stack.Navigator screenOptions={{ headerShown: false }}>
-          {isSignedIn ? (
+          {user ? (
             <Stack.Screen name="MainAppStack" component={MainAppStack} />
           ) : (
             <>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -11,12 +11,83 @@ import {
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import Feather from 'react-native-vector-icons/Feather';
 import { primaryColor } from '../../constants/colors';
-
+import { signup } from '../../apis/auth';
 const SignUpScreen = ({ navigation, route }) => {
   const { signIn } = route.params;
+
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [securePassword, setSecurePassword] = useState(true);
   const [secureConfirmPassword, setSecureConfirmPassword] = useState(true);
+
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+
+  const [errors, setErrors] = useState({});
+  const [isFormValid, setIsFormValid] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [passwordStrength, setPasswordStrength] = useState('');
+
+  // ✅ Password Strength Checker
+  const checkPasswordStrength = pass => {
+    if (pass.length === 0) return '';
+    if (pass.length < 6) return 'Weak';
+    if (/^(?=.*[A-Z])(?=.*[a-z])(?=.*\d).{6,}$/.test(pass)) return 'Strong';
+    return 'Medium';
+  };
+
+  useEffect(() => {
+    console.log('Email changed:', email);
+  }, [email]);
+
+  useEffect(() => {
+    setPasswordStrength(checkPasswordStrength(password));
+  }, [password]);
+
+  // ✅ Validation logic only runs after submitted = true
+  useEffect(() => {
+    if (!submitted) return;
+
+    let newErrors = {};
+
+    if (!email) newErrors.email = 'Email is required';
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
+      newErrors.email = 'Invalid email format';
+
+    if (!password) newErrors.password = 'Password is required';
+    else if (password.length < 6)
+      newErrors.password = 'Password must be at least 6 characters';
+    else if (!/(?=.*[A-Z])(?=.*[a-z])(?=.*\d)/.test(password))
+      newErrors.password =
+        'Password must include uppercase, lowercase, and a number';
+
+    if (confirmPassword !== password)
+      newErrors.confirmPassword = 'Passwords do not match';
+
+    if (!acceptedTerms)
+      newErrors.terms = 'You must accept the terms and privacy policy';
+
+    setErrors(newErrors);
+    setIsFormValid(Object.keys(newErrors).length === 0);
+  }, [email, password, confirmPassword, acceptedTerms, submitted]);
+
+  const handleSubmit = () => {
+    setSubmitted(true);
+    if (isFormValid) {
+      createAccount();
+    }
+  };
+
+  const createAccount = async () => {
+    console.log('This is a log message:');
+    try {
+      await signup(email, password);
+      alert('Account created!');
+      // navigation.navigate('Home');
+    } catch (error) {
+      alert(error.message);
+    }
+  };
 
   return (
     <View style={styles.outerContainer}>
@@ -34,9 +105,15 @@ const SignUpScreen = ({ navigation, route }) => {
         <ScrollView showsVerticalScrollIndicator={false}>
           <Text style={styles.mainTitle}>Sign Up</Text>
 
+          {/* Email */}
           <View style={styles.inputGroup}>
             <Text style={styles.inputLabel}>Email</Text>
-            <View style={styles.inputContainer}>
+            <View
+              style={[
+                styles.inputContainer,
+                submitted && errors.email && { borderColor: 'red' },
+              ]}
+            >
               <Feather
                 name="send"
                 size={20}
@@ -49,13 +126,23 @@ const SignUpScreen = ({ navigation, route }) => {
                 placeholderTextColor="#888"
                 keyboardType="email-address"
                 autoCapitalize="none"
+                value={email}
+                onChangeText={setEmail}
               />
             </View>
+            {submitted && errors.email && (
+              <Text style={styles.errorText}>{errors.email}</Text>
+            )}
           </View>
-
+          {/* Password */}
           <View style={styles.inputGroup}>
             <Text style={styles.inputLabel}>Password</Text>
-            <View style={styles.inputContainer}>
+            <View
+              style={[
+                styles.inputContainer,
+                submitted && errors.password && { borderColor: 'red' },
+              ]}
+            >
               <Ionicons
                 name="lock-closed-outline"
                 size={20}
@@ -67,6 +154,8 @@ const SignUpScreen = ({ navigation, route }) => {
                 placeholder="Type Password"
                 placeholderTextColor="#888"
                 secureTextEntry={securePassword}
+                value={password}
+                onChangeText={setPassword}
               />
               <TouchableOpacity
                 onPress={() => setSecurePassword(!securePassword)}
@@ -78,11 +167,32 @@ const SignUpScreen = ({ navigation, route }) => {
                 />
               </TouchableOpacity>
             </View>
+            {submitted && errors.password && (
+              <Text style={styles.errorText}>{errors.password}</Text>
+            )}
+            {password.length > 0 && (
+              <Text
+                style={[
+                  styles.strengthText,
+                  passwordStrength === 'Strong' && { color: 'green' },
+                  passwordStrength === 'Medium' && { color: 'orange' },
+                  passwordStrength === 'Weak' && { color: 'red' },
+                ]}
+              >
+                Password Strength: {passwordStrength}
+              </Text>
+            )}
           </View>
 
+          {/* Confirm Password */}
           <View style={styles.inputGroup}>
             <Text style={styles.inputLabel}>Confirm Password</Text>
-            <View style={styles.inputContainer}>
+            <View
+              style={[
+                styles.inputContainer,
+                submitted && errors.confirmPassword && { borderColor: 'red' },
+              ]}
+            >
               <Ionicons
                 name="lock-closed-outline"
                 size={20}
@@ -94,6 +204,8 @@ const SignUpScreen = ({ navigation, route }) => {
                 placeholder="Type Password"
                 placeholderTextColor="#888"
                 secureTextEntry={secureConfirmPassword}
+                value={confirmPassword}
+                onChangeText={setConfirmPassword}
               />
               <TouchableOpacity
                 onPress={() => setSecureConfirmPassword(!secureConfirmPassword)}
@@ -107,8 +219,12 @@ const SignUpScreen = ({ navigation, route }) => {
                 />
               </TouchableOpacity>
             </View>
+            {submitted && errors.confirmPassword && (
+              <Text style={styles.errorText}>{errors.confirmPassword}</Text>
+            )}
           </View>
 
+          {/* Terms */}
           <TouchableOpacity
             style={styles.termsContainer}
             onPress={() => setAcceptedTerms(!acceptedTerms)}
@@ -123,17 +239,20 @@ const SignUpScreen = ({ navigation, route }) => {
               <Text style={styles.termsLink}>policy and privacy</Text>
             </Text>
           </TouchableOpacity>
+          {submitted && errors.terms && (
+            <Text style={styles.errorText}>{errors.terms}</Text>
+          )}
 
-          <TouchableOpacity style={styles.createButton} onPress={signIn}>
+          {/* Create Button */}
+          <TouchableOpacity
+            style={[
+              styles.createButton,
+              submitted && !isFormValid && { backgroundColor: '#ccc' },
+            ]}
+            onPress={handleSubmit}
+          >
             <Text style={styles.createButtonText}>CREATE ACCOUNT</Text>
           </TouchableOpacity>
-
-          <View style={styles.signInContainer}>
-            <Text style={styles.signInText}>Already have an account? </Text>
-            <TouchableOpacity onPress={() => navigation.navigate('SignIn')}>
-              <Text style={styles.signInLink}>Sign In</Text>
-            </TouchableOpacity>
-          </View>
         </ScrollView>
       </View>
     </View>
@@ -141,10 +260,7 @@ const SignUpScreen = ({ navigation, route }) => {
 };
 
 const styles = StyleSheet.create({
-  outerContainer: {
-    flex: 1,
-    backgroundColor: primaryColor,
-  },
+  outerContainer: { flex: 1, backgroundColor: primaryColor },
   backButton: {
     position: 'absolute',
     top: 55,
@@ -153,11 +269,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     zIndex: 10,
   },
-  backButtonText: {
-    color: '#fff',
-    fontSize: 18,
-    marginLeft: 5,
-  },
+  backButtonText: { color: '#fff', fontSize: 18, marginLeft: 5 },
   container: {
     flex: 1,
     marginTop: 100,
@@ -174,9 +286,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
     marginBottom: 30,
   },
-  inputGroup: {
-    marginBottom: 20,
-  },
+  inputGroup: { marginBottom: 20 },
   inputLabel: {
     fontSize: 16,
     fontWeight: '500',
@@ -191,30 +301,16 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingHorizontal: 15,
   },
-  inputIcon: {
-    marginRight: 10,
-  },
-  input: {
-    flex: 1,
-    height: 50,
-    fontSize: 16,
-    color: '#333',
-  },
+  inputIcon: { marginRight: 10 },
+  input: { flex: 1, height: 50, fontSize: 16, color: '#333' },
   termsContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 30,
     marginTop: 5,
   },
-  termsText: {
-    marginLeft: 10,
-    fontSize: 14,
-    color: '#555',
-  },
-  termsLink: {
-    color: primaryColor,
-    fontWeight: '500',
-  },
+  termsText: { marginLeft: 10, fontSize: 14, color: '#555' },
+  termsLink: { color: primaryColor, fontWeight: '500' },
   createButton: {
     backgroundColor: primaryColor,
     padding: 18,
@@ -222,25 +318,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 30,
   },
-  createButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  signInContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  signInText: {
-    fontSize: 15,
-    color: '#555',
-  },
-  signInLink: {
-    fontSize: 15,
-    color: primaryColor,
-    fontWeight: '500',
-  },
+  createButtonText: { color: '#fff', fontSize: 16, fontWeight: '500' },
+  errorText: { color: 'red', fontSize: 13, marginTop: 5 },
+  strengthText: { fontSize: 13, marginTop: 5 },
 });
 
 export default SignUpScreen;

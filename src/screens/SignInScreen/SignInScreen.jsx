@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,21 +8,81 @@ import {
   TextInput,
   ScrollView,
   Modal,
+  Alert,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import Feather from 'react-native-vector-icons/Feather';
 import { primaryColor } from '../../constants/colors';
+import { login, resetPassword } from '../../apis/auth';
 
 const SignInScreen = ({ navigation, route }) => {
   const { signIn } = route.params;
+
   const [rememberMe, setRememberMe] = useState(false);
   const [secureTextEntry, setSecureTextEntry] = useState(true);
   const [isForgotModalVisible, setIsForgotModalVisible] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+
+  const [errors, setErrors] = useState({});
+  const [isFormValid, setIsFormValid] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+
+  // ✅ Validate only after submit
+  useEffect(() => {
+    if (!submitted) return;
+
+    let newErrors = {};
+
+    if (!email) newErrors.email = 'Email is required';
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
+      newErrors.email = 'Invalid email format';
+
+    if (!password) newErrors.password = 'Password is required';
+    else if (password.length < 6)
+      newErrors.password = 'Password must be at least 6 characters';
+
+    setErrors(newErrors);
+    setIsFormValid(Object.keys(newErrors).length === 0);
+  }, [email, password, submitted]);
+
+  const handleSignIn = async () => {
+    setSubmitted(true);
+
+    let newErrors = {};
+
+    if (!email) newErrors.email = 'Email is required';
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
+      newErrors.email = 'Invalid email format';
+
+    if (!password) newErrors.password = 'Password is required';
+    else if (password.length < 6)
+      newErrors.password = 'Password must be at least 6 characters';
+
+    setErrors(newErrors);
+
+    if (Object.keys(newErrors).length > 0) {
+      return; // stop if errors exist
+    }
+
+    setIsLoading(true);
+    try {
+      const user = await login(email, password);
+      console.log('user --------------------->>>', user);
+      // maybe navigate to main screen here
+    } catch (error) {
+      Alert.alert('Login Failed', error.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <View style={styles.outerContainer}>
       <StatusBar backgroundColor={primaryColor} barStyle="light-content" />
 
+      {/* ✅ Forgot Password Modal */}
       <Modal
         transparent={true}
         visible={isForgotModalVisible}
@@ -76,9 +136,15 @@ const SignInScreen = ({ navigation, route }) => {
         <ScrollView showsVerticalScrollIndicator={false}>
           <Text style={styles.mainTitle}>Sign In</Text>
 
+          {/* ✅ Email */}
           <View style={styles.inputGroup}>
             <Text style={styles.inputLabel}>Email</Text>
-            <View style={styles.inputContainer}>
+            <View
+              style={[
+                styles.inputContainer,
+                submitted && errors.email && { borderColor: 'red' },
+              ]}
+            >
               <Feather
                 name="send"
                 size={20}
@@ -91,13 +157,24 @@ const SignInScreen = ({ navigation, route }) => {
                 placeholderTextColor="#888"
                 keyboardType="email-address"
                 autoCapitalize="none"
+                value={email}
+                onChangeText={setEmail}
               />
             </View>
+            {submitted && errors.email && (
+              <Text style={styles.errorText}>{errors.email}</Text>
+            )}
           </View>
 
+          {/* ✅ Password */}
           <View style={styles.inputGroup}>
             <Text style={styles.inputLabel}>Password</Text>
-            <View style={styles.inputContainer}>
+            <View
+              style={[
+                styles.inputContainer,
+                submitted && errors.password && { borderColor: 'red' },
+              ]}
+            >
               <Ionicons
                 name="lock-closed-outline"
                 size={20}
@@ -109,6 +186,8 @@ const SignInScreen = ({ navigation, route }) => {
                 placeholder="Type Password"
                 placeholderTextColor="#888"
                 secureTextEntry={secureTextEntry}
+                value={password}
+                onChangeText={setPassword}
               />
               <TouchableOpacity
                 onPress={() => setSecureTextEntry(!secureTextEntry)}
@@ -120,8 +199,12 @@ const SignInScreen = ({ navigation, route }) => {
                 />
               </TouchableOpacity>
             </View>
+            {submitted && errors.password && (
+              <Text style={styles.errorText}>{errors.password}</Text>
+            )}
           </View>
 
+          {/* ✅ Remember Me + Forgot Password */}
           <View style={styles.optionsContainer}>
             <TouchableOpacity
               style={styles.rememberMe}
@@ -139,7 +222,14 @@ const SignInScreen = ({ navigation, route }) => {
             </TouchableOpacity>
           </View>
 
-          <TouchableOpacity style={styles.signInButton} onPress={signIn}>
+          {/* ✅ Sign In Button */}
+          <TouchableOpacity
+            style={[
+              styles.signInButton,
+              submitted && !isFormValid && { backgroundColor: '#ccc' },
+            ]}
+            onPress={handleSignIn}
+          >
             <Text style={styles.signInButtonText}>SIGN IN ACCOUNT</Text>
           </TouchableOpacity>
 
@@ -307,6 +397,11 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 16,
     fontWeight: '500',
+  },
+  errorText: {
+    color: 'red',
+    fontSize: 13,
+    marginTop: 5,
   },
 });
 
