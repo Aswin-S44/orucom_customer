@@ -1,55 +1,34 @@
 import React, { createContext, useState, useEffect } from 'react';
-import { auth, db } from '../config/firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { auth } from '../config/firebase';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null); // store user data
-  const [loading, setLoading] = useState(true);
-
-  // useEffect(() => {
-  //     // Listen for auth state changes
-  //     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-  //         if (firebaseUser) {
-  //             // Fetch Firestore user profile
-  //             const docRef = doc(db, "shop-owners", firebaseUser.uid);
-  //             const docSnap = await getDoc(docRef);
-
-  //             if (docSnap.exists()) {
-  //                 setUser({ ...firebaseUser, ...docSnap.data() });
-  //             } else {
-  //                 setUser(firebaseUser);
-  //             }
-  //         } else {
-  //             setUser(null);
-  //         }
-  //         setLoading(false);
-  //     });
-
-  //     return unsubscribe;
-  // }, []);
+  const [user, setUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, user => {
-      setUser(user);
-      if (loading) {
-        setLoading(false);
-      }
+    const unsubscribe = onAuthStateChanged(auth, u => {
+      setUser(u);
+      setAuthLoading(false); // set loading after firebase gives a response
     });
 
     return unsubscribe;
-  }, [loading]);
+  }, []);
 
-  const logout = () => {
-    setUser(null);
-    signOut(auth);
+  const logout = async () => {
+    try {
+      await signOut(auth);
+      setUser(null); // reset user state
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
   };
 
   return (
-    <AuthContext.Provider value={{ user, setUser, logout }}>
-      {!loading && children}
+    <AuthContext.Provider value={{ user, setUser, logout, authLoading }}>
+      {!authLoading && children}
     </AuthContext.Provider>
   );
 };
