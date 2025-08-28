@@ -79,6 +79,7 @@ const BookingSummaryScreen = ({ route, navigation }) => {
         appointmentStatus: APPOINTMENT_STATUSES.PENDING,
         customerId: user.uid,
         totalAmount: subtotal,
+        shopId: route.params.shopId
       };
 
       try {

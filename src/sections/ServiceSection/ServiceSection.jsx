@@ -125,7 +125,7 @@ const ServiceSection = ({ shopId, navigation }) => {
 
       fetchServices();
     }
-  }, [shopId, services]);
+  }, [shopId]);
 
   useEffect(() => {
     if (shopId) {
@@ -147,7 +147,7 @@ const ServiceSection = ({ shopId, navigation }) => {
 
       fetchOffers();
     }
-  }, [shopId, offers]);
+  }, [shopId]);
 
   return (
     <View style={styles.container}>

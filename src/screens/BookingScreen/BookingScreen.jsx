@@ -82,7 +82,7 @@ const BookingScreen = ({ route, navigation }) => {
   const onDateChange = selectedDate => {
     const currentDate = selectedDate || selectedDate;
     setShowDatePicker(Platform.OS === 'ios');
-    setSelectedDate(currentDate);
+    setSelectedDate(new Date(currentDate));
   };
 
   const handleNext = () => {
@@ -91,6 +91,7 @@ const BookingScreen = ({ route, navigation }) => {
       selectedTime: selectedTime,
       selectedServices: selectedServices,
       selectedExpert: experts.find(expert => expert.id === selectedExpert),
+      shopId,
     });
   };
 
@@ -162,7 +163,11 @@ const BookingScreen = ({ route, navigation }) => {
             style={styles.datePicker}
             onPress={() => setShowDatePicker(true)}
           >
-            <Text style={styles.dateText}>{selectedDate.toDateString()}</Text>
+            <Text style={styles.dateText}>{selectedDate?.toDateString()}</Text>
+            {console.log(
+              'selectedDate----------',
+              selectedDate ? selectedDate : 'no selectedDate',
+            )}
             <Ionicons name="calendar-outline" size={22} color="#888" />
           </TouchableOpacity>
 
