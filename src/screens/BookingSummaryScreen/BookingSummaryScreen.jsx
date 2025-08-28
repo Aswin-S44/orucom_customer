@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import {
   View,
   Text,
@@ -7,9 +7,13 @@ import {
   StyleSheet,
   StatusBar,
   Modal,
+  ActivityIndicator,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { primaryColor } from '../../constants/colors';
+import { APPOINTMENT_STATUSES } from '../../constants/variables';
+import { AuthContext } from '../../context/AuthContext';
+import { createAppointment } from '../../apis/services';
 
 const Row = ({ label, value }) => (
   <View style={styles.row}>
@@ -36,8 +40,63 @@ const AmountRow = ({ service, qty, price, isBold = false }) => (
   </View>
 );
 
-const BookingSummaryScreen = ({ navigation }) => {
+const BookingSummaryScreen = ({ route, navigation }) => {
+  const { user } = useContext(AuthContext);
   const [modalVisible, setModalVisible] = useState(false);
+  const [selectedDate, setSelectedDate] = useState('');
+  const [selectedTime, setSelectedTime] = useState('');
+  const [selectedServices, setSelectedServices] = useState([]);
+  const [subtotal, setSubtotal] = useState(0);
+  const [confirming, setConfirming] = useState(false);
+
+  useEffect(() => {
+    if (route.params) {
+      const { selectedDate, selectedTime, selectedServices } = route.params;
+      setSelectedDate(selectedDate);
+      setSelectedTime(selectedTime);
+      setSelectedServices(selectedServices);
+
+      const calculatedSubtotal = selectedServices.reduce(
+        (sum, service) => sum + service.servicePrice,
+        0,
+      );
+      setSubtotal(calculatedSubtotal);
+    }
+  }, [route.params]);
+
+  const total = subtotal;
+
+  const handleConfirmBooking = async () => {
+    setConfirming(true);
+
+    if (user && user.uid) {
+      const serviceIds = selectedServices.map(service => service.id);
+
+      const bookingData = {
+        serviceIds,
+        selectedDate,
+        selectedTime,
+        appointmentStatus: APPOINTMENT_STATUSES.PENDING,
+        customerId: user.uid,
+        totalAmount: subtotal,
+      };
+
+      try {
+        const res = await createAppointment(bookingData);
+
+        if (res && res.success) {
+          setModalVisible(true);
+        }
+      } catch (error) {
+        console.error('Error creating appointment:', error);
+      } finally {
+        setConfirming(false);
+      }
+    } else {
+      setConfirming(false);
+      console.warn('User not logged in or user ID not available.');
+    }
+  };
 
   return (
     <View style={styles.outerContainer}>
@@ -55,11 +114,15 @@ const BookingSummaryScreen = ({ navigation }) => {
               <Ionicons name="checkmark" size={36} color="#fff" />
             </View>
             <Text style={styles.modalText}>
-              Successfully send your request. Waiting for confirmation.
+              Successfully sent your request. Waiting for confirmation.
             </Text>
             <TouchableOpacity
               style={styles.okButton}
-              onPress={() => setModalVisible(false)}
+              onPress={() => {
+                setModalVisible(false);
+
+                navigation.navigate('Appointment');
+              }}
             >
               <Text style={styles.okButtonText}>OK</Text>
             </TouchableOpacity>
@@ -67,9 +130,17 @@ const BookingSummaryScreen = ({ navigation }) => {
         </View>
       </Modal>
 
+      <Modal transparent={true} visible={confirming} animationType="fade">
+        <View style={styles.loadingOverlay}>
+          <ActivityIndicator size="large" color="#fff" />
+          <Text style={styles.loadingText}>Sending Booking request ...</Text>
+        </View>
+      </Modal>
+
       <TouchableOpacity
         style={styles.backButton}
         onPress={() => navigation.goBack()}
+        disabled={confirming}
       >
         <Ionicons name="chevron-back" size={24} color="#fff" />
         <Text style={styles.backButtonText}>Back</Text>
@@ -81,8 +152,8 @@ const BookingSummaryScreen = ({ navigation }) => {
 
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Date & Time</Text>
-            <Row label="Date" value="25 August 2021" />
-            <Row label="Time" value="08.00 pm" />
+            <Row label="Date" value={selectedDate} />
+            <Row label="Time" value={selectedTime} />
           </View>
 
           <View style={styles.section}>
@@ -105,26 +176,40 @@ const BookingSummaryScreen = ({ navigation }) => {
                   Price
                 </Text>
               </View>
-              <AmountRow service="Style Hair Cut" qty="01" price="$25" />
-              <AmountRow service="Spa" qty="01" price="$100" />
-              <AmountRow service="Skin Treatment" qty="01" price="$80" />
+              {selectedServices.map((service, index) => (
+                <AmountRow
+                  key={index}
+                  service={service.serviceName}
+                  qty="01"
+                  price={`${service.servicePrice}`}
+                />
+              ))}
             </View>
 
             <View style={styles.separator} />
 
-            <AmountRow service="Subtotal" qty="" price="$205" />
-            <AmountRow service="Discount by coupon" qty="" price="- $10" />
+            <AmountRow service="Subtotal" qty="" price={`${subtotal}`} />
 
             <View style={styles.separator} />
 
-            <AmountRow service="Total" qty="" price="$195" isBold={true} />
+            <AmountRow
+              service="Total"
+              qty=""
+              price={`${total}`}
+              isBold={true}
+            />
           </View>
         </ScrollView>
         <TouchableOpacity
-          style={styles.confirmButton}
-          onPress={() => setModalVisible(true)}
+          style={[styles.confirmButton, confirming && styles.disabledButton]}
+          onPress={handleConfirmBooking}
+          disabled={confirming}
         >
-          <Text style={styles.confirmButtonText}>Confirm</Text>
+          {confirming ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.confirmButtonText}>Confirm</Text>
+          )}
         </TouchableOpacity>
       </View>
     </View>
@@ -219,6 +304,9 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
   },
+  disabledButton: {
+    backgroundColor: '#cccccc',
+  },
   modalBackdrop: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.6)',
@@ -260,6 +348,17 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 18,
     fontWeight: 'bold',
+  },
+  loadingOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    color: '#fff',
+    fontSize: 18,
+    marginTop: 10,
   },
 });
 

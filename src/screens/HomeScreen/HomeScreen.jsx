@@ -8,14 +8,38 @@ import {
   TextInput,
   StatusBar,
 } from 'react-native';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 
 import EvilIcons from 'react-native-vector-icons/EvilIcons';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import Card from '../../components/Card/Card';
 import { primaryColor, secondaryColor } from '../../constants/colors';
+import { getAllParlours } from '../../apis/services';
+import CardSkeleton from '../../components/CardSkeleton/CardSkeleton';
 
 const HomeScreen = ({ navigation }) => {
+  const [shops, setShops] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchShops = async () => {
+      try {
+        setLoading(true);
+        const res = await getAllParlours();
+
+        if (res && res.length > 0) {
+          setShops(res);
+        }
+        setShops(res);
+      } catch (err) {
+        console.error('Error fetching shops:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchShops();
+  }, []);
+
   const services = [
     {
       id: 1,
@@ -172,7 +196,33 @@ const HomeScreen = ({ navigation }) => {
         <Text style={styles.sectionTitle}>Popular Beauty Parlour</Text>
         <View style={styles.featuredContainer}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            {featuredSection.map((feature, index) => (
+            {loading ? (
+              <View>
+                <CardSkeleton />
+              </View>
+            ) : (
+              shops &&
+              shops.length > 0 &&
+              shops.map((shop, index) => (
+                <TouchableOpacity
+                  key={index}
+                  onPress={() =>
+                    navigation.navigate('ParlourDetails', {
+                      parlourData: shop,
+                    })
+                  }
+                >
+                  <Card
+                    image={shop.profileImage}
+                    title={shop.parlourName}
+                    location={shop.address}
+                    rating={shop.rating ?? 0}
+                    status={shop.status ?? 'closed'}
+                  />
+                </TouchableOpacity>
+              ))
+            )}
+            {/* {featuredSection.map((feature, index) => (
               <TouchableOpacity
                 key={index}
                 onPress={() =>
@@ -189,7 +239,7 @@ const HomeScreen = ({ navigation }) => {
                   status={feature.status}
                 />
               </TouchableOpacity>
-            ))}
+            ))} */}
           </ScrollView>
         </View>
       </View>

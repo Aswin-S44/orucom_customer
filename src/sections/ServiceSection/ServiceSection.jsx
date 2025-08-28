@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -8,127 +8,146 @@ import {
   FlatList,
 } from 'react-native';
 import { GREY } from '../../constants/colors';
+import { getOffersByShop, getServicesByShop } from '../../apis/services';
+import { NO_IMAGE } from '../../constants/images';
+import { useNavigation } from '@react-navigation/native';
+import ServiceCardSkeleton from '../../components/ServiceCardSkeleton/ServiceCardSkeleton';
+import EmptyComponent from '../../components/EmptyComponent/EmptyComponent';
+import OfferText from '../../components/OfferText/OfferText';
 
-const servicesData = [
-  {
-    id: '1',
-    name: 'Hair Cut',
-    types: '20 Types',
-    image: require('../../assets/images/services/1.png'),
-    active: true,
-  },
-  {
-    id: '2',
-    name: 'Fascial',
-    types: '10 Types',
-    image: require('../../assets/images/services/2.png'),
-  },
-  {
-    id: '3',
-    name: 'Hair Treatment',
-    types: '15 Types',
-    image: require('../../assets/images/services/3.png'),
-  },
-  {
-    id: '4',
-    name: 'Makeup',
-    types: '30 Types',
-    image: require('../../assets/images/services/4.png'),
-  },
-  {
-    id: '5',
-    name: 'Spa',
-    types: '05 Types',
-    image: require('../../assets/images/services/5.png'),
-  },
-];
+const ServiceItem = ({ item, shopId }) => {
+  const navigation = useNavigation();
 
-const offerData = [
-  {
-    id: '1',
-    name: 'Hair Cut',
-    offer: '50% Offer $255 $120',
-    image: require('../../assets/images/services/1.png'),
-    active: true,
-  },
-  {
-    id: '2',
-    name: 'Fascial',
-    offer: '10 Types',
-    image: require('../../assets/images/services/2.png'),
-  },
-  {
-    id: '3',
-    name: 'Hair Treatment',
-    offer: '50% Offer $255 $120',
-    image: require('../../assets/images/services/3.png'),
-  },
-  {
-    id: '4',
-    name: 'Makeup',
-    offer: '50% Offer $255 $120',
-    image: require('../../assets/images/services/4.png'),
-  },
-  {
-    id: '5',
-    name: 'Spa',
-    offer: '50% Offer $255 $120',
-    image: require('../../assets/images/services/5.png'),
-  },
-];
-
-const ServiceItem = ({ item }) => (
-  <View style={styles.card}>
-    <Image source={item.image} style={styles.cardImage} />
-    <View style={styles.cardTextContainer}>
-      <Text style={styles.cardTitle}>{item.name}</Text>
-      <Text style={styles.cardSubtitle}>{item.types}</Text>
-    </View>
-    <TouchableOpacity
-      style={[
-        styles.bookButton,
-        item.active ? styles.activeButton : styles.inactiveButton,
-      ]}
-    >
-      <Text
+  return (
+    <View style={styles.card}>
+      <Image
+        source={{
+          uri: typeof item.imageUrl === 'string' ? item.imageUrl : NO_IMAGE,
+        }}
+        style={styles.cardImage}
+      />
+      <View style={styles.cardTextContainer}>
+        <Text style={styles.cardTitle}>{item.serviceName}</Text>
+        <Text style={styles.cardSubtitle}>{item.category}</Text>
+      </View>
+      <TouchableOpacity
         style={[
-          styles.bookButtonText,
-          item.active ? styles.activeButtonText : styles.inactiveButtonText,
+          styles.bookButton,
+          item.active ? styles.activeButton : styles.inactiveButton,
         ]}
+        onPress={() =>
+          navigation.navigate('BookingScreen', {
+            shopId: shopId,
+            serviceId: item.id,
+          })
+        }
       >
-        Book
-      </Text>
-    </TouchableOpacity>
-  </View>
-);
-
-const OfferItem = ({ item }) => (
-  <View style={styles.card}>
-    <Image source={item.image} style={styles.cardImage} />
-    <View style={styles.cardTextContainer}>
-      <Text style={styles.cardTitle}>{item.name}</Text>
-      <Text style={styles.cardSubtitle}>{item.offer}</Text>
+        <Text
+          style={[
+            styles.bookButtonText,
+            item.active ? styles.activeButtonText : styles.inactiveButtonText,
+          ]}
+        >
+          Book
+        </Text>
+      </TouchableOpacity>
     </View>
-    <TouchableOpacity
-      style={[
-        styles.bookButton,
-        item.active ? styles.activeButton : styles.inactiveButton,
-      ]}
-    >
-      <Text
-        style={[
-          styles.bookButtonText,
-          item.active ? styles.activeButtonText : styles.inactiveButtonText,
-        ]}
-      >
-        Book
-      </Text>
-    </TouchableOpacity>
-  </View>
-);
+  );
+};
 
-const ServiceSection = () => {
+const OfferItem = ({ item, shopId }) => {
+  const navigation = useNavigation();
+  return (
+    <View style={styles.card}>
+      <Image
+        source={{
+          uri:
+            typeof item.service.imageUrl === 'string'
+              ? item.service.imageUrl
+              : NO_IMAGE,
+        }}
+        style={styles.cardImage}
+      />
+      <View style={styles.cardTextContainer}>
+        <Text style={styles.cardTitle}>{item.serviceName}</Text>
+
+        <OfferText regularPrice={500} offerPrice={450} />
+      </View>
+      <TouchableOpacity
+        style={[
+          styles.bookButton,
+          item.active ? styles.activeButton : styles.inactiveButton,
+        ]}
+        onPress={() =>
+          navigation.navigate('BookingScreen', {
+            shopId: shopId,
+            serviceId: item.serviceId,
+          })
+        }
+      >
+        <Text
+          style={[
+            styles.bookButtonText,
+            item.active ? styles.activeButtonText : styles.inactiveButtonText,
+          ]}
+        >
+          Book
+        </Text>
+      </TouchableOpacity>
+    </View>
+  );
+};
+
+const ServiceSection = ({ shopId, navigation }) => {
   const [activeTab, setActiveTab] = useState('Services');
+  const [services, setServices] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [offers, setOffers] = useState([]);
+  const [offersLoading, setOffersLoading] = useState(false);
+
+  useEffect(() => {
+    if (shopId) {
+      const fetchServices = async () => {
+        try {
+          setLoading(true);
+          const res = await getServicesByShop(shopId);
+          setLoading(false);
+          console.log('services:', services);
+          if (res && res.length > 0) {
+            setServices(res);
+          }
+        } catch (err) {
+          console.error('Error fetching services:', err);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      fetchServices();
+    }
+  }, [shopId, services]);
+
+  useEffect(() => {
+    if (shopId) {
+      const fetchOffers = async () => {
+        try {
+          setOffersLoading(true);
+          const res = await getOffersByShop(shopId);
+          setOffersLoading(false);
+          console.log('offers:', offers);
+          if (res && res.length > 0) {
+            setOffers(res);
+          }
+        } catch (err) {
+          console.error('Error fetching offers:', err);
+        } finally {
+          setOffersLoading(false);
+        }
+      };
+
+      fetchOffers();
+    }
+  }, [shopId, offers]);
 
   return (
     <View style={styles.container}>
@@ -158,19 +177,47 @@ const ServiceSection = () => {
       </View>
 
       {activeTab === 'Services' ? (
-        <FlatList
-          data={servicesData}
-          renderItem={({ item }) => <ServiceItem item={item} />}
-          keyExtractor={item => item.id}
-          contentContainerStyle={styles.listContainer}
-        />
+        <>
+          {loading ? (
+            <>
+              <ServiceCardSkeleton />
+            </>
+          ) : !loading && services.length == 0 ? (
+            <>
+              <EmptyComponent />
+            </>
+          ) : (
+            <FlatList
+              data={services}
+              renderItem={({ item }) => (
+                <ServiceItem item={item} shopId={shopId} />
+              )}
+              keyExtractor={item => item.id}
+              contentContainerStyle={styles.listContainer}
+            />
+          )}
+        </>
       ) : (
-        <FlatList
-          data={servicesData}
-          renderItem={({ item }) => <ServiceItem item={item} />}
-          keyExtractor={item => item.id}
-          contentContainerStyle={styles.listContainer}
-        />
+        <>
+          {offersLoading ? (
+            <>
+              <ServiceCardSkeleton />
+            </>
+          ) : !offersLoading && offers.length == 0 ? (
+            <>
+              <EmptyComponent />
+            </>
+          ) : (
+            <FlatList
+              data={offers}
+              renderItem={({ item }) => (
+                <OfferItem item={item} shopId={shopId} />
+              )}
+              keyExtractor={item => item.id}
+              contentContainerStyle={styles.listContainer}
+            />
+          )}
+        </>
       )}
     </View>
   );
@@ -238,7 +285,7 @@ const styles = StyleSheet.create({
   },
   cardTitle: {
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: '500',
     color: '#333',
   },
   cardSubtitle: {

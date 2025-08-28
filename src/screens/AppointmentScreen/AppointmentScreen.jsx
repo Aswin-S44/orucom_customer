@@ -40,8 +40,10 @@ const servicesData = [
   },
 ];
 
-const AppointmentScreen = ({ navigation }) => {
+const AppointmentScreen = ({ route, navigation }) => {
   const [selectedType, setSelectedType] = useState('Child');
+
+  const { shopId, serviceId } = route.params;
 
   return (
     <View style={styles.outerContainer}>

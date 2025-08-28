@@ -1,12 +1,19 @@
 import React from 'react';
 import { View, Text, Image, StyleSheet } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
+import { NO_IMAGE } from '../../constants/images';
 
 const Card = ({ image, title, location, rating, status }) => {
   return (
     <View style={styles.card}>
       <View style={styles.imageContainer}>
-        <Image source={image} style={styles.cardImage} />
+        <Image
+          source={{
+            uri: typeof image === 'string' ? image : NO_IMAGE,
+          }}
+          style={styles.cardImage}
+        />
+
         <View style={styles.badgesContainer}>
           <View style={styles.ratingBadge}>
             <Icon name="star" size={14} color="#fff" />

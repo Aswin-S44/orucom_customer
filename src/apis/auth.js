@@ -16,7 +16,7 @@ export const signup = async (email, password) => {
 
     // Storing data into firestore
     const user = userCredential.user;
-    await setDoc(doc(db, 'shop-owners', user.uid), {
+    await setDoc(doc(db, 'customers', user.uid), {
       uid: user.uid,
       fullName: '',
       phone: '',

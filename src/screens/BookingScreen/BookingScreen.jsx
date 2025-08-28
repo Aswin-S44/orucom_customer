@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -7,32 +7,14 @@ import {
   ScrollView,
   StyleSheet,
   StatusBar,
+  Platform,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { bookedColor, lightPurple, primaryColor } from '../../constants/colors';
-
-const expertsData = [
-  {
-    id: 1,
-    name: 'Robat Jonson',
-    image: require('../../assets/images/users/1.png'),
-  },
-  {
-    id: 2,
-    name: 'Markal hums',
-    image: require('../../assets/images/users/2.png'),
-  },
-  {
-    id: 3,
-    name: 'Lifsa Zuli',
-    image: require('../../assets/images/users/3.png'),
-  },
-  {
-    id: 4,
-    name: 'Washin Tomas',
-    image: require('../../assets/images/users/4.png'),
-  },
-];
+import { getExpertsByShopId, getServiceById } from '../../apis/services';
+import BookingScreenSkeleton from '../../components/BookingScreenSkeleton/BookingScreenSkeleton';
+import { NO_IMAGE } from '../../constants/images';
 
 const timeSlots = [
   '8:00 am',
@@ -53,15 +35,71 @@ const timeSlots = [
 
 const bookedSlots = ['10:00 am', '4:00 pm', '6:00 pm'];
 
-const servicesData = [
-  { id: 1, name: 'Style Hair Cut', qty: '01', price: '$25' },
-  { id: 2, name: 'Spa', qty: '01', price: '$100' },
-  { id: 3, name: 'Skin Treatment', qty: '01', price: '$200' },
-];
-
-const BookingScreen = ({ navigation }) => {
+const BookingScreen = ({ route, navigation }) => {
   const [selectedExpert, setSelectedExpert] = useState(1);
   const [selectedTime, setSelectedTime] = useState(null);
+  const [selectedServices, setSelectedServices] = useState(null);
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [experts, setExperts] = useState([]);
+
+  const { shopId, serviceId } = route.params;
+
+  useEffect(() => {
+    if (shopId) {
+      const fetchShopExperts = async () => {
+        try {
+          setLoading(true);
+          const res = await getExpertsByShopId(shopId);
+          setLoading(false);
+
+          setExperts(res);
+        } catch (error) {
+          console.log('Error while fetching experts : ', error);
+        }
+      };
+      fetchShopExperts();
+    }
+  }, [shopId]);
+
+  useEffect(() => {
+    if (shopId && serviceId) {
+      const fetchServiceDetails = async () => {
+        try {
+          const res = await getServiceById(shopId, serviceId);
+          if (res) {
+            setSelectedServices([res]);
+          }
+        } catch (error) {
+          console.error('Error fetching service details:', error);
+        }
+      };
+      fetchServiceDetails();
+    }
+  }, [shopId, serviceId]);
+
+  const onDateChange = selectedDate => {
+    const currentDate = selectedDate || selectedDate;
+    setShowDatePicker(Platform.OS === 'ios');
+    setSelectedDate(currentDate);
+  };
+
+  const handleNext = () => {
+    navigation.navigate('BookingSummaryScreen', {
+      selectedDate: selectedDate.toDateString(),
+      selectedTime: selectedTime,
+      selectedServices: selectedServices,
+      selectedExpert: experts.find(expert => expert.id === selectedExpert),
+    });
+  };
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  if (loading) {
+    return <BookingScreenSkeleton />;
+  }
 
   return (
     <View style={styles.outerContainer}>
@@ -91,28 +129,54 @@ const BookingScreen = ({ navigation }) => {
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.expertScroll}
           >
-            {expertsData.map(expert => (
+            {experts.map(expert => (
               <TouchableOpacity
                 key={expert.id}
                 style={styles.expertCard}
-                onPress={() => navigation.navigate('BeautyExpertDetailsScreen')}
+                onPress={() => {
+                  setSelectedExpert(expert.id);
+                  navigation.navigate('BeautyExpertDetailsScreen');
+                }}
               >
                 <View style={styles.avatarContainer}>
-                  <Image source={expert.image} style={styles.avatar} />
+                  <Image
+                    source={{
+                      uri:
+                        typeof expert.imageUrl === 'string'
+                          ? expert.imageUrl
+                          : NO_IMAGE,
+                    }}
+                    style={styles.avatar}
+                  />
                   {selectedExpert === expert.id && (
                     <View style={styles.avatarOverlay} />
                   )}
                 </View>
-                <Text style={styles.expertName}>{expert.name}</Text>
+                <Text style={styles.expertName}>{expert.expertName ?? ''}</Text>
               </TouchableOpacity>
             ))}
           </ScrollView>
 
           <Text style={styles.sectionTitle}>Select Date</Text>
-          <TouchableOpacity style={styles.datePicker}>
-            <Text style={styles.dateText}>25 August 2020</Text>
+          <TouchableOpacity
+            style={styles.datePicker}
+            onPress={() => setShowDatePicker(true)}
+          >
+            <Text style={styles.dateText}>{selectedDate.toDateString()}</Text>
             <Ionicons name="calendar-outline" size={22} color="#888" />
           </TouchableOpacity>
+
+          {showDatePicker && (
+            <DateTimePicker
+              testID="datePicker"
+              value={selectedDate}
+              mode="date"
+              display="default"
+              onChange={onDateChange}
+              minimumDate={today}
+              accentColor="#FF69B4"
+            />
+          )}
 
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Select Time Slot</Text>
@@ -177,22 +241,29 @@ const BookingScreen = ({ navigation }) => {
                 Price
               </Text>
             </View>
-            {servicesData.map(service => (
-              <View key={service.id} style={styles.tableRow}>
-                <Text style={[styles.tableCell, { flex: 2 }]}>
-                  {service.name}
-                </Text>
-                <Text style={styles.tableCell}>{service.qty}</Text>
-                <Text style={[styles.tableCell, { textAlign: 'right' }]}>
-                  {service.price}
-                </Text>
-              </View>
-            ))}
+            {selectedServices &&
+              selectedServices.length > 0 &&
+              selectedServices.map(service => (
+                <View key={service.id} style={styles.tableRow}>
+                  <Text style={[styles.tableCell, { flex: 2 }]}>
+                    {service.serviceName}
+                  </Text>
+                  <Text style={styles.tableCell}>{service.qty ?? 1}</Text>
+                  <Text style={[styles.tableCell, { textAlign: 'right' }]}>
+                    {service.servicePrice}
+                  </Text>
+                </View>
+              ))}
           </View>
         </ScrollView>
         <TouchableOpacity
-          style={styles.nextButton}
-          onPress={() => navigation.navigate('BookingSummaryScreen')}
+          style={[
+            styles.nextButton,
+            (!selectedTime || !selectedServices || !selectedDate) &&
+              styles.disabledButton,
+          ]}
+          onPress={handleNext}
+          disabled={!selectedTime || !selectedServices || !selectedDate}
         >
           <Text style={styles.nextButtonText}>NEXT</Text>
         </TouchableOpacity>
@@ -229,7 +300,7 @@ const styles = StyleSheet.create({
   },
   mainTitle: {
     fontSize: 26,
-    fontWeight: 400,
+    fontWeight: '400',
     color: '#333',
     textAlign: 'center',
     marginTop: 25,
@@ -365,6 +436,9 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     alignItems: 'center',
     marginVertical: 10,
+  },
+  disabledButton: {
+    backgroundColor: '#ccc',
   },
   nextButtonText: {
     color: '#fff',

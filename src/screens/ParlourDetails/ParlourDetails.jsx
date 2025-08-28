@@ -13,51 +13,27 @@ import Reviews from '../../components/Reviews/Reviews';
 import { primaryColor } from '../../constants/colors';
 import ServiceSection from '../../sections/ServiceSection/ServiceSection';
 import GallerySection from '../../sections/GallerySection/GallerySection';
+import { NO_IMAGE } from '../../constants/images';
+import StarRating from '../../components/StarRating/StarRating';
+import AboutSection from '../../sections/AboutSection/AboutSection';
 
 const ParlourDetails = ({ route, navigation }) => {
   const { parlourData } = route.params;
   const [activeTab, setActiveTab] = React.useState('About');
 
-  const renderStars = rating => {
-    const stars = [];
-    const filledStars = Math.floor(rating);
-    const hasHalfStar = rating % 1 !== 0;
-
-    for (let i = 0; i < filledStars; i++) {
-      stars.push(<Ionicons key={i} name="star" size={20} color="#FFA500" />);
-    }
-
-    if (hasHalfStar) {
-      stars.push(
-        <Ionicons
-          key="half"
-          name="star-half-sharp"
-          size={20}
-          color="#FFA500"
-        />,
-      );
-    }
-
-    const emptyStars = 5 - stars.length;
-    for (let i = 0; i < emptyStars; i++) {
-      stars.push(
-        <Ionicons
-          key={`empty-${i}`}
-          name="star-outline"
-          size={20}
-          color="#FFFFFF"
-        />,
-      );
-    }
-
-    return stars;
-  };
-
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       <StatusBar barStyle="light-content" />
       <View style={styles.imageContainer}>
-        <Image source={parlourData.image} style={styles.image} />
+        <Image
+          source={{
+            uri:
+              typeof parlourData.profileImage === 'string'
+                ? parlourData.profileImage
+                : NO_IMAGE,
+          }}
+          style={styles.image}
+        />
         <View style={styles.overlay} />
 
         <TouchableOpacity
@@ -67,13 +43,14 @@ const ParlourDetails = ({ route, navigation }) => {
           <Ionicons name="chevron-back" size={24} color="#fff" />
           <Text style={styles.backButtonText}>Back</Text>
         </TouchableOpacity>
-
         <View style={styles.headerContent}>
           <View style={styles.headerLeft}>
-            <Text style={styles.title}>{parlourData.serviceName}</Text>
-            <Text style={styles.locationText}>{parlourData.location}</Text>
+            <Text style={styles.title}>{parlourData?.parlourName ?? ''}</Text>
+            <Text style={styles.locationText}>
+              {parlourData?.address ?? ''}
+            </Text>
             <View style={styles.ratingContainer}>
-              {renderStars(parlourData.rating)}
+              <StarRating rating={parlourData.rating ?? 4.5} />
             </View>
           </View>
           <TouchableOpacity
@@ -140,55 +117,11 @@ const ParlourDetails = ({ route, navigation }) => {
         </TouchableOpacity>
       </View>
 
-      {activeTab === 'About' && (
-        <View style={styles.content}>
-          <Text style={styles.subtitle}>Why Choose Us</Text>
-          <Text style={styles.description}>
-            Contrary to popular belief, Lorem Inosimplyrandom and text. It has
-            roots in a piece of classical Latin liteture 45 BC, making it over
-            2000 years old.
-          </Text>
-          <View style={styles.bulletPoint}>
-            <View style={styles.bulletIcon} />
-            <Text style={styles.bulletText}>
-              Distracted by the readable content of a page when looking at its
-              layout.
-            </Text>
-          </View>
-          <View style={styles.bulletPoint}>
-            <View style={styles.bulletIcon} />
-            <Text style={styles.bulletText}>
-              Distracted by the readable content of a page when looking at its
-              layout.
-            </Text>
-          </View>
-
-          <Text style={styles.subtitle}>Our Mission and Vision</Text>
-          <Text style={styles.description}>
-            Contrary to popular belief, Loreipsnosimplyrandom car text. It has
-            roots a piece of classical Latin liteture 45 BC, making it over 2000
-            years old.
-          </Text>
-          <View style={styles.bulletPoint}>
-            <View style={styles.bulletIcon} />
-            <Text style={styles.bulletText}>
-              Distracted by the readable content of a page when looking at its
-              layout.
-            </Text>
-          </View>
-          <View style={styles.bulletPoint}>
-            <View style={styles.bulletIcon} />
-            <Text style={styles.bulletText}>
-              Distracted by the readable content of a page when looking at its
-              layout.
-            </Text>
-          </View>
-        </View>
-      )}
+      {activeTab === 'About' && <AboutSection />}
 
       {activeTab === 'Service' && (
         <View style={styles.content}>
-          <ServiceSection />
+          <ServiceSection shopId={parlourData.uid} />
         </View>
       )}
 
@@ -296,41 +229,6 @@ const styles = StyleSheet.create({
   },
   activeTabText: {
     fontWeight: 'bold',
-  },
-  content: {
-    padding: 20,
-  },
-  subtitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 10,
-    marginTop: 10,
-  },
-  description: {
-    fontSize: 15,
-    color: '#555',
-    lineHeight: 22,
-    marginBottom: 15,
-  },
-  bulletPoint: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: 12,
-  },
-  bulletIcon: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: primaryColor,
-    marginRight: 12,
-    marginTop: 6,
-  },
-  bulletText: {
-    fontSize: 15,
-    color: '#555',
-    flex: 1,
-    lineHeight: 22,
   },
 });
 
