@@ -121,3 +121,40 @@ export const getExpertsByShopId = async shopId => {
     ...doc.data(),
   }));
 };
+
+export const getAppointmentsByCustomerId = async customerId => {
+  try {
+    const q = query(
+      collection(db, 'appointments'),
+      where('customerId', '==', customerId),
+    );
+    const querySnapshot = await getDocs(q);
+
+    const results = await Promise.all(
+      querySnapshot.docs.map(async appointmentDoc => {
+        const appointmentData = appointmentDoc.data();
+        const expertId = appointmentData.expertId;
+
+        let expertData = null;
+        if (expertId) {
+          const expertRef = doc(db, 'beauty_experts', expertId);
+          const expertSnap = await getDoc(expertRef);
+          if (expertSnap.exists()) {
+            expertData = { id: expertSnap.id, ...expertSnap.data() };
+          }
+        }
+
+        return {
+          id: appointmentDoc.id,
+          ...appointmentData,
+          expert: expertData,
+        };
+      }),
+    );
+
+    return results;
+  } catch (error) {
+    console.error('Error fetching appointments with expert data:', error);
+    throw error;
+  }
+};

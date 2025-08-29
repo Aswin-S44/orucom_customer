@@ -48,13 +48,16 @@ const BookingSummaryScreen = ({ route, navigation }) => {
   const [selectedServices, setSelectedServices] = useState([]);
   const [subtotal, setSubtotal] = useState(0);
   const [confirming, setConfirming] = useState(false);
+  const [selectedExpert, setSelectedExpert] = useState('');
 
   useEffect(() => {
     if (route.params) {
-      const { selectedDate, selectedTime, selectedServices } = route.params;
+      const { selectedDate, selectedTime, selectedServices, selectedExpert } =
+        route.params;
       setSelectedDate(selectedDate);
       setSelectedTime(selectedTime);
       setSelectedServices(selectedServices);
+      setSelectedExpert(selectedExpert.id);
 
       const calculatedSubtotal = selectedServices.reduce(
         (sum, service) => sum + service.servicePrice,
@@ -79,7 +82,8 @@ const BookingSummaryScreen = ({ route, navigation }) => {
         appointmentStatus: APPOINTMENT_STATUSES.PENDING,
         customerId: user.uid,
         totalAmount: subtotal,
-        shopId: route.params.shopId
+        shopId: route.params.shopId,
+        expertId: selectedExpert,
       };
 
       try {

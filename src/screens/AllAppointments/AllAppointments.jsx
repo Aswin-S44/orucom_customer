@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -7,62 +7,38 @@ import {
   FlatList,
   Image,
 } from 'react-native';
-
-const primaryColor = '#8E44AD';
-
-const historyData = [
-  {
-    id: '1',
-    name: 'Sofiyan Lit',
-    specialty: 'Spa Specialist',
-    description: '25 Dec 2020,\n08:00pm\nAmount $250',
-    status: 'Pending',
-    image: require('../../assets/images/users/1.png'),
-  },
-  {
-    id: '2',
-    name: 'Nadiya Khan',
-    specialty: 'Hair Specialist',
-    description: '27 Dec 2020,\n10:00pm\nAmount $350',
-    status: 'Completed',
-    image: require('../../assets/images/users/2.png'),
-  },
-  {
-    id: '3',
-    name: 'Kusino Zaal',
-    specialty: 'Skin Specialist',
-    description: '10 Nov 2020,\n08:00pm\nAmount $170',
-    status: 'Confirmed',
-    image: require('../../assets/images/users/3.png'),
-  },
-  {
-    id: '4',
-    name: 'Lifa Mitali',
-    specialty: 'Cut Specialist',
-    description: '07 Nov 2020,\n09:00pm\nAmount $250',
-    status: 'Canceled',
-    image: require('../../assets/images/users/4.png'),
-  },
-];
+import { AuthContext } from '../../context/AuthContext';
+import { getAppointmentsByCustomerId } from '../../apis/services';
+import EmptyComponent from '../../components/EmptyComponent/EmptyComponent';
+import { NO_IMAGE } from '../../constants/images';
+import {
+  convertFIrstCharToUpper,
+  formatText,
+  formatTimestamp,
+} from '../../utils/utils';
+import AppointmentHistorySkeleton from '../../components/AppointmentHistorySkeleton/AppointmentHistorySkeleton';
+import { primaryColor } from '../../constants/colors';
+import ServiceCardSkeleton from '../../components/ServiceCardSkeleton/ServiceCardSkeleton';
+import Loader from '../../components/Loader/Loader';
 
 const getStatusStyles = status => {
   switch (status) {
-    case 'Pending':
+    case 'pending':
       return {
         container: { backgroundColor: '#F3E5F5' },
         text: { color: '#8E44AD' },
       };
-    case 'Completed':
+    case 'completed':
       return {
         container: { backgroundColor: '#E1BEE7' },
         text: { color: '#6A1B9A' },
       };
-    case 'Confirmed':
+    case 'confirmed':
       return {
         container: { backgroundColor: '#9C27B0' },
         text: { color: '#FFFFFF' },
       };
-    case 'Canceled':
+    case 'canceled':
       return {
         container: { backgroundColor: '#F1F1F1' },
         text: { color: '#9E9E9E' },
@@ -73,24 +49,38 @@ const getStatusStyles = status => {
 };
 
 const HistoryItem = ({ item }) => {
-  const statusStyles = getStatusStyles(item.status);
+  const statusStyles = getStatusStyles(item.appointmentStatus);
 
   return (
     <View style={styles.itemContainer}>
       <View style={styles.expertColumn}>
-        <Image source={item.image} style={styles.avatar} />
+        <Image
+          source={{
+            uri:
+              typeof item.expert.imageUrl === 'string'
+                ? item.expert.imageUrl
+                : NO_IMAGE,
+          }}
+          style={styles.avatar}
+        />
         <View>
-          <Text style={styles.expertName}>{item.name}</Text>
-          <Text style={styles.expertSpecialty}>{item.specialty}</Text>
+          <Text style={styles.expertName}>{item.expert.expertName}</Text>
+          <Text style={styles.expertSpecialty}>
+            {formatText(item.expert.specialist ?? '')}
+          </Text>
         </View>
       </View>
       <View style={styles.descriptionColumn}>
-        <Text style={styles.descriptionText}>{item.description}</Text>
+        <Text style={styles.descriptionText}>
+          {formatTimestamp(item.createdAt)}
+        </Text>
+        <Text style={styles.descriptionText}>{item.selectedTime}</Text>
+        <Text>Amount : {item.totalAmount}</Text>
       </View>
       <View style={styles.statusColumn}>
         <View style={[styles.statusBadge, statusStyles.container]}>
           <Text style={[styles.statusText, statusStyles.text]}>
-            {item.status}
+            {convertFIrstCharToUpper(item.appointmentStatus)}
           </Text>
         </View>
       </View>
@@ -99,26 +89,55 @@ const HistoryItem = ({ item }) => {
 };
 
 const AllAppointments = () => {
+  const { user } = useContext(AuthContext);
+  const [appointments, setAppointments] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (user && user.uid) {
+      const fetchAppointmentHistory = async () => {
+        setLoading(true);
+        const res = await getAppointmentsByCustomerId(user.uid);
+        setLoading(false);
+        if (res) {
+          setAppointments(res);
+        }
+      };
+      fetchAppointmentHistory();
+    }
+  }, [user]);
+
   return (
     <View style={styles.outerContainer}>
       <StatusBar backgroundColor={primaryColor} barStyle="light-content" />
-      <View style={styles.container}>
-        <Text style={styles.mainTitle}>Appointment History</Text>
-        <View style={styles.headerRow}>
-          <Text style={[styles.headerText, { flex: 1.5 }]}>Beauty Expert</Text>
-          <Text style={[styles.headerText, { flex: 1.2 }]}>Description</Text>
-          <Text style={[styles.headerText, { flex: 0.8, textAlign: 'right' }]}>
-            Status
-          </Text>
+
+      {loading ? (
+        <Loader />
+      ) : appointments.length == 0 ? (
+        <EmptyComponent />
+      ) : (
+        <View style={styles.container}>
+          <Text style={styles.mainTitle}>Appointment History</Text>
+          <View style={styles.headerRow}>
+            <Text style={[styles.headerText, { flex: 1.5 }]}>
+              Beauty Expert
+            </Text>
+            <Text style={[styles.headerText, { flex: 1.2 }]}>Description</Text>
+            <Text
+              style={[styles.headerText, { flex: 0.8, textAlign: 'right' }]}
+            >
+              Status
+            </Text>
+          </View>
+          <FlatList
+            data={appointments}
+            renderItem={({ item }) => <HistoryItem item={item} />}
+            keyExtractor={item => item.id}
+            showsVerticalScrollIndicator={false}
+            ItemSeparatorComponent={() => <View style={styles.separator} />}
+          />
         </View>
-        <FlatList
-          data={historyData}
-          renderItem={({ item }) => <HistoryItem item={item} />}
-          keyExtractor={item => item.id}
-          showsVerticalScrollIndicator={false}
-          ItemSeparatorComponent={() => <View style={styles.separator} />}
-        />
-      </View>
+      )}
     </View>
   );
 };
