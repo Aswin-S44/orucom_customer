@@ -30,7 +30,7 @@ const CustomDrawerContent = props => {
             <Text style={styles.userName}>
               {userData?.fullName ?? generateRandomName()}
             </Text>
-            <Text style={styles.userPhone}>{userData.phone ?? '_'}</Text>
+            <Text style={styles.userPhone}>{userData?.phone ?? '_'}</Text>
           </View>
         </View>
 

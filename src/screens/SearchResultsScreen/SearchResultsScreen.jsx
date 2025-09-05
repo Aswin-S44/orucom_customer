@@ -37,7 +37,6 @@ const debounce = (func, wait) => {
 const SearchItem = ({ item, navigation }) => {
   return (
     <View style={styles.card}>
-      {console.log('ITEM---------------', item ? item : 'no item')}
       <Image
         source={{ uri: item.profileImage ?? NO_IMAGE }}
         style={styles.image}
@@ -63,14 +62,11 @@ const SearchItem = ({ item, navigation }) => {
                   : 'star-outline'
               }
               size={16}
-              color="#FFD700" // Gold color for stars
+              color="#FFD700"
             />
           ))}
           <Text style={styles.totalRating}>({item.totalRating})</Text>
         </View>
-        {/* <Text style={styles.time}>
-          {item.openingTime.startTime} - {item.openingTime.closingTime}
-        </Text> */}
       </View>
       <TouchableOpacity
         style={styles.bookButton}
@@ -91,44 +87,31 @@ const SearchResultsScreen = ({ navigation }) => {
   const [searchResults, setSearchResults] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [searchCount, setSearchCount] = useState(0);
-
   const [error, setError] = useState('');
 
-  // Debounced search function
   const debouncedSearch = useCallback(
     debounce(term => {
       performSearch(term);
-    }, 500), // 500ms delay
+    }, 500),
     [],
   );
 
   useEffect(() => {
-    if (searchTerm) {
-      debouncedSearch(searchTerm);
-    } else {
-      setSearchResults([]);
-      setSearchCount(0);
-      setError('');
-    }
-  }, [searchTerm, debouncedSearch]);
+    performSearch(searchTerm);
+  }, [searchTerm]);
 
   const performSearch = async term => {
-    if (!term.trim()) {
-      setSearchResults([]);
-      setSearchCount(0);
-      setError('');
-      return;
-    }
-
     setLoading(true);
     setError('');
     try {
-      // Try searching by service first
-      let results = await searchShopsByService(term);
-
-      // If no results from service search, try searching by shop name
-      if (results.length === 0) {
-        results = await searchShops(term);
+      let results;
+      if (!term.trim()) {
+        results = await searchShops('');
+      } else {
+        results = await searchShopsByService(term);
+        if (results.length === 0) {
+          results = await searchShops(term);
+        }
       }
 
       setSearchResults(results);
@@ -141,13 +124,6 @@ const SearchResultsScreen = ({ navigation }) => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleBookPress = shop => {
-    navigation.navigate('BookingScreen', {
-      shopId: shop.uid || shop.id,
-      shopData: shop,
-    });
   };
 
   const handleSearchSubmit = () => {
@@ -169,16 +145,12 @@ const SearchResultsScreen = ({ navigation }) => {
       <View style={styles.container}>
         <View style={styles.searchContainer}>
           <View style={styles.searchBox}>
-            <TouchableOpacity
-              style={styles.searchBar}
-              onPress={() => navigation.navigate('SearchResultsScreen')}
-            >
+            <View style={styles.searchBar}>
               <TextInput
                 placeholder="Spa, Facial, Makeup"
                 style={styles.searchInput}
                 placeholderTextColor="#888"
                 editable={true}
-                pointerEvents="none"
                 onChangeText={setSearchTerm}
                 value={searchTerm}
                 onSubmitEditing={handleSearchSubmit}
@@ -189,9 +161,11 @@ const SearchResultsScreen = ({ navigation }) => {
                 color="#888"
                 style={styles.searchIcon}
               />
-            </TouchableOpacity>
+            </View>
           </View>
-          <Text style={styles.searchTitle}>Show Search Result (20)</Text>
+          <Text style={styles.searchTitle}>
+            Show Search Result ({searchCount})
+          </Text>
           <View>
             {loading ? (
               <Loader />
@@ -244,11 +218,9 @@ const styles = StyleSheet.create({
   },
   searchContainer: {
     position: 'absolute',
-    // bottom: 20,
     left: 0,
     right: 0,
     top: 40,
-    // paddingHorizontal: 20,
   },
   searchBox: {
     paddingHorizontal: 20,
@@ -276,14 +248,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#333',
   },
-  mainTitle: {
-    fontSize: 28,
-    fontWeight: '400',
-    color: '#333',
-    textAlign: 'center',
-    marginTop: 10,
-    marginBottom: 30,
-  },
   separator: {
     height: 1,
     backgroundColor: '#F0F0F0',
@@ -294,14 +258,14 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginHorizontal: 16,
     marginVertical: 0,
-    elevation: 2, // For Android shadow
-    shadowColor: '#000', // For iOS shadow
+    elevation: 2,
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.2,
     shadowRadius: 1.41,
     padding: 10,
     alignItems: 'center',
-    position: 'relative', // For absolute positioning of the book button
+    position: 'relative',
   },
   image: {
     width: 90,
@@ -347,16 +311,12 @@ const styles = StyleSheet.create({
     color: '#888',
     marginLeft: 4,
   },
-  time: {
-    fontSize: 12,
-    color: '#888',
-  },
   bookButton: {
-    backgroundColor: '#9C27B0', // Purple color
+    backgroundColor: '#9C27B0',
     paddingVertical: 8,
     paddingHorizontal: 16,
     borderRadius: 20,
-    position: 'absolute', // Position the button
+    position: 'absolute',
     bottom: 10,
     right: 10,
   },

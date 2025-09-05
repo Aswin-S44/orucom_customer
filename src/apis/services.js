@@ -205,23 +205,16 @@ export const searchShops = async searchTerm => {
       ...doc.data(),
     }));
 
+    if (!searchTerm) {
+      return allShops;
+    }
+
     const filteredShops = allShops.filter(
       shop =>
         shop.parlourName &&
         shop.parlourName.toLowerCase().includes(searchTerm.toLowerCase()),
     );
-
-    const enhancedShops = await Promise.all(
-      filteredShops.map(async shop => {
-        const services = await getServicesByShopId(shop.uid || shop.id);
-        return {
-          ...shop,
-          services,
-        };
-      }),
-    );
-
-    return enhancedShops;
+    return filteredShops;
   } catch (error) {
     console.error('Search shops error:', error);
     throw error;
@@ -257,7 +250,6 @@ const getServicesByShopId = async shopId => {
     return [];
   }
 };
-
 export const sendAppointmentNofification = async (customerId, shopId) => {
   try {
     console.log('1111111111111111');
