@@ -19,7 +19,7 @@ import AboutSection from '../../sections/AboutSection/AboutSection';
 
 const ParlourDetails = ({ route, navigation }) => {
   const { parlourData } = route.params;
-  const [activeTab, setActiveTab] = React.useState('About');
+  const [activeTab, setActiveTab] = React.useState('Service');
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
@@ -53,29 +53,16 @@ const ParlourDetails = ({ route, navigation }) => {
               <StarRating rating={parlourData.rating ?? 4.5} />
             </View>
           </View>
-          <TouchableOpacity
+          {/* <TouchableOpacity
             style={styles.bookButton}
             onPress={() => navigation.navigate('AppointmentScreen')}
           >
             <Text style={styles.bookButtonText}>Book Now</Text>
-          </TouchableOpacity>
+          </TouchableOpacity> */}
         </View>
       </View>
 
       <View style={styles.tabContainer}>
-        <TouchableOpacity
-          style={[styles.tab, activeTab === 'About' && styles.activeTab]}
-          onPress={() => setActiveTab('About')}
-        >
-          <Text
-            style={[
-              styles.tabText,
-              activeTab === 'About' && styles.activeTabText,
-            ]}
-          >
-            About
-          </Text>
-        </TouchableOpacity>
         <TouchableOpacity
           style={[styles.tab, activeTab === 'Service' && styles.activeTab]}
           onPress={() => setActiveTab('Service')}
@@ -89,6 +76,20 @@ const ParlourDetails = ({ route, navigation }) => {
             Service
           </Text>
         </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'About' && styles.activeTab]}
+          onPress={() => setActiveTab('About')}
+        >
+          <Text
+            style={[
+              styles.tabText,
+              activeTab === 'About' && styles.activeTabText,
+            ]}
+          >
+            About
+          </Text>
+        </TouchableOpacity>
+
         <TouchableOpacity
           style={[styles.tab, activeTab === 'Gallery' && styles.activeTab]}
           onPress={() => setActiveTab('Gallery')}
