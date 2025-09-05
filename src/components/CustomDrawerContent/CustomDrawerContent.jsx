@@ -5,6 +5,8 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { primaryColor } from '../../constants/colors';
 import { AuthContext } from '../../context/AuthContext';
+import { DEFAULT_AVATAR } from '../../constants/images';
+import { generateRandomName } from '../../utils/utils';
 
 const DrawerItem = ({ icon, label, onPress }) => (
   <TouchableOpacity onPress={onPress} style={styles.drawerItem}>
@@ -14,30 +16,25 @@ const DrawerItem = ({ icon, label, onPress }) => (
 );
 
 const CustomDrawerContent = props => {
-  const { logout } = useContext(AuthContext);
+  const { user, userData, logout } = useContext(AuthContext);
 
   return (
     <View style={styles.container}>
       <DrawerContentScrollView {...props}>
         <View style={styles.profileContainer}>
           <Image
-            source={require('../../assets/images/users/1.png')}
+            source={{ uri: userData?.profileImage ?? DEFAULT_AVATAR }}
             style={styles.avatar}
           />
           <View>
-            <Text style={styles.userName}>Jesika Sabrina</Text>
-            <Text style={styles.userPhone}>5936-685-214</Text>
+            <Text style={styles.userName}>
+              {userData?.fullName ?? generateRandomName()}
+            </Text>
+            <Text style={styles.userPhone}>{userData.phone ?? '_'}</Text>
           </View>
         </View>
 
         <View style={styles.drawerSection}>
-          {/* <DrawerItem
-            label="Add Payment Method"
-            icon={
-              <Ionicons name="card-outline" size={24} color={primaryColor} />
-            }
-            onPress={() => {}}
-          /> */}
           <DrawerItem
             label="Change Password"
             icon={

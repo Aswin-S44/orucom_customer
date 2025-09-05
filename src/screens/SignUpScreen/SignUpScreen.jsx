@@ -14,7 +14,7 @@ import { primaryColor } from '../../constants/colors';
 import { signup } from '../../apis/auth';
 const SignUpScreen = ({ navigation, route }) => {
   const { signIn } = route.params;
-
+  const [isLoading, setIsLoading] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [securePassword, setSecurePassword] = useState(true);
   const [secureConfirmPassword, setSecureConfirmPassword] = useState(true);
@@ -26,9 +26,9 @@ const SignUpScreen = ({ navigation, route }) => {
   const [errors, setErrors] = useState({});
   const [isFormValid, setIsFormValid] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  const [passwordStrength, setPasswordStrength] = useState('');
+  const [loginError, setLoginError] = useState('');
+  const [privacyTermsAccepted, setPrivacyTermAccepted] = useState(false);
 
-  // ✅ Password Strength Checker
   const checkPasswordStrength = pass => {
     if (pass.length === 0) return '';
     if (pass.length < 6) return 'Weak';
@@ -41,11 +41,6 @@ const SignUpScreen = ({ navigation, route }) => {
   }, [email]);
 
   useEffect(() => {
-    setPasswordStrength(checkPasswordStrength(password));
-  }, [password]);
-
-  // ✅ Validation logic only runs after submitted = true
-  useEffect(() => {
     if (!submitted) return;
 
     let newErrors = {};
@@ -57,9 +52,6 @@ const SignUpScreen = ({ navigation, route }) => {
     if (!password) newErrors.password = 'Password is required';
     else if (password.length < 6)
       newErrors.password = 'Password must be at least 6 characters';
-    else if (!/(?=.*[A-Z])(?=.*[a-z])(?=.*\d)/.test(password))
-      newErrors.password =
-        'Password must include uppercase, lowercase, and a number';
 
     if (confirmPassword !== password)
       newErrors.confirmPassword = 'Passwords do not match';
@@ -79,13 +71,14 @@ const SignUpScreen = ({ navigation, route }) => {
   };
 
   const createAccount = async () => {
-    console.log('This is a log message:');
+    setIsLoading(true);
     try {
       await signup(email, password);
-      alert('Account created!');
-      // navigation.navigate('Home');
+      setIsLoading(false);
     } catch (error) {
       alert(error.message);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -104,7 +97,7 @@ const SignUpScreen = ({ navigation, route }) => {
       <View style={styles.container}>
         <ScrollView showsVerticalScrollIndicator={false}>
           <Text style={styles.mainTitle}>Sign Up</Text>
-    
+
           {/* Email */}
           <View style={styles.inputGroup}>
             <Text style={styles.inputLabel}>Email</Text>
@@ -170,19 +163,11 @@ const SignUpScreen = ({ navigation, route }) => {
             {submitted && errors.password && (
               <Text style={styles.errorText}>{errors.password}</Text>
             )}
-            {password.length > 0 && (
-              <Text
-                style={[
-                  styles.strengthText,
-                  passwordStrength === 'Strong' && { color: 'green' },
-                  passwordStrength === 'Medium' && { color: 'orange' },
-                  passwordStrength === 'Weak' && { color: 'red' },
-                ]}
-              >
-                Password Strength: {passwordStrength}
-              </Text>
-            )}
           </View>
+
+          {loginError ? (
+            <Text style={styles.loginError}>{loginError}</Text>
+          ) : null}
 
           {/* Confirm Password */}
           <View style={styles.inputGroup}>
@@ -250,10 +235,20 @@ const SignUpScreen = ({ navigation, route }) => {
               submitted && !isFormValid && { backgroundColor: '#ccc' },
             ]}
             onPress={handleSubmit}
+            disabled={isLoading}
           >
-            <Text style={styles.createButtonText}>CREATE ACCOUNT</Text>
+            <Text style={styles.signInButtonText}>
+              {isLoading ? 'Please wait....' : 'CREATE ACCOUNT'}
+            </Text>
           </TouchableOpacity>
         </ScrollView>
+        {isLoading && (
+          <Modal transparent animationType="fade" visible={isLoading}>
+            <View style={styles.loadingOverlay}>
+              <ActivityIndicator size="large" color="#fff" />
+            </View>
+          </Modal>
+        )}
       </View>
     </View>
   );
@@ -321,6 +316,18 @@ const styles = StyleSheet.create({
   createButtonText: { color: '#fff', fontSize: 16, fontWeight: '500' },
   errorText: { color: 'red', fontSize: 13, marginTop: 5 },
   strengthText: { fontSize: 13, marginTop: 5 },
+  loginError: {
+    color: 'red',
+    fontSize: 14,
+    textAlign: 'center',
+    marginBottom: 15,
+  },
+  loadingOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
 });
 
 export default SignUpScreen;

@@ -1,5 +1,6 @@
 import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
+import { DEFAULT_AVATAR } from '../constants/images';
 
 export const signup = async (email, password) => {
   try {
@@ -14,8 +15,10 @@ export const signup = async (email, password) => {
       phone: '',
       email,
       createdAt: firestore.FieldValue.serverTimestamp(),
-      parlourName: '',
       about: '',
+      profileImage: DEFAULT_AVATAR,
+      fcmToken: null,
+      emailVerified: false,
     });
     return user;
   } catch (error) {
