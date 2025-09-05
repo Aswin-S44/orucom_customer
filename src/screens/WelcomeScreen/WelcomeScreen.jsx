@@ -7,23 +7,21 @@ import {
   TouchableOpacity,
   StatusBar,
 } from 'react-native';
-import Feather from 'react-native-vector-icons/Feather';
-import {
-  lightPurple,
-  primaryColor,
-  primaryGradient,
-} from '../../constants/colors';
+import LinearGradient from 'react-native-linear-gradient';
+import { lightPurple, primaryColor } from '../../constants/colors';
 
 const WelcomeScreen = ({ navigation }) => {
   return (
-    <View style={styles.container}>
+    <LinearGradient
+      colors={[primaryColor, lightPurple]}
+      style={styles.container}
+    >
       <StatusBar backgroundColor={primaryColor} barStyle="light-content" />
       <Image
         source={require('../../assets/images/splash_logo.png')}
         style={styles.welcomeImage}
       />
       <Text style={styles.title}>Beauty Parlour Booking App</Text>
-
       <View style={styles.buttonContainer}>
         <TouchableOpacity
           style={styles.signInButton}
@@ -38,14 +36,13 @@ const WelcomeScreen = ({ navigation }) => {
           <Text style={styles.signUpButtonText}>SIGN UP</Text>
         </TouchableOpacity>
       </View>
-    </View>
+    </LinearGradient>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: primaryColor,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
@@ -90,8 +87,8 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   welcomeImage: {
-    width: '100',
-    height: '100',
+    width: 100,
+    height: 100,
     borderTopLeftRadius: 12,
     borderTopRightRadius: 12,
   },
