@@ -1,31 +1,23 @@
-import {
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-  signOut,
-} from 'firebase/auth';
-import { auth, db } from '../config/firebase';
-import { doc, setDoc } from 'firebase/firestore';
+import auth from '@react-native-firebase/auth';
+import firestore from '@react-native-firebase/firestore';
 
 export const signup = async (email, password) => {
   try {
-    const userCredential = await createUserWithEmailAndPassword(
-      auth,
+    const userCredential = await auth().createUserWithEmailAndPassword(
       email,
       password,
     );
-
-    // Storing data into firestore
     const user = userCredential.user;
-    await setDoc(doc(db, 'customers', user.uid), {
+    await firestore().collection('customers').doc(user.uid).set({
       uid: user.uid,
       fullName: '',
       phone: '',
       email,
-      createdAt: new Date(),
+      createdAt: firestore.FieldValue.serverTimestamp(),
       parlourName: '',
       about: '',
     });
-    return userCredential.user;
+    return user;
   } catch (error) {
     throw error;
   }
@@ -33,8 +25,7 @@ export const signup = async (email, password) => {
 
 export const login = async (email, password) => {
   try {
-    const userCredential = await signInWithEmailAndPassword(
-      auth,
+    const userCredential = await auth().signInWithEmailAndPassword(
       email,
       password,
     );
@@ -46,7 +37,7 @@ export const login = async (email, password) => {
 
 export const logout = async () => {
   try {
-    await signOut(auth);
+    await auth().signOut();
   } catch (error) {
     throw error;
   }

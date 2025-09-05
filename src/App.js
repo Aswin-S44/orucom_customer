@@ -224,12 +224,12 @@ export default function App() {
               <Stack.Screen
                 name="SignIn"
                 component={SignInScreen}
-                // initialParams={{ signIn: authContext.signIn }}
+                initialParams={{ signIn: AuthContext.signIn }}
               />
               <Stack.Screen
                 name="SignUp"
                 component={SignUpScreen}
-                // initialParams={{ signIn: authContext.signIn }}
+                initialParams={{ signIn: AuthContext.signIn }}
               />
               <Stack.Screen
                 name="OTPVerificationScreen"
