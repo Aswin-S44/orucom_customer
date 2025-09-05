@@ -28,6 +28,9 @@ import SignUpScreen from './screens/SignUpScreen/SignUpScreen';
 
 import { primaryColor } from './constants/colors';
 import { AuthContext, AuthProvider } from './context/AuthContext';
+import SearchResultsScreen from './screens/SearchResultsScreen/SearchResultsScreen';
+import FirebaseNotificationService from './apis/FirebaseNotificationService';
+import { auth } from './config/firebase';
 
 const Tab = createMaterialBottomTabNavigator();
 const Drawer = createDrawerNavigator();
@@ -49,6 +52,11 @@ function HomeStack() {
       <Stack.Screen
         name="BeautyExpertDetailsScreen"
         component={BeautyExpertDetailsScreen}
+      />
+      {/* SearchResultsScreen */}
+      <Stack.Screen
+        name="SearchResultsScreen"
+        component={SearchResultsScreen}
       />
     </Stack.Navigator>
   );
@@ -155,13 +163,52 @@ export default function App() {
 
   const { user, loading } = useContext(AuthContext);
 
-  const authContext = useMemo(
-    () => ({
-      signIn: () => setIsSignedIn(true),
-      signOut: () => setIsSignedIn(false),
-    }),
-    [],
-  );
+  // const authContext = useMemo(
+  //   () => ({
+  //     signIn: () => setIsSignedIn(true),
+  //     signOut: () => setIsSignedIn(false),
+  //   }),
+  //   [],
+  // );
+
+  const [isLoading, setIsLoading] = useState(false);
+
+  const [fcmToken, setFcmToken] = useState('');
+
+  useEffect(() => {
+    const initializeApp = async () => {
+      try {
+        FirebaseNotificationService.setupNotificationHandlers();
+
+        const hasPermission =
+          await FirebaseNotificationService.requestNotificationPermission();
+
+        if (hasPermission) {
+          const token = await FirebaseNotificationService.getFCMToken();
+          console.log('TOKEN**************', token ? token : 'no token');
+          setFcmToken(token);
+        }
+
+        setIsLoading(false);
+      } catch (error) {
+        console.error('App initialization error:', error);
+        setIsLoading(false);
+      }
+    };
+
+    initializeApp();
+
+    const unsubscribeAuth = auth().onAuthStateChanged(async user => {
+      if (user) {
+        const token = await FirebaseNotificationService.getFCMToken();
+        setFcmToken(token);
+      }
+    });
+
+    return () => {
+      unsubscribeAuth();
+    };
+  }, []);
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
@@ -177,12 +224,12 @@ export default function App() {
               <Stack.Screen
                 name="SignIn"
                 component={SignInScreen}
-                initialParams={{ signIn: authContext.signIn }}
+                // initialParams={{ signIn: authContext.signIn }}
               />
               <Stack.Screen
                 name="SignUp"
                 component={SignUpScreen}
-                initialParams={{ signIn: authContext.signIn }}
+                // initialParams={{ signIn: authContext.signIn }}
               />
               <Stack.Screen
                 name="OTPVerificationScreen"

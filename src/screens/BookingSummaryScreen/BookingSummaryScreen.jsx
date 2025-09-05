@@ -13,7 +13,11 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import { primaryColor } from '../../constants/colors';
 import { APPOINTMENT_STATUSES } from '../../constants/variables';
 import { AuthContext } from '../../context/AuthContext';
-import { createAppointment } from '../../apis/services';
+import {
+  createAppointment,
+  sendAppointmentNofification,
+} from '../../apis/services';
+import { firestore } from '../../config/firebase';
 
 const Row = ({ label, value }) => (
   <View style={styles.row}>
@@ -41,6 +45,7 @@ const AmountRow = ({ service, qty, price, isBold = false }) => (
 );
 
 const BookingSummaryScreen = ({ route, navigation }) => {
+  console.log('route----------', route ? route : 'no route');
   const { user } = useContext(AuthContext);
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedDate, setSelectedDate] = useState('');
@@ -49,15 +54,17 @@ const BookingSummaryScreen = ({ route, navigation }) => {
   const [subtotal, setSubtotal] = useState(0);
   const [confirming, setConfirming] = useState(false);
   const [selectedExpert, setSelectedExpert] = useState('');
+  const [selectedSlot, setSelectedSlot] = useState('');
 
   useEffect(() => {
     if (route.params) {
       const { selectedDate, selectedTime, selectedServices, selectedExpert } =
         route.params;
       setSelectedDate(selectedDate);
-      setSelectedTime(selectedTime);
+      setSelectedTime(`${selectedTime.startTime} - ${selectedTime.endTime}`);
       setSelectedServices(selectedServices);
       setSelectedExpert(selectedExpert.id);
+      setSelectedSlot(selectedTime);
 
       const calculatedSubtotal = selectedServices.reduce(
         (sum, service) => sum + service.servicePrice,
@@ -68,6 +75,22 @@ const BookingSummaryScreen = ({ route, navigation }) => {
   }, [route.params]);
 
   const total = subtotal;
+
+  const updateSlotInFirestore = async (slotId, slotData) => {
+    try {
+      await firestore()
+        .collection('slots')
+        .doc(slotId)
+        .update({
+          ...slotData,
+          updatedAt: new Date(),
+        });
+      return { success: true };
+    } catch (error) {
+      console.error('Error updating slot:', error);
+      throw error;
+    }
+  };
 
   const handleConfirmBooking = async () => {
     setConfirming(true);
@@ -88,9 +111,12 @@ const BookingSummaryScreen = ({ route, navigation }) => {
 
       try {
         const res = await createAppointment(bookingData);
+        console.log('SLOT ID--------------------', selectedSlot.id);
+        await updateSlotInFirestore(selectedSlot.id, { isAvailable: false });
 
         if (res && res.success) {
           setModalVisible(true);
+          await sendAppointmentNofification(user.uid, route.params.shopId);
         }
       } catch (error) {
         console.error('Error creating appointment:', error);

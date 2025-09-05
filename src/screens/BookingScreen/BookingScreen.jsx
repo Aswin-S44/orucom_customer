@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -15,6 +15,9 @@ import { bookedColor, lightPurple, primaryColor } from '../../constants/colors';
 import { getExpertsByShopId, getServiceById } from '../../apis/services';
 import BookingScreenSkeleton from '../../components/BookingScreenSkeleton/BookingScreenSkeleton';
 import { NO_IMAGE } from '../../constants/images';
+import firestore from '@react-native-firebase/firestore';
+import moment from 'moment';
+import { AuthContext } from '../../context/AuthContext';
 
 const timeSlots = [
   '8:00 am',
@@ -36,15 +39,69 @@ const timeSlots = [
 const bookedSlots = ['10:00 am', '4:00 pm', '6:00 pm'];
 
 const BookingScreen = ({ route, navigation }) => {
-  const [selectedExpert, setSelectedExpert] = useState(1);
+  const { user, userData } = useContext(AuthContext);
+  const [selectedExpert, setSelectedExpert] = useState(null);
   const [selectedTime, setSelectedTime] = useState(null);
   const [selectedServices, setSelectedServices] = useState(null);
-  const [selectedDate, setSelectedDate] = useState(new Date());
+  // const [selectedDate, setSelectedDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [loading, setLoading] = useState(false);
   const [experts, setExperts] = useState([]);
+  const [slots, setSlots] = useState({});
+
+  // const [selectedDate, setSelectedDate] = useState(
+  //   moment().format('YYYY-MM-DD'),
+  // );
+
+  const [selectedDate, setSelectedDate] = useState(new Date());
+
+  const formattedDate = moment(selectedDate).format('YYYY-MM-DD');
+  const slotsForDate = slots[formattedDate] || [];
+
+  // const onDayPress = day => {
+  //   setSelectedDate(day.dateString);
+  // };
 
   const { shopId, serviceId } = route.params;
+
+  useEffect(() => {
+    if (!user?.uid) return;
+
+    setLoading(true);
+
+    // React Native Firebase realtime listener
+    const unsubscribe = firestore()
+      .collection('slots')
+      .where('shopId', '==', user.uid)
+      .onSnapshot(
+        querySnapshot => {
+          const slotsData = {};
+
+          querySnapshot.forEach(doc => {
+            const slot = { id: doc.id, ...doc.data() };
+            const slotDate = slot.date;
+
+            if (!slotsData[slotDate]) {
+              slotsData[slotDate] = [];
+            }
+
+            slotsData[slotDate].push(slot);
+          });
+
+          setSlots(slotsData);
+          setLoading(false);
+        },
+        error => {
+          console.error('Error fetching slots:', error);
+          setLoading(false);
+          Alert.alert('Error', 'Failed to load slots');
+        },
+      );
+
+    return () => unsubscribe();
+  }, [user]);
+
+  console.log('slots____________', slots);
 
   useEffect(() => {
     if (shopId) {
@@ -79,10 +136,18 @@ const BookingScreen = ({ route, navigation }) => {
     }
   }, [shopId, serviceId]);
 
-  const onDateChange = selectedDate => {
-    const currentDate = selectedDate || selectedDate;
-    setShowDatePicker(Platform.OS === 'ios');
-    setSelectedDate(new Date(currentDate));
+  // const onDateChange = selectedDate => {
+  //   const currentDate = selectedDate || selectedDate;
+  //   setShowDatePicker(Platform.OS === 'ios');
+  //   //setSelectedDate(new Date(currentDate));
+  //   setSelectedDate(selectedDate.toDateString);
+  // };
+
+  const onDateChange = (event, date) => {
+    if (date) {
+      setSelectedDate(date);
+    }
+    setShowDatePicker(false);
   };
 
   const handleNext = () => {
@@ -105,7 +170,7 @@ const BookingScreen = ({ route, navigation }) => {
   return (
     <View style={styles.outerContainer}>
       <StatusBar backgroundColor={primaryColor} barStyle="light-content" />
-
+      {console.log('selectedDate------------', selectedDate)}
       <TouchableOpacity
         style={styles.backButton}
         onPress={() => navigation.goBack()}
@@ -131,43 +196,69 @@ const BookingScreen = ({ route, navigation }) => {
             contentContainerStyle={styles.expertScroll}
           >
             {experts.map(expert => (
-              <TouchableOpacity
-                key={expert.id}
-                style={styles.expertCard}
-                onPress={() => {
-                  setSelectedExpert(expert.id);
-                  navigation.navigate('BeautyExpertDetailsScreen');
-                }}
-              >
-                <View style={styles.avatarContainer}>
-                  <Image
-                    source={{
-                      uri:
-                        typeof expert.imageUrl === 'string'
-                          ? expert.imageUrl
-                          : NO_IMAGE,
-                    }}
-                    style={styles.avatar}
-                  />
-                  {selectedExpert === expert.id && (
-                    <View style={styles.avatarOverlay} />
-                  )}
-                </View>
-                <Text style={styles.expertName}>{expert.expertName ?? ''}</Text>
-              </TouchableOpacity>
+              <View>
+                <TouchableOpacity
+                  key={expert.id}
+                  style={styles.expertCard}
+                  onPress={() => {
+                    setSelectedExpert(expert.id);
+                  }}
+                >
+                  <View style={styles.avatarContainer}>
+                    <Image
+                      source={{
+                        uri:
+                          typeof expert.imageUrl === 'string'
+                            ? expert.imageUrl
+                            : NO_IMAGE,
+                      }}
+                      style={styles.avatar}
+                    />
+
+                    {selectedExpert === expert.id && (
+                      <View style={styles.avatarOverlay} />
+                    )}
+                  </View>
+                  <Text style={styles.expertName}>
+                    {expert.expertName ?? ''}
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  key={expert.id}
+                  style={styles.expertCard}
+                  onPress={() => {
+                    navigation.navigate('BeautyExpertDetailsScreen', {
+                      expert,
+                    });
+                  }}
+                >
+                  {' '}
+                  <Ionicons name="eye" size={18} color="#111" />
+                </TouchableOpacity>
+              </View>
             ))}
           </ScrollView>
 
           <Text style={styles.sectionTitle}>Select Date</Text>
-          <TouchableOpacity
+          {/* <TouchableOpacity
             style={styles.datePicker}
             onPress={() => setShowDatePicker(true)}
           >
-            <Text style={styles.dateText}>{selectedDate?.toDateString()}</Text>
+            <Text style={styles.dateText}>{selectedDate.toDateString}</Text>
             {console.log(
               'selectedDate----------',
               selectedDate ? selectedDate : 'no selectedDate',
             )}
+            <Ionicons name="calendar-outline" size={22} color="#888" />
+          </TouchableOpacity> */}
+
+          <TouchableOpacity
+            style={styles.datePicker}
+            onPress={() => setShowDatePicker(true)}
+          >
+            <Text style={styles.dateText}>
+              {selectedDate ? selectedDate.toDateString() : 'Select Date'}
+            </Text>
             <Ionicons name="calendar-outline" size={22} color="#888" />
           </TouchableOpacity>
 
@@ -197,32 +288,39 @@ const BookingScreen = ({ route, navigation }) => {
             </View>
           </View>
           <View style={styles.timeSlotsContainer}>
-            {timeSlots.map(time => {
-              const isBooked = bookedSlots.includes(time);
-              const isSelected = selectedTime === time;
-              return (
-                <TouchableOpacity
-                  key={time}
-                  disabled={isBooked}
-                  onPress={() => setSelectedTime(time)}
-                  style={[
-                    styles.timeSlot,
-                    isBooked && styles.timeSlotBooked,
-                    isSelected && styles.timeSlotSelected,
-                  ]}
-                >
-                  <Text
+            {slotsForDate.length === 0 ? (
+              <Text style={{ color: '#888', textAlign: 'center' }}>
+                No slots available for this date
+              </Text>
+            ) : (
+              slotsForDate.map(slot => {
+                const slotLabel = `${slot.startTime} - ${slot.endTime}`;
+                const isSelected = selectedTime === slot.id;
+
+                return (
+                  <TouchableOpacity
+                    key={slot.id}
+                    onPress={() =>
+                      // setSelectedTime(`${slot.startTime} - ${slot.endTime}`)
+                      setSelectedTime(slot)
+                    }
                     style={[
-                      styles.timeSlotText,
-                      isBooked && styles.timeSlotTextBooked,
-                      isSelected && styles.timeSlotTextSelected,
+                      styles.timeSlot,
+                      isSelected && styles.timeSlotSelected,
                     ]}
                   >
-                    {time}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
+                    <Text
+                      style={[
+                        styles.timeSlotText,
+                        isSelected && styles.timeSlotTextSelected,
+                      ]}
+                    >
+                      {slotLabel}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })
+            )}
           </View>
 
           <Text style={styles.sectionTitle}>Service Amount</Text>
@@ -261,14 +359,23 @@ const BookingScreen = ({ route, navigation }) => {
               ))}
           </View>
         </ScrollView>
+        {console.log('selectedExpert--------------', selectedExpert)}
         <TouchableOpacity
           style={[
             styles.nextButton,
-            (!selectedTime || !selectedServices || !selectedDate) &&
+            (!selectedTime ||
+              !selectedServices ||
+              !selectedDate ||
+              !selectedExpert) &&
               styles.disabledButton,
           ]}
           onPress={handleNext}
-          disabled={!selectedTime || !selectedServices || !selectedDate}
+          disabled={
+            !selectedTime ||
+            !selectedServices ||
+            !selectedDate ||
+            !selectedExpert
+          }
         >
           <Text style={styles.nextButtonText}>NEXT</Text>
         </TouchableOpacity>

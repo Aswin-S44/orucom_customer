@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { primaryColor, starColor } from '../../constants/colors';
+import { formatText } from '../../utils/utils';
 
 const StarRating = ({ rating, count }) => {
   const stars = [];
@@ -61,7 +62,9 @@ const StarRating = ({ rating, count }) => {
   );
 };
 
-const BeautyExpertDetailsScreen = ({ navigation }) => {
+const BeautyExpertDetailsScreen = ({ navigation, route }) => {
+  console.log('expert------', route.params.expert);
+  const { expert } = route.params;
   return (
     <View style={styles.outerContainer}>
       <StatusBar backgroundColor={primaryColor} barStyle="light-content" />
@@ -83,8 +86,11 @@ const BeautyExpertDetailsScreen = ({ navigation }) => {
               source={require('../../assets/images/users/2.png')}
               style={styles.avatar}
             />
-            <Text style={styles.expertName}>Jesika Sabnom</Text>
-            <Text style={styles.expertSpecialty}>Spa & Skin Specialist</Text>
+            <Text style={styles.expertName}>{expert.expertName ?? '_'}</Text>
+            <Text style={styles.expertSpecialty}>
+              {' '}
+              {formatText(expert.specialist ?? '')}
+            </Text>
             <StarRating rating={4.9} count={150} />
             <TouchableOpacity
               style={styles.bookButton}
@@ -96,11 +102,7 @@ const BeautyExpertDetailsScreen = ({ navigation }) => {
 
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>About</Text>
-            <Text style={styles.descriptionText}>
-              Contrary to popular belief, Lorem Inosimplyrandom text. It has
-              roots in a piece of classical Latin literature 45 BC, making it
-              over 2000 years old.
-            </Text>
+            <Text style={styles.descriptionText}>{expert?.about ?? ''}</Text>
             <View style={styles.bulletPoint}>
               <View style={styles.bulletIcon} />
               <Text style={styles.bulletText}>
@@ -126,9 +128,7 @@ const BeautyExpertDetailsScreen = ({ navigation }) => {
             <Text style={styles.sectionTitle}>Address</Text>
             <View style={styles.addressContainer}>
               <Ionicons name="location-sharp" size={24} color={primaryColor} />
-              <Text style={styles.addressText}>
-                58 Street- al dulha{'\n'}london - USA
-              </Text>
+              <Text style={styles.addressText}>{expert?.address ?? ''}</Text>
               <Ionicons name="locate-outline" size={24} color={primaryColor} />
               <Text style={styles.distanceText}>5 km</Text>
             </View>

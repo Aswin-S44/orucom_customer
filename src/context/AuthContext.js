@@ -1,55 +1,61 @@
-import React, { createContext, useState, useEffect } from 'react';
-import { auth, db } from '../config/firebase';
-import { doc, getDoc } from 'firebase/firestore';
-import { onAuthStateChanged, signOut } from 'firebase/auth';
+import React, { createContext, useState, useEffect, useContext } from 'react'; // Added useContext
+import auth from '@react-native-firebase/auth'; // Changed import
+import { auth as firebaseAuth, firestore } from '../config/firebase'; // Make sure path is correct
 
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null); // store user data
+  const [user, setUser] = useState(null);
+  const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // useEffect(() => {
-  //     // Listen for auth state changes
-  //     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-  //         if (firebaseUser) {
-  //             // Fetch Firestore user profile
-  //             const docRef = doc(db, "shop-owners", firebaseUser.uid);
-  //             const docSnap = await getDoc(docRef);
-
-  //             if (docSnap.exists()) {
-  //                 setUser({ ...firebaseUser, ...docSnap.data() });
-  //             } else {
-  //                 setUser(firebaseUser);
-  //             }
-  //         } else {
-  //             setUser(null);
-  //         }
-  //         setLoading(false);
-  //     });
-
-  //     return unsubscribe;
-  // }, []);
-
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, user => {
-      setUser(user);
-      if (loading) {
-        setLoading(false);
+    // React Native Firebase uses different syntax
+    const unsubscribe = auth().onAuthStateChanged(async firebaseUser => {
+      if (firebaseUser) {
+        setUser(firebaseUser);
+        try {
+          const docSnap = await firestore()
+            .collection('shop-owners')
+            .doc(firebaseUser.uid)
+            .get();
+
+          if (docSnap.exists) {
+            setUserData(docSnap.data());
+          }
+        } catch (err) {
+          console.log('Error fetching user data:', err);
+        }
+      } else {
+        setUser(null);
+        setUserData(null);
       }
+      setLoading(false);
     });
 
     return unsubscribe;
-  }, [loading]);
+  }, []);
 
   const logout = () => {
+    auth().signOut();
     setUser(null);
-    signOut(auth);
+    setUserData(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, setUser, logout }}>
-      {!loading && children}
+    <AuthContext.Provider
+      value={{ user, userData, logout, loading, setLoading }}
+    >
+      {children}
     </AuthContext.Provider>
   );
+};
+
+// Optional: Create a hook for easier usage
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
 };

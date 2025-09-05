@@ -104,7 +104,7 @@ const SignUpScreen = ({ navigation, route }) => {
       <View style={styles.container}>
         <ScrollView showsVerticalScrollIndicator={false}>
           <Text style={styles.mainTitle}>Sign Up</Text>
-
+    
           {/* Email */}
           <View style={styles.inputGroup}>
             <Text style={styles.inputLabel}>Email</Text>

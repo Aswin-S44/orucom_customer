@@ -1,25 +1,36 @@
-import auth from '@react-native-firebase/auth';
-import firestore from '@react-native-firebase/firestore';
-import axios from 'axios';
-import { BACKEND_URL } from '../constants/variables';
+import { auth, db } from '../config/firebase';
+import {
+  collection,
+  getDocs,
+  doc,
+  getDoc,
+  query,
+  where,
+  addDoc,
+  serverTimestamp,
+  orderBy,
+} from 'firebase/firestore';
 
+// Get all parlours
 export const getAllParlours = async () => {
-  const querySnapshot = await firestore()
-    .collection('shop-owners')
-    .where('isOnboarded', '==', true)
-    .get();
+  const q = query(
+    collection(db, 'shop-owners'),
+    where('isOnboarded', '==', true),
+  );
 
+  const querySnapshot = await getDocs(q);
   return querySnapshot.docs.map(doc => ({
     id: doc.id,
     ...doc.data(),
   }));
 };
-
+// Get single parlour by ID
 export const getParlourById = async id => {
   try {
-    const docSnap = await firestore().collection('shop-owners').doc(id).get();
+    const docRef = doc(db, 'shop-owners', id);
+    const docSnap = await getDoc(docRef);
 
-    if (docSnap.exists) {
+    if (docSnap.exists()) {
       return { id: docSnap.id, ...docSnap.data() };
     } else {
       throw new Error('No such parlour exists');
@@ -30,11 +41,9 @@ export const getParlourById = async id => {
 };
 
 export const getServicesByShop = async shopId => {
-  const querySnapshot = await firestore()
-    .collection('services')
-    .where('shopId', '==', shopId)
-    .get();
+  const q = query(collection(db, 'services'), where('shopId', '==', shopId));
 
+  const querySnapshot = await getDocs(q);
   return querySnapshot.docs.map(doc => ({
     id: doc.id,
     ...doc.data(),
@@ -42,9 +51,10 @@ export const getServicesByShop = async shopId => {
 };
 
 export const getServiceById = async (shopId, serviceId) => {
-  const docSnap = await firestore().collection('services').doc(serviceId).get();
+  const docRef = doc(db, 'services', serviceId);
+  const docSnap = await getDoc(docRef);
 
-  if (docSnap.exists && docSnap.data().shopId === shopId) {
+  if (docSnap.exists() && docSnap.data().shopId === shopId) {
     return { id: docSnap.id, ...docSnap.data() };
   }
   return null;
@@ -52,18 +62,16 @@ export const getServiceById = async (shopId, serviceId) => {
 
 export const createAppointment = async appointmentData => {
   try {
-    const user = auth().currentUser;
+    const user = auth.currentUser;
     if (!user) {
       throw new Error('User not authenticated');
     }
 
-    const docRef = await firestore()
-      .collection('appointments')
-      .add({
-        ...appointmentData,
-        userId: user.uid,
-        createdAt: firestore.FieldValue.serverTimestamp(),
-      });
+    const docRef = await addDoc(collection(db, 'appointments'), {
+      ...appointmentData,
+      userId: user.uid,
+      createdAt: serverTimestamp(),
+    });
 
     return {
       success: true,
@@ -80,23 +88,19 @@ export const createAppointment = async appointmentData => {
 };
 
 export const getOffersByShop = async shopId => {
-  const querySnapshot = await firestore()
-    .collection('offers')
-    .where('shopId', '==', shopId)
-    .get();
+  const q = query(collection(db, 'offers'), where('shopId', '==', shopId));
+  const querySnapshot = await getDocs(q);
 
   const offers = await Promise.all(
     querySnapshot.docs.map(async offerDoc => {
       const offerData = offerDoc.data();
-      const serviceSnap = await firestore()
-        .collection('services')
-        .doc(offerData.serviceId)
-        .get();
+      const serviceRef = doc(db, 'services', offerData.serviceId);
+      const serviceSnap = await getDoc(serviceRef);
 
       return {
         id: offerDoc.id,
         ...offerData,
-        service: serviceSnap.exists
+        service: serviceSnap.exists()
           ? { id: serviceSnap.id, ...serviceSnap.data() }
           : null,
       };
@@ -106,24 +110,52 @@ export const getOffersByShop = async shopId => {
   return offers;
 };
 
-export const getExpertsByShopId = async shopId => {
-  const querySnapshot = await firestore()
-    .collection('beauty_experts')
-    .where('shopId', '==', shopId)
-    .get();
+// export const getServicesByShopId = async shopId => {
+//   const q = query(
+//     collection(db, 'services'),
+//     where('shopId', '==', shopId),
+//     orderBy('serviceName'),
+//   );
 
+//   const querySnapshot = await getDocs(q);
+//   return querySnapshot.docs.map(doc => ({
+//     id: doc.id,
+//     ...doc.data(),
+//   }));
+// };
+
+export const getExpertsByShopId = async shopId => {
+  const q = query(
+    collection(db, 'beauty_experts'),
+    where('shopId', '==', shopId),
+  );
+
+  const querySnapshot = await getDocs(q);
   return querySnapshot.docs.map(doc => ({
     id: doc.id,
     ...doc.data(),
   }));
 };
 
+// export const getShopOwnerByShopId = async shopId => {
+//   const q = query(collection(db, 'shop-owners'), where('uid', '==', shopId));
+
+//   const querySnapshot = await getDocs(q);
+//   if (querySnapshot.empty) return null;
+
+//   return {
+//     id: querySnapshot.docs[0].id,
+//     ...querySnapshot.docs[0].data(),
+//   };
+// };
+
 export const getAppointmentsByCustomerId = async customerId => {
   try {
-    const querySnapshot = await firestore()
-      .collection('appointments')
-      .where('customerId', '==', customerId)
-      .get();
+    const q = query(
+      collection(db, 'appointments'),
+      where('customerId', '==', customerId),
+    );
+    const querySnapshot = await getDocs(q);
 
     const results = await Promise.all(
       querySnapshot.docs.map(async appointmentDoc => {
@@ -132,11 +164,9 @@ export const getAppointmentsByCustomerId = async customerId => {
 
         let expertData = null;
         if (expertId) {
-          const expertSnap = await firestore()
-            .collection('beauty_experts')
-            .doc(expertId)
-            .get();
-          if (expertSnap.exists) {
+          const expertRef = doc(db, 'beauty_experts', expertId);
+          const expertSnap = await getDoc(expertRef);
+          if (expertSnap.exists()) {
             expertData = { id: expertSnap.id, ...expertSnap.data() };
           }
         }
@@ -158,24 +188,27 @@ export const getAppointmentsByCustomerId = async customerId => {
 
 export const searchShopsByService = async searchTerm => {
   try {
-    const servicesSnapshot = await firestore().collection('services').get();
+    const servicesSnapshot = await getDocs(collection(db, 'services'));
     const allServices = servicesSnapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data(),
     }));
 
+    // Filter services by search term
     const filteredServices = allServices.filter(
       service =>
         service.serviceName &&
         service.serviceName.toLowerCase().includes(searchTerm.toLowerCase()),
     );
 
+    // Get unique shop IDs
     const shopIds = [
       ...new Set(filteredServices.map(service => service.shopId)),
     ];
 
     if (shopIds.length === 0) return [];
 
+    // Get shop details for each shop ID
     const shopsPromises = shopIds.map(async shopId => {
       const shopOwner = await getShopOwnerByShopId(shopId);
       if (shopOwner) {
@@ -197,20 +230,23 @@ export const searchShopsByService = async searchTerm => {
   }
 };
 
+// Get all shops and filter client-side
 export const searchShops = async searchTerm => {
   try {
-    const shopsSnapshot = await firestore().collection('shop-owners').get();
+    const shopsSnapshot = await getDocs(collection(db, 'shop-owners'));
     const allShops = shopsSnapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data(),
     }));
 
+    // Filter shops by search term
     const filteredShops = allShops.filter(
       shop =>
         shop.parlourName &&
         shop.parlourName.toLowerCase().includes(searchTerm.toLowerCase()),
     );
 
+    // Enhance with services
     const enhancedShops = await Promise.all(
       filteredShops.map(async shop => {
         const services = await getServicesByShopId(shop.uid || shop.id);
@@ -228,9 +264,10 @@ export const searchShops = async searchTerm => {
   }
 };
 
+// Helper function to get shop owner by shop ID
 const getShopOwnerByShopId = async shopId => {
   try {
-    const shopsSnapshot = await firestore().collection('shop-owners').get();
+    const shopsSnapshot = await getDocs(collection(db, 'shop-owners'));
     const allShops = shopsSnapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data(),
@@ -243,9 +280,10 @@ const getShopOwnerByShopId = async shopId => {
   }
 };
 
+// Helper function to get services by shop ID
 const getServicesByShopId = async shopId => {
   try {
-    const servicesSnapshot = await firestore().collection('services').get();
+    const servicesSnapshot = await getDocs(collection(db, 'services'));
     const allServices = servicesSnapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data(),
@@ -255,22 +293,5 @@ const getServicesByShopId = async shopId => {
   } catch (error) {
     console.error('Get services error:', error);
     return [];
-  }
-};
-
-export const sendAppointmentNofification = async (customerId, shopId) => {
-  try {
-    console.log('1111111111111111');
-    console.log('customerId : ', customerId);
-    console.log('shopId : ', shopId);
-    const res = await axios.post(
-      `https://beauty-parlor-app-backend.onrender.com/api/v1/user/appointment`,
-      {
-        customerId,
-        shopId,
-      },
-    );
-  } catch (error) {
-    console.log('Error whilel sending notification : ', error);
   }
 };

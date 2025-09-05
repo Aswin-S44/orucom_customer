@@ -154,11 +154,16 @@ const HomeScreen = ({ navigation }) => {
         </View>
 
         <View style={styles.searchContainer}>
-          <View style={styles.searchBar}>
+          <TouchableOpacity
+            style={styles.searchBar}
+            onPress={() => navigation.navigate('SearchResultsScreen')}
+          >
             <TextInput
               placeholder="Spa, Facial, Makeup"
               style={styles.searchInput}
               placeholderTextColor="#888"
+              editable={false}
+              pointerEvents="none"
             />
             <EvilIcons
               name="search"
@@ -166,7 +171,7 @@ const HomeScreen = ({ navigation }) => {
               color="#888"
               style={styles.searchIcon}
             />
-          </View>
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -222,24 +227,6 @@ const HomeScreen = ({ navigation }) => {
                 </TouchableOpacity>
               ))
             )}
-            {/* {featuredSection.map((feature, index) => (
-              <TouchableOpacity
-                key={index}
-                onPress={() =>
-                  navigation.navigate('ParlourDetails', {
-                    parlourData: feature,
-                  })
-                }
-              >
-                <Card
-                  image={feature.image}
-                  title={feature.serviceName}
-                  location={feature.location}
-                  rating={feature.rating}
-                  status={feature.status}
-                />
-              </TouchableOpacity>
-            ))} */}
           </ScrollView>
         </View>
       </View>
@@ -360,7 +347,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 20,
-    fontWeight: 500,
+    fontWeight: '500',
     marginBottom: 15,
     color: '#333',
     left: 10,
