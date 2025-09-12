@@ -230,7 +230,7 @@ const HomeScreen = ({ navigation }) => {
           </ScrollView>
         </View>
       </View>
-      <View style={styles.section}>
+      {/* <View style={styles.section}>
         <Text style={styles.sectionTitle}>Popular Categories</Text>
         <View style={styles.featuredContainer}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -247,7 +247,7 @@ const HomeScreen = ({ navigation }) => {
             ))}
           </ScrollView>
         </View>
-      </View>
+      </View> */}
     </ScrollView>
   );
 };

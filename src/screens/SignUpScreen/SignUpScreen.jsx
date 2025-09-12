@@ -7,11 +7,13 @@ import {
   StatusBar,
   TextInput,
   ScrollView,
+  ActivityIndicator,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import Feather from 'react-native-vector-icons/Feather';
 import { primaryColor } from '../../constants/colors';
 import { signup } from '../../apis/auth';
+import { Modal } from 'react-native';
 const SignUpScreen = ({ navigation, route }) => {
   const { signIn } = route.params;
   const [isLoading, setIsLoading] = useState(false);

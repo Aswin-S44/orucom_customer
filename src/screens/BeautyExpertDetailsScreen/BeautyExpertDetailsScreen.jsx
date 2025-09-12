@@ -63,7 +63,6 @@ const StarRating = ({ rating, count }) => {
 };
 
 const BeautyExpertDetailsScreen = ({ navigation, route }) => {
-  console.log('expert------', route.params.expert);
   const { expert } = route.params;
   return (
     <View style={styles.outerContainer}>

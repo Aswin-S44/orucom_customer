@@ -15,7 +15,6 @@ export const signup = async (email, password) => {
       phone: '',
       email,
       createdAt: firestore.FieldValue.serverTimestamp(),
-      about: '',
       profileImage: DEFAULT_AVATAR,
       fcmToken: null,
       emailVerified: false,

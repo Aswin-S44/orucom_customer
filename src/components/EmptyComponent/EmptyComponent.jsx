@@ -1,47 +1,41 @@
-import { View, Text } from 'react-native';
+import { View, Text, StyleSheet, Image } from 'react-native';
 import React from 'react';
-import { StyleSheet } from 'react-native';
-import { Image } from 'react-native';
 
 const EmptyComponent = () => {
   return (
-    <View>
-      <View style={styles.emptyContainer}>
-        <Image
-          source={require('../../assets/images/no-services.jpg')}
-          style={styles.emptyImage}
-        />
-        <Text style={styles.emptyText}>No Services Found</Text>
-        <Text style={styles.emptySubText}>
-          Add a new service to get started.
-        </Text>
-      </View>
+    <View style={styles.container}>
+      <Image
+        source={require('../../assets/images/forgot-password.png')}
+        style={styles.image}
+      />
+      <Text style={styles.title}>No Data Available</Text>
+      <Text style={styles.subtitle}>There's nothing to show here yet</Text>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  emptyContainer: {
+  container: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
   },
-  emptyImage: {
-    width: 200,
-    height: 200,
-    resizeMode: 'contain',
+  image: {
+    width: 150,
+    height: 150,
     marginBottom: 20,
+    resizeMode: 'contain',
   },
-  emptyText: {
+  title: {
     fontSize: 20,
     fontWeight: 'bold',
     color: '#333',
+    marginBottom: 8,
   },
-  emptySubText: {
-    fontSize: 14,
-    color: '#888',
-    marginTop: 10,
+  subtitle: {
+    fontSize: 16,
+    color: '#666',
     textAlign: 'center',
   },
 });

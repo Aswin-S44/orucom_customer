@@ -1,7 +1,10 @@
 import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
 import axios from 'axios';
-import { BACKEND_URL } from '../constants/variables';
+import { BACKEND_URL, NOTIFICATION_TYPES } from '../constants/variables';
+const CLOUDINARY_URL =
+  'https://api.cloudinary.com/v1_1/personalprojectaswins/image/upload';
+const CLOUDINARY_UPLOAD_PRESET = 'cloudinary_react';
 
 export const getAllParlours = async () => {
   const querySnapshot = await firestore()
@@ -252,9 +255,6 @@ const getServicesByShopId = async shopId => {
 };
 export const sendAppointmentNofification = async (customerId, shopId) => {
   try {
-    console.log('1111111111111111');
-    console.log('customerId : ', customerId);
-    console.log('shopId : ', shopId);
     const res = await axios.post(
       `https://beauty-parlor-app-backend.onrender.com/api/v1/user/appointment`,
       {
@@ -262,7 +262,96 @@ export const sendAppointmentNofification = async (customerId, shopId) => {
         shopId,
       },
     );
+    console.log('notification res---------------', res ? res : 'no res')
   } catch (error) {
     console.log('Error whilel sending notification : ', error);
+  }
+};
+
+export const getCustomerById = async id => {
+  try {
+    const docSnap = await firestore().collection('customers').doc(id).get();
+
+    if (docSnap.exists) {
+      return { id: docSnap.id, ...docSnap.data() };
+    } else {
+      throw new Error('No such cusstomer exists');
+    }
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const updateUserData = async (uid, updateData) => {
+  try {
+    console.log('update data---------', updateData);
+    if (
+      updateData.profileImage &&
+      typeof updateData.profileImage === 'string' &&
+      updateData.profileImage.startsWith('file://')
+    ) {
+      const formData = new FormData();
+      formData.append('file', {
+        uri: updateData.profileImage,
+        type: 'image/jpeg',
+        name: 'upload.jpg',
+      });
+      formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+
+      const response = await fetch(CLOUDINARY_URL, {
+        method: 'POST',
+        body: formData,
+      });
+      const responseData = await response.json();
+      console.log(
+        'responseData---------',
+        responseData ? responseData : 'no responseData',
+      );
+      if (responseData.secure_url) {
+        updateData.profileImage = responseData.secure_url;
+      } else {
+        return false;
+      }
+    }
+
+    await firestore().collection('customers').doc(uid).update(updateData);
+    return true;
+  } catch (error) {
+    console.error('Error updating user data:', error);
+    return false;
+  }
+};
+
+export const createNotification = async notification => {
+  try {
+    const user = auth().currentUser;
+    if (!user) {
+      throw new Error('User not authenticated');
+    }
+
+    const notificationData = {
+      fromId: '7UMCTcRXfNPOi3xNd3ha297qhJF2',
+      toId: 'GbsbBUL7GBVqfH2gIdPtjwUao0n1',
+      notificationType: NOTIFICATION_TYPES.APPOINTMENT_REQUEST,
+      createdAt: new Date(),
+      isRead: false,
+      message: 'Sent an appointment request',
+    };
+
+    const docRef = await firestore()
+      .collection('notifications')
+      .add(notificationData);
+
+    return {
+      success: true,
+      id: docRef.id,
+      message: 'notification created successfully',
+    };
+  } catch (error) {
+    console.error('Error creating appointment:', error);
+    return {
+      success: false,
+      message: error.message,
+    };
   }
 };

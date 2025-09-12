@@ -45,7 +45,6 @@ const AmountRow = ({ service, qty, price, isBold = false }) => (
 );
 
 const BookingSummaryScreen = ({ route, navigation }) => {
-  console.log('route----------', route ? route : 'no route');
   const { user } = useContext(AuthContext);
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedDate, setSelectedDate] = useState('');
@@ -111,11 +110,12 @@ const BookingSummaryScreen = ({ route, navigation }) => {
 
       try {
         const res = await createAppointment(bookingData);
-        console.log('SLOT ID--------------------', selectedSlot.id);
+
         await updateSlotInFirestore(selectedSlot.id, { isAvailable: false });
 
         if (res && res.success) {
           setModalVisible(true);
+
           await sendAppointmentNofification(user.uid, route.params.shopId);
         }
       } catch (error) {

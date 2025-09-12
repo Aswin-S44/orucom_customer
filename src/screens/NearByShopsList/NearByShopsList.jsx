@@ -7,7 +7,7 @@ import {
   TextInput,
   FlatList,
 } from 'react-native';
-import MapView, { Marker } from 'react-native-maps';
+// import MapView, { Marker } from 'react-native-maps';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import Card from '../../components/Card/Card';
 import { primaryColor } from '../../constants/colors';

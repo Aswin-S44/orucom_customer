@@ -9,7 +9,7 @@
       "client_info": {
         "mobilesdk_app_id": "1:583572822214:android:5036a82f3d279847869fc7",
         "android_client_info": {
-          "package_name": "saloon.beauty.app"
+          "package_name": "saloon.beauty.customer.app"
         }
       },
       "oauth_client": [],

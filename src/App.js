@@ -31,6 +31,7 @@ import { AuthContext, AuthProvider } from './context/AuthContext';
 import SearchResultsScreen from './screens/SearchResultsScreen/SearchResultsScreen';
 import FirebaseNotificationService from './apis/FirebaseNotificationService';
 import { auth } from './config/firebase';
+import EditProfileScreen from './screens/EditProfileScreen/EditProfileScreen';
 
 const Tab = createMaterialBottomTabNavigator();
 const Drawer = createDrawerNavigator();
@@ -58,6 +59,7 @@ function HomeStack() {
         name="SearchResultsScreen"
         component={SearchResultsScreen}
       />
+      {/*  */}
     </Stack.Navigator>
   );
 }
@@ -154,6 +156,7 @@ function MainAppStack() {
         component={ChangePasswordScreen}
       />
       <Stack.Screen name="HelpSupportScreen" component={HelpSupportScreen} />
+      <Stack.Screen name="EditProfileScreen" component={EditProfileScreen} />
     </Stack.Navigator>
   );
 }
@@ -185,7 +188,7 @@ export default function App() {
 
         if (hasPermission) {
           const token = await FirebaseNotificationService.getFCMToken();
-          console.log('TOKEN**************', token ? token : 'no token');
+
           setFcmToken(token);
         }
 

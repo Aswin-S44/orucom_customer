@@ -6,17 +6,13 @@ import {
   StyleSheet,
   StatusBar,
   TextInput,
-  ScrollView,
-  FlatList,
   Image,
+  FlatList,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import Feather from 'react-native-vector-icons/Feather';
-import { primaryColor } from '../../constants/colors';
-import { signup } from '../../apis/auth';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons'; // For the location icon
-
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import EvilIcons from 'react-native-vector-icons/EvilIcons';
+import { primaryColor } from '../../constants/colors';
 import { NO_IMAGE } from '../../constants/images';
 import Loader from '../../components/Loader/Loader';
 import EmptyComponent from '../../components/EmptyComponent/EmptyComponent';
@@ -87,7 +83,6 @@ const SearchResultsScreen = ({ navigation }) => {
   const [searchResults, setSearchResults] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [searchCount, setSearchCount] = useState(0);
-  const [error, setError] = useState('');
 
   const debouncedSearch = useCallback(
     debounce(term => {
@@ -97,12 +92,15 @@ const SearchResultsScreen = ({ navigation }) => {
   );
 
   useEffect(() => {
-    performSearch(searchTerm);
-  }, [searchTerm]);
+    if (searchTerm.trim() !== '') {
+      debouncedSearch(searchTerm);
+    } else {
+      performSearch('');
+    }
+  }, [searchTerm, debouncedSearch]);
 
   const performSearch = async term => {
     setLoading(true);
-    setError('');
     try {
       let results;
       if (!term.trim()) {
@@ -117,8 +115,6 @@ const SearchResultsScreen = ({ navigation }) => {
       setSearchResults(results);
       setSearchCount(results.length);
     } catch (error) {
-      console.error('Search error:', error);
-      setError('Search failed. Please try again.');
       setSearchResults([]);
       setSearchCount(0);
     } finally {
@@ -143,47 +139,45 @@ const SearchResultsScreen = ({ navigation }) => {
       </TouchableOpacity>
 
       <View style={styles.container}>
-        <View style={styles.searchContainer}>
-          <View style={styles.searchBox}>
-            <View style={styles.searchBar}>
-              <TextInput
-                placeholder="Spa, Facial, Makeup"
-                style={styles.searchInput}
-                placeholderTextColor="#888"
-                editable={true}
-                onChangeText={setSearchTerm}
-                value={searchTerm}
-                onSubmitEditing={handleSearchSubmit}
-              />
-              <EvilIcons
-                name="search"
-                size={32}
-                color="#888"
-                style={styles.searchIcon}
-              />
-            </View>
-          </View>
-          <Text style={styles.searchTitle}>
-            Show Search Result ({searchCount})
-          </Text>
-          <View>
-            {loading ? (
-              <Loader />
-            ) : searchResults?.length === 0 && !loading ? (
-              <EmptyComponent />
-            ) : (
-              <FlatList
-                data={searchResults}
-                renderItem={({ item }) => (
-                  <SearchItem item={item} navigation={navigation} />
-                )}
-                keyExtractor={item => item.id}
-                showsVerticalScrollIndicator={false}
-                ItemSeparatorComponent={() => <View style={styles.separator} />}
-              />
-            )}
+        <View style={styles.searchBox}>
+          <View style={styles.searchBar}>
+            <TextInput
+              placeholder="Spa, Facial, Makeup"
+              style={styles.searchInput}
+              placeholderTextColor="#888"
+              onChangeText={setSearchTerm}
+              value={searchTerm}
+              onSubmitEditing={handleSearchSubmit}
+            />
+            <EvilIcons
+              name="search"
+              size={32}
+              color="#888"
+              style={styles.searchIcon}
+            />
           </View>
         </View>
+
+        <Text style={styles.searchTitle}>
+          Show Search Result ({searchCount})
+        </Text>
+
+        {loading ? (
+          <Loader />
+        ) : searchResults?.length === 0 ? (
+          <EmptyComponent />
+        ) : (
+          <FlatList
+            data={searchResults}
+            renderItem={({ item }) => (
+              <SearchItem item={item} navigation={navigation} />
+            )}
+            keyExtractor={item => item.id}
+            showsVerticalScrollIndicator={false}
+            ItemSeparatorComponent={() => <View style={styles.separator} />}
+            contentContainerStyle={styles.flatListContent}
+          />
+        )}
       </View>
     </View>
   );
@@ -206,7 +200,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderTopLeftRadius: 40,
     borderTopRightRadius: 40,
-    padding: 25,
+    padding: 15,
   },
   searchTitle: {
     fontSize: 22,
@@ -216,14 +210,10 @@ const styles = StyleSheet.create({
     marginTop: 10,
     marginBottom: 30,
   },
-  searchContainer: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    top: 40,
-  },
   searchBox: {
     paddingHorizontal: 20,
+    marginTop: 10,
+    marginBottom: 20,
   },
   searchBar: {
     flexDirection: 'row',
@@ -238,7 +228,6 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     height: 50,
     width: '100%',
-    paddingHorizontal: 20,
   },
   searchIcon: {
     marginRight: 10,
@@ -248,16 +237,18 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#333',
   },
+  flatListContent: {
+    paddingBottom: 20,
+  },
   separator: {
-    height: 1,
-    backgroundColor: '#F0F0F0',
+    height: 10,
+    backgroundColor: 'transparent',
   },
   card: {
     flexDirection: 'row',
     backgroundColor: '#fff',
     borderRadius: 8,
     marginHorizontal: 16,
-    marginVertical: 0,
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },

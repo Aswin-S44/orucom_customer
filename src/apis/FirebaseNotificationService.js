@@ -44,7 +44,6 @@ class FirebaseNotificationService {
       }
 
       const token = await messaging().getToken();
-      console.log('FCM Token:', token);
 
       // Store token in Firestore for the current user
       await this.storeFCMToken(token);
@@ -98,7 +97,7 @@ class FirebaseNotificationService {
 
     // Check if app was opened by notification
     messaging()
-    .getInitialNotification()
+      .getInitialNotification()
       .then(remoteMessage => {
         if (remoteMessage) {
           console.log('App opened by notification:', remoteMessage);

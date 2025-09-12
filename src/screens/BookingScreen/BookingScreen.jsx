@@ -65,14 +65,14 @@ const BookingScreen = ({ route, navigation }) => {
   const { shopId, serviceId } = route.params;
 
   useEffect(() => {
-    if (!user?.uid) return;
+    if (!route.params?.shopId) return;
 
     setLoading(true);
 
     // React Native Firebase realtime listener
     const unsubscribe = firestore()
       .collection('slots')
-      .where('shopId', '==', user.uid)
+      .where('shopId', '==', route.params.shopId)
       .onSnapshot(
         querySnapshot => {
           const slotsData = {};
@@ -99,7 +99,7 @@ const BookingScreen = ({ route, navigation }) => {
       );
 
     return () => unsubscribe();
-  }, [user]);
+  }, [route]);
 
   console.log('slots____________', slots);
 
@@ -294,25 +294,28 @@ const BookingScreen = ({ route, navigation }) => {
               </Text>
             ) : (
               slotsForDate.map(slot => {
+                console.log('selectedTime-----------', selectedTime);
                 const slotLabel = `${slot.startTime} - ${slot.endTime}`;
-                const isSelected = selectedTime === slot.id;
+                const isSelected = selectedTime?.id === slot.id;
+                // const isSelected = false;
+                const isDisabled = !slot.isAvailable;
 
                 return (
                   <TouchableOpacity
                     key={slot.id}
-                    onPress={() =>
-                      // setSelectedTime(`${slot.startTime} - ${slot.endTime}`)
-                      setSelectedTime(slot)
-                    }
+                    onPress={() => !isDisabled && setSelectedTime(slot)}
+                    disabled={isDisabled}
                     style={[
                       styles.timeSlot,
                       isSelected && styles.timeSlotSelected,
+                      isDisabled && { backgroundColor: '#d8b4fe' }, // light purple
                     ]}
                   >
                     <Text
                       style={[
                         styles.timeSlotText,
                         isSelected && styles.timeSlotTextSelected,
+                        isDisabled && { color: '#aaa' }, // grey text for disabled
                       ]}
                     >
                       {slotLabel}
@@ -491,16 +494,19 @@ const styles = StyleSheet.create({
   timeSlotsContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-start',
     marginBottom: 25,
+    gap: 10,
   },
   timeSlot: {
-    width: '23%',
+    // width: '23%',
     backgroundColor: lightPurple,
     borderRadius: 10,
     paddingVertical: 12,
-    alignItems: 'center',
+    alignItems: 'left',
     marginBottom: 10,
+    whiteSpace: 'nowrap',
+    width: '30%',
   },
   timeSlotSelected: {
     backgroundColor: primaryColor,
@@ -511,6 +517,9 @@ const styles = StyleSheet.create({
   timeSlotText: {
     color: primaryColor,
     fontWeight: '600',
+    left: 10,
+    whiteSpace: 'nowrap',
+    fontSize: 12,
   },
   timeSlotTextSelected: {
     color: '#fff',
