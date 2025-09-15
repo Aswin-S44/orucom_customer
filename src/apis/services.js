@@ -1,5 +1,5 @@
 import auth from '@react-native-firebase/auth';
-import firestore from '@react-native-firebase/firestore';
+import firestore, { doc } from '@react-native-firebase/firestore';
 import axios from 'axios';
 import { BACKEND_URL, NOTIFICATION_TYPES } from '../constants/variables';
 const CLOUDINARY_URL =
@@ -262,7 +262,7 @@ export const sendAppointmentNofification = async (customerId, shopId) => {
         shopId,
       },
     );
-    console.log('notification res---------------', res ? res : 'no res')
+    console.log('notification res---------------', res ? res : 'no res');
   } catch (error) {
     console.log('Error whilel sending notification : ', error);
   }
@@ -353,5 +353,132 @@ export const createNotification = async notification => {
       success: false,
       message: error.message,
     };
+  }
+};
+export const getGalleryImagesByShopId = async shopId => {
+  const querySnapshot = await firestore()
+    .collection('services')
+    .where('shopId', '==', shopId)
+    .get();
+  const images = [];
+  querySnapshot.docs.map((doc, index) => {
+    const data = doc.data();
+    if (data.imageUrl) {
+      images.push({
+        id: doc.id, // Use doc.id as a unique key
+        image: data.imageUrl,
+      });
+    }
+  });
+  return images;
+};
+
+export const getExpertsWithShopDetailsByShopId = async expertId => {
+  try {
+    console.log('expert id : ', expertId);
+    const expertDoc = await firestore()
+      .collection('beauty_experts')
+      .doc(expertId)
+      .get();
+
+    if (expertDoc.exists) {
+      const expertData = expertDoc.data();
+      const shopId = expertData?.shopId;
+
+      if (shopId) {
+        const shopOwnerDoc = await firestore()
+          .collection('shop-owners')
+          .doc(shopId)
+          .get();
+
+        if (shopOwnerDoc.exists) {
+          return {
+            expert: expertData,
+            shopDetails: shopOwnerDoc.data(),
+          };
+        } else {
+          console.warn('Shop owner not found for shopId:', shopId);
+          return { expert: expertData, shopDetails: null };
+        }
+      } else {
+        console.warn('Expert data does not contain a shopId.');
+        return { expert: expertData, shopDetails: null };
+      }
+    } else {
+      console.warn('No expert found with expertId:', expertId);
+      return null;
+    }
+  } catch (error) {
+    console.error('Error fetching expert data:', error);
+    throw error;
+  }
+};
+
+export const getNotificationsByCustomerId = async userId => {
+  try {
+    const querySnapshot = await firestore()
+      .collection('notifications')
+      .where('toId', '==', userId)
+      .get();
+
+    const notifications = await Promise.all(
+      querySnapshot.docs.map(async doc => {
+        const data = doc.data();
+        const shopSnapshot = await firestore()
+          .collection('shop_owners')
+          .where('uid', '==', data.fromId)
+          .limit(1)
+          .get();
+
+        const shop = !shopSnapshot.empty
+          ? {
+              id: shopSnapshot.docs[0].id,
+              ...shopSnapshot.docs[0].data(),
+            }
+          : null;
+
+        return { id: doc.id, ...data, shop };
+      }),
+    );
+
+    return notifications;
+  } catch (error) {
+    console.error('Error fetching notifications:', error);
+    return [];
+  }
+};
+
+export const markNotificationAsRead = async id => {
+  try {
+    const notificationRef = firestore().collection('notifications').doc(id);
+    const docSnapshot = await notificationRef.get();
+
+    if (!docSnapshot.exists) {
+      return { success: false, message: 'Notification not found' };
+    }
+
+    await notificationRef.update({
+      isRead: true,
+    });
+
+    return { success: true };
+  } catch (error) {
+    console.error('Error updating notification:', error);
+    return { success: false, error };
+  }
+};
+
+export const getNotificationsCountByCustomerId = async customerId => {
+  try {
+    const querySnapshot = await firestore()
+      .collection('notifications')
+      .where('toId', '==', customerId)
+      .where('isRead', '==', false)
+      .get();
+
+    return querySnapshot?.size ?? 0;
+  } catch (error) {
+    console.error('Error fetching notifications:', error);
+    return 0;
   }
 };

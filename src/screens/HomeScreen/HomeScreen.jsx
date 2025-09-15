@@ -8,18 +8,24 @@ import {
   TextInput,
   StatusBar,
 } from 'react-native';
-import React, { useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 
 import EvilIcons from 'react-native-vector-icons/EvilIcons';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import Card from '../../components/Card/Card';
 import { primaryColor, secondaryColor } from '../../constants/colors';
-import { getAllParlours } from '../../apis/services';
+import {
+  getAllParlours,
+  getNotificationsCountByCustomerId,
+} from '../../apis/services';
 import CardSkeleton from '../../components/CardSkeleton/CardSkeleton';
+import { AuthContext } from '../../context/AuthContext';
 
 const HomeScreen = ({ navigation }) => {
   const [shops, setShops] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [notificationCount, setNotificationCount] = useState(0);
+  const { user } = useContext(AuthContext);
 
   useEffect(() => {
     const fetchShops = async () => {
@@ -67,40 +73,17 @@ const HomeScreen = ({ navigation }) => {
     },
   ];
 
-  const featuredSection = [
-    {
-      id: 1,
-      serviceName: 'Live Style Parlour',
-      image: require('../../assets/images/bg.png'),
-      location: 'Captown City',
-      rating: 4.0,
-      status: 'Open',
-    },
-    {
-      id: 2,
-      serviceName: 'Kigfisher Pro',
-      image: require('../../assets/images/services/6.png'),
-      location: 'Captown City',
-      rating: 4.0,
-      status: 'Open',
-    },
-    {
-      id: 3,
-      serviceName: 'Landon Town',
-      image: require('../../assets/images/services/5.png'),
-      location: 'Captown City',
-      rating: 4.0,
-      status: 'Open',
-    },
-    {
-      id: 4,
-      serviceName: 'Live Style Parlour',
-      image: require('../../assets/images/services/4.png'),
-      location: 'Captown City',
-      rating: 4.0,
-      status: 'Open',
-    },
-  ];
+  useEffect(() => {
+    if (user && user.uid) {
+      const fetchNotificationCount = async () => {
+        const res = await getNotificationsCountByCustomerId(user.uid);
+        if (res) {
+          setNotificationCount(res);
+        }
+      };
+      fetchNotificationCount();
+    }
+  }, [user]);
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
@@ -135,6 +118,7 @@ const HomeScreen = ({ navigation }) => {
                 justifyContent: 'center',
                 borderRadius: '50%',
               }}
+              onPress={() => navigation.navigate('AllNotificationScreen')}
             >
               <Ionicons
                 name="notifications-outline"
@@ -142,7 +126,7 @@ const HomeScreen = ({ navigation }) => {
                 color={primaryColor}
               />
               <View style={styles.badgeContainer}>
-                <Text style={styles.badgeText}>02</Text>
+                <Text style={styles.badgeText}>{notificationCount}</Text>
               </View>
             </TouchableOpacity>
           </View>

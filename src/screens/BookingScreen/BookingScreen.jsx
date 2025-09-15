@@ -101,8 +101,6 @@ const BookingScreen = ({ route, navigation }) => {
     return () => unsubscribe();
   }, [route]);
 
-  console.log('slots____________', slots);
-
   useEffect(() => {
     if (shopId) {
       const fetchShopExperts = async () => {
@@ -228,7 +226,7 @@ const BookingScreen = ({ route, navigation }) => {
                   style={styles.expertCard}
                   onPress={() => {
                     navigation.navigate('BeautyExpertDetailsScreen', {
-                      expert,
+                      expertId: expert.id,
                     });
                   }}
                 >

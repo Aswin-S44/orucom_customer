@@ -128,7 +128,7 @@ const ParlourDetails = ({ route, navigation }) => {
 
       {activeTab === 'Gallery' && (
         <View style={styles.content}>
-          <GallerySection />
+          <GallerySection shopId={parlourData?.uid} />
         </View>
       )}
 

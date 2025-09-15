@@ -32,6 +32,8 @@ import SearchResultsScreen from './screens/SearchResultsScreen/SearchResultsScre
 import FirebaseNotificationService from './apis/FirebaseNotificationService';
 import { auth } from './config/firebase';
 import EditProfileScreen from './screens/EditProfileScreen/EditProfileScreen';
+import AllNotificationScreen from './screens/AllNotificationScreen/AllNotificationScreen';
+import NofificationDetailsScreen from './screens/NofificationDetailsScreen/NofificationDetailsScreen';
 
 const Tab = createMaterialBottomTabNavigator();
 const Drawer = createDrawerNavigator();
@@ -60,6 +62,14 @@ function HomeStack() {
         component={SearchResultsScreen}
       />
       {/*  */}
+      <Stack.Screen
+        name="AllNotificationScreen"
+        component={AllNotificationScreen}
+      />
+      <Stack.Screen
+        name="NotificationDetailsScreen"
+        component={NofificationDetailsScreen}
+      />
     </Stack.Navigator>
   );
 }

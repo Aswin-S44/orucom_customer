@@ -134,7 +134,7 @@ const ServiceSection = ({ shopId, navigation }) => {
           setOffersLoading(true);
           const res = await getOffersByShop(shopId);
           setOffersLoading(false);
-          console.log('offers:', offers);
+
           if (res && res.length > 0) {
             setOffers(res);
           }

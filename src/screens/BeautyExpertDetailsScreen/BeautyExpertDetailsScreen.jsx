@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -7,10 +7,14 @@ import {
   StatusBar,
   ScrollView,
   Image,
+  ActivityIndicator,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { primaryColor, starColor } from '../../constants/colors';
 import { formatText } from '../../utils/utils';
+import { getExpertsWithShopDetailsByShopId } from '../../apis/services';
+import { DEFAULT_AVATAR } from '../../constants/images';
+import Loader from '../../components/Loader/Loader';
 
 const StarRating = ({ rating, count }) => {
   const stars = [];
@@ -63,7 +67,25 @@ const StarRating = ({ rating, count }) => {
 };
 
 const BeautyExpertDetailsScreen = ({ navigation, route }) => {
-  const { expert } = route.params;
+  const { expertId } = route.params;
+
+  const [loading, setLoading] = useState(null);
+  const [expert, setExpert] = useState(null);
+
+  useEffect(() => {
+    if (expertId) {
+      const fetchExpert = async () => {
+        setLoading(true);
+        const res = await getExpertsWithShopDetailsByShopId(expertId);
+        setLoading(false);
+        if (res) {
+          setExpert(res);
+        }
+      };
+      fetchExpert();
+    }
+  }, [expertId, route]);
+
   return (
     <View style={styles.outerContainer}>
       <StatusBar backgroundColor={primaryColor} barStyle="light-content" />
@@ -75,65 +97,89 @@ const BeautyExpertDetailsScreen = ({ navigation, route }) => {
         <Ionicons name="chevron-back" size={24} color="#fff" />
         <Text style={styles.backButtonText}>Back</Text>
       </TouchableOpacity>
+      {console.log('expert-----------', expert ? expert : 'no expert')}
+      {loading ? (
+        <Loader />
+      ) : (
+        <>
+          <View style={styles.container}>
+            <ScrollView showsVerticalScrollIndicator={false}>
+              <Text style={styles.mainTitle}>Beauty Expert</Text>
 
-      <View style={styles.container}>
-        <ScrollView showsVerticalScrollIndicator={false}>
-          <Text style={styles.mainTitle}>Beauty Expert</Text>
+              <View style={styles.profileSection}>
+                <Image
+                  // source={require('../../assets/images/users/2.png')}
+                  source={{
+                    uri: expert?.expert?.profileImage ?? DEFAULT_AVATAR,
+                  }}
+                  style={styles.avatar}
+                />
+                <Text style={styles.expertName}>
+                  {expert?.expert?.expertName ?? '_'}
+                </Text>
+                <Text style={styles.expertSpecialty}>
+                  {' '}
+                  {formatText(expert?.expert?.specialist ?? '')}
+                </Text>
+                <StarRating rating={4.9} count={150} />
+                <TouchableOpacity
+                  style={styles.bookButton}
+                  onPress={() =>
+                    navigation.navigate('BookingScreen', {
+                      shopId: expert?.expert?.shopId,
+                    })
+                  }
+                >
+                  <Text style={styles.bookButtonText}>Book Now</Text>
+                </TouchableOpacity>
+              </View>
 
-          <View style={styles.profileSection}>
-            <Image
-              source={require('../../assets/images/users/2.png')}
-              style={styles.avatar}
-            />
-            <Text style={styles.expertName}>{expert.expertName ?? '_'}</Text>
-            <Text style={styles.expertSpecialty}>
-              {' '}
-              {formatText(expert.specialist ?? '')}
-            </Text>
-            <StarRating rating={4.9} count={150} />
-            <TouchableOpacity
-              style={styles.bookButton}
-              onPress={() => navigation.navigate('BookingSummaryScreen')}
-            >
-              <Text style={styles.bookButtonText}>Book Now</Text>
-            </TouchableOpacity>
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>About</Text>
+                <Text style={styles.descriptionText}>
+                  {expert?.expert?.about ?? ''}
+                </Text>
+                {/* <View style={styles.bulletPoint}>
+                  <View style={styles.bulletIcon} />
+                  <Text style={styles.bulletText}>
+                    Distracted by the readable content of a page when looking at
+                    its layout.
+                  </Text>
+                </View> */}
+              </View>
+
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>Opening Hours</Text>
+                <View style={styles.hoursRow}>
+                  <Text style={styles.hoursDay}>
+                    {expert?.shopDetails?.openingHours ?? '-'}
+                  </Text>
+                </View>
+              </View>
+
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>Address</Text>
+                <View style={styles.addressContainer}>
+                  <Ionicons
+                    name="location-sharp"
+                    size={24}
+                    color={primaryColor}
+                  />
+                  <Text style={styles.addressText}>
+                    {expert?.shopDetails?.address ?? '-'}
+                  </Text>
+                  <Ionicons
+                    name="locate-outline"
+                    size={24}
+                    color={primaryColor}
+                  />
+                  <Text style={styles.distanceText}>5 km</Text>
+                </View>
+              </View>
+            </ScrollView>
           </View>
-
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>About</Text>
-            <Text style={styles.descriptionText}>{expert?.about ?? ''}</Text>
-            <View style={styles.bulletPoint}>
-              <View style={styles.bulletIcon} />
-              <Text style={styles.bulletText}>
-                Distracted by the readable content of a page when looking at its
-                layout.
-              </Text>
-            </View>
-          </View>
-
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Opening Hours</Text>
-            <View style={styles.hoursRow}>
-              <Text style={styles.hoursDay}>Mon - Wed</Text>
-              <Text style={styles.hoursTime}>8:00 am - 12:00 pm</Text>
-            </View>
-            <View style={styles.hoursRow}>
-              <Text style={styles.hoursDay}>Fri - Sat</Text>
-              <Text style={styles.hoursTime}>10:00 am - 11:00 pm</Text>
-            </View>
-          </View>
-
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Address</Text>
-            <View style={styles.addressContainer}>
-              <Ionicons name="location-sharp" size={24} color={primaryColor} />
-              <Text style={styles.addressText}>{expert?.address ?? ''}</Text>
-              <Ionicons name="locate-outline" size={24} color={primaryColor} />
-              <Text style={styles.distanceText}>5 km</Text>
-            </View>
-          </View>
-        </ScrollView>
-      </View>
+        </>
+      )}
     </View>
   );
 };
