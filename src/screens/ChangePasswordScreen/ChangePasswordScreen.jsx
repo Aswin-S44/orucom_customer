@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useContext, useState } from 'react';
 import {
   View,
   Text,
@@ -7,11 +7,21 @@ import {
   StatusBar,
   TextInput,
   ScrollView,
+  Alert,
+  ActivityIndicator,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { primaryColor } from '../../constants/colors';
+import auth from '@react-native-firebase/auth'; // ✅ use only react-native-firebase
+import { AuthContext } from '../../context/AuthContext';
 
-const PasswordInput = ({ label, secureTextEntry, toggleSecureEntry }) => (
+const PasswordInput = ({
+  label,
+  value,
+  onChangeText,
+  secureTextEntry,
+  toggleSecureEntry,
+}) => (
   <View style={styles.inputGroup}>
     <Text style={styles.inputLabel}>{label}</Text>
     <View style={styles.inputContainer}>
@@ -26,6 +36,8 @@ const PasswordInput = ({ label, secureTextEntry, toggleSecureEntry }) => (
         placeholder="Type Password"
         placeholderTextColor="#888"
         secureTextEntry={secureTextEntry}
+        value={value}
+        onChangeText={onChangeText}
       />
       <TouchableOpacity onPress={toggleSecureEntry}>
         <Ionicons
@@ -39,20 +51,72 @@ const PasswordInput = ({ label, secureTextEntry, toggleSecureEntry }) => (
 );
 
 const ChangePasswordScreen = ({ navigation }) => {
-  const [passwords, setPasswords] = React.useState({
+  const [passwords, setPasswords] = useState({
     old: true,
     new: true,
     confirm: true,
   });
+  const [oldPassword, setOldPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const { user, logout } = useContext(AuthContext);
 
   const toggleSecureEntry = field => {
     setPasswords(prev => ({ ...prev, [field]: !prev[field] }));
   };
 
+  const handleChangePassword = async () => {
+    if (!oldPassword || !newPassword || !confirmPassword) {
+      Alert.alert('Error', 'Please fill all fields');
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      Alert.alert('Error', 'New passwords do not match');
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      Alert.alert('Error', 'Password must be at least 6 characters');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      if (user && user.email) {
+        // ✅ Re-authenticate with @react-native-firebase/auth
+        const credential = auth.EmailAuthProvider.credential(
+          user.email,
+          oldPassword,
+        );
+        await user.reauthenticateWithCredential(credential);
+
+        // ✅ Update password
+        await user.updatePassword(newPassword);
+
+        Alert.alert('Success', 'Password changed successfully');
+        navigation.goBack();
+        logout();
+      }
+    } catch (error) {
+      if (error.code === 'auth/wrong-password') {
+        Alert.alert('Error', 'Current password is incorrect');
+      } else if (error.code === 'auth/requires-recent-login') {
+        Alert.alert('Error', 'Please sign in again to change your password');
+      } else {
+        Alert.alert('Error', error.message);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <View style={styles.outerContainer}>
       <StatusBar backgroundColor={primaryColor} barStyle="light-content" />
-
       <TouchableOpacity
         style={styles.backButton}
         onPress={() => navigation.goBack()}
@@ -60,29 +124,42 @@ const ChangePasswordScreen = ({ navigation }) => {
         <Ionicons name="chevron-back" size={24} color="#fff" />
         <Text style={styles.backButtonText}>Back</Text>
       </TouchableOpacity>
-
       <View style={styles.container}>
         <ScrollView showsVerticalScrollIndicator={false}>
           <Text style={styles.mainTitle}>Change Password</Text>
 
           <PasswordInput
             label="Old Password"
+            value={oldPassword}
+            onChangeText={setOldPassword}
             secureTextEntry={passwords.old}
             toggleSecureEntry={() => toggleSecureEntry('old')}
           />
           <PasswordInput
             label="New Password"
+            value={newPassword}
+            onChangeText={setNewPassword}
             secureTextEntry={passwords.new}
             toggleSecureEntry={() => toggleSecureEntry('new')}
           />
           <PasswordInput
             label="Confirm Password"
+            value={confirmPassword}
+            onChangeText={setConfirmPassword}
             secureTextEntry={passwords.confirm}
             toggleSecureEntry={() => toggleSecureEntry('confirm')}
           />
 
-          <TouchableOpacity style={styles.changeButton}>
-            <Text style={styles.changeButtonText}>CHANGE PASSWORD</Text>
+          <TouchableOpacity
+            style={[styles.changeButton, loading && styles.disabledButton]}
+            onPress={handleChangePassword}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.changeButtonText}>CHANGE PASSWORD</Text>
+            )}
           </TouchableOpacity>
         </ScrollView>
       </View>
@@ -156,6 +233,9 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     alignItems: 'center',
     marginTop: 20,
+  },
+  disabledButton: {
+    opacity: 0.7,
   },
   changeButtonText: {
     color: '#fff',
