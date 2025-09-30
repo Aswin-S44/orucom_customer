@@ -130,7 +130,7 @@ const SearchResultsScreen = ({ navigation }) => {
           results = await searchShops(term);
         }
       }
-      console.log('results------------', results ? results : 'no results');
+
       if (results && results.length > 0) {
         const shopsWithDistance = results.map(parlour => {
           if (
@@ -189,7 +189,6 @@ const SearchResultsScreen = ({ navigation }) => {
 
       <View style={styles.container}>
         <View style={styles.searchBox}>
-          {console.log('searchResults=================', searchResults)}
           <View style={styles.searchBar}>
             <TextInput
               placeholder="Spa, Facial, Makeup"

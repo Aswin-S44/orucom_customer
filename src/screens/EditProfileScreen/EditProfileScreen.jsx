@@ -34,7 +34,7 @@ const EditProfileScreen = ({ navigation }) => {
       const fetchUserData = async () => {
         try {
           const res = await getCustomerById(user.uid);
-          console.log('RES=============', res ? res : 'no res');
+
           if (res) {
             setName(res.fullName || '');
             setPhone(res.phone || '');

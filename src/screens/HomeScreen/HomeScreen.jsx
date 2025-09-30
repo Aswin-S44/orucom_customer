@@ -36,7 +36,6 @@ const HomeScreen = ({ navigation }) => {
 
   const getCurrentLocation = async () => {
     getLocationPermission().then(granted => {
-      console.log('GRANGED--------------', granted ? granted : 'on granted');
       if (!granted) {
         console.log('Location permission denied');
         return;
@@ -44,9 +43,7 @@ const HomeScreen = ({ navigation }) => {
 
       Geolocation.getCurrentPosition(
         async position => {
-          console.log('POSITION============', position);
           const { latitude, longitude } = position.coords;
-          console.log('Latitude:', latitude, 'Longitude:', longitude);
 
           if (user && user.uid) {
             await updateCustomer(user.uid, {

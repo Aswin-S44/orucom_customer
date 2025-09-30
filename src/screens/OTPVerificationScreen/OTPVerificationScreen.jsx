@@ -62,7 +62,6 @@ const OTPVerificationScreen = ({ navigation }) => {
         setError('User data is missing. Please try signing in again.');
       }
     } catch (err) {
-      console.log('Error while verifying OTP : ', err);
       setError('Something went wrong. Please try again later.');
     }
   };
@@ -73,7 +72,6 @@ const OTPVerificationScreen = ({ navigation }) => {
         const res = await resentOTP(user?.email);
         setOtp({ 1: '', 2: '', 3: '', 4: '', 5: '', 6: '' });
       } catch (error) {
-        console.log('Error while resent otp : ', error);
         setError(error);
       }
     }

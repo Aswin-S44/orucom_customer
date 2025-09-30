@@ -12,7 +12,6 @@ export const getLocationPermission = async () => {
   }
 
   const result = await check(permission);
-  console.log('ASWINS============', result ? result : 'on result');
 
   if (result === RESULTS.GRANTED) {
     return true;

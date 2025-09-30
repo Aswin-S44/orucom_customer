@@ -112,7 +112,7 @@ const ServiceSection = ({ shopId, navigation }) => {
           setLoading(true);
           const res = await getServicesByShop(shopId);
           setLoading(false);
-          console.log('services:', services);
+
           if (res && res.length > 0) {
             setServices(res);
           }

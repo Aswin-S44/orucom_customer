@@ -55,20 +55,17 @@ const SignInScreen = ({ navigation }) => {
     try {
       await login(email, password); // Your custom login function
       const firebaseUser = auth().currentUser;
-      console.log('SER DATA----------', userData ? userData : 'no userdata');
-
-      console.log('Email Verified:', firebaseUser.emailVerified);
 
       if (firebaseUser) {
         // Reload user to get latest verification status
 
         await firebaseUser.reload();
         await refreshUser(); // Update AuthContext with latest user data
-        console.log();
+
         if (!userData.emailVerified) {
           navigation.navigate('OTPVerificationScreen', { userEmail: email });
         }
-        console.log('=================');
+
         // Navigation is now handled by App.js based on AuthContext's user.emailVerified
         // or the isEmailVerified state. If the user is not verified, App.js will
         // redirect them to OTPVerificationScreen.

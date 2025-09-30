@@ -127,7 +127,7 @@ const Reviews = ({ placeId }) => {
         try {
           setLoading(true);
           const res = await getReviews(placeId);
-          console.log('res------------', res ? res : 'no res');
+
           if (res && res.rating && res.reviews) {
             setAvgRating(res.rating);
             setReviews(res.reviews);
@@ -145,7 +145,6 @@ const Reviews = ({ placeId }) => {
 
   return (
     <View style={styles.container}>
-      {console.log('reviews====================', reviews)}
       {loading ? (
         <ServiceCardSkeleton />
       ) : !loading && reviews.length == 0 ? (

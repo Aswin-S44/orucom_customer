@@ -50,10 +50,7 @@ const AllNotificationScreen = ({ navigation }) => {
       item.id === notification.id ? { ...item, isRead: true } : item,
     );
     setNotifications(updatedNotifications);
-    console.log(
-      'NOTIFIATION-------------',
-      notification ? notification : 'no notiication',
-    );
+
     navigation.navigate('NotificationDetailsScreen', { notification });
   };
 
@@ -111,7 +108,6 @@ const AllNotificationScreen = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      {console.log('notifications----------------', notifications)}
       <StatusBar barStyle="light-content" />
       <View style={styles.header}>
         <Image

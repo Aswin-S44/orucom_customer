@@ -180,7 +180,6 @@ export default function App() {
 
   useEffect(() => {
     const initializeNotifications = async () => {
-      console.log('*************************8', notificationSetupComplete);
       if (!notificationSetupComplete) {
         try {
           FirebaseNotificationService.setupNotificationHandlers();
@@ -189,7 +188,6 @@ export default function App() {
 
           if (hasPermission && user) {
             const token = await FirebaseNotificationService.getFCMToken();
-            console.log('TOEN----------------', token);
           }
           setNotificationSetupComplete(true);
         } catch (error) {

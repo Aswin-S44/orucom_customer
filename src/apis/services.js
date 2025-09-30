@@ -272,8 +272,6 @@ export const sendAppointmentNofification = async (
   appointmentType,
 ) => {
   try {
-    console.log('CUSSTOMER ID ---------------', customerId);
-    console.log('SHOP ID --------------------', shopId);
     await createNotification(customerId, shopId);
     const url = `${BACKEND_URL}/appointment`;
     const res = await axios.post(url, {
@@ -281,7 +279,6 @@ export const sendAppointmentNofification = async (
       shopId,
       appointmentType,
     });
-    console.log('notification res---------------', res ? res : 'no res');
   } catch (error) {
     console.log('Error whilel sending notification : ', error);
   }
@@ -289,12 +286,8 @@ export const sendAppointmentNofification = async (
 
 export const getCustomerById = async id => {
   try {
-    console.log('ID===============', id);
-    console.log('11111111111111');
-
     const docSnap = await firestore().collection('customers').doc(id).get();
-    console.log('22222222222222');
-    console.log('docSnap==============', docSnap);
+
     if (docSnap.exists) {
       return { id: docSnap.id, ...docSnap.data() };
     } else {
@@ -309,41 +302,28 @@ export const updateUserData = async (uid, updateData) => {
   try {
     const customer = await getCustomerById(uid);
 
-    console.log('updateData-------------', updateData);
-
-    console.log(
-      'CEHCK-------------------------',
-      (updateData.profileImage &&
-        typeof updateData.profileImage === 'string' &&
-        updateData.profileImage.startsWith('file://')) ||
-        updateData.profileImage.startsWith('data:image/'),
-    );
     if (
       updateData.profileImage &&
       typeof updateData.profileImage === 'string' &&
       (updateData.profileImage.startsWith('file://') ||
         updateData.profileImage.startsWith('data:image/'))
     ) {
-      console.log('*************************');
       const formData = new FormData();
       formData.append('file', {
         uri: updateData.profileImage,
         type: 'image/jpeg',
         name: 'upload.jpg',
       });
-      console.log('=====================');
+
       formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
-      console.log('&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&');
+
       const response = await fetch(CLOUDINARY_URL, {
         method: 'POST',
         body: formData,
       });
-      console.log('########################');
+
       const responseData = await response.json();
-      console.log(
-        'responseData---------',
-        responseData ? responseData : 'no responseData',
-      );
+
       if (responseData.secure_url) {
         updateData.profileImage = responseData.secure_url;
       } else {
@@ -362,7 +342,7 @@ export const updateUserData = async (uid, updateData) => {
 export const createNotification = async (fromId, toId) => {
   try {
     const user = auth().currentUser;
-    console.log('user---------', user);
+
     if (!user) {
       throw new Error('User not authenticated');
     }
@@ -375,7 +355,6 @@ export const createNotification = async (fromId, toId) => {
       isRead: false,
       message: 'Sent an appointment request',
     };
-    console.log('notificationData------------', notificationData);
 
     const docRef = await firestore()
       .collection('notifications')
@@ -414,7 +393,6 @@ export const getGalleryImagesByShopId = async shopId => {
 
 export const getExpertsWithShopDetailsByShopId = async expertId => {
   try {
-    console.log('expert id : ', expertId);
     const expertDoc = await firestore()
       .collection('beauty_experts')
       .doc(expertId)
@@ -523,9 +501,6 @@ export const getNotificationsCountByCustomerId = async customerId => {
 };
 
 export const updateCustomer = async (uid, dataToUpdate) => {
-  console.log('UID-----------', uid);
-  console.log('data to update--------', dataToUpdate);
-
   try {
     const db = getFirestore(); // ✅ modular way
     const customerRef = doc(db, 'customers', uid); // ✅ use doc()

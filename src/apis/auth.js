@@ -72,7 +72,6 @@ export const logout = async () => {
 };
 
 export const resentOTP = async email => {
-  console.log('CLICKED--------------', email ? email : 'no email');
   const res = await axios.post(
     `https://beauty-parlor-app-backend.onrender.com/api/v1/user/send-otp`,
     {
@@ -80,5 +79,4 @@ export const resentOTP = async email => {
       userType: USER_TYPES.CUSTOMER,
     },
   );
-  console.log('RESET OTP RES==================', res ? res : 'no res');
 };

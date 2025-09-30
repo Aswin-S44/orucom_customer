@@ -89,7 +89,7 @@ const BeautyExpertDetailsScreen = ({ navigation, route }) => {
   return (
     <View style={styles.outerContainer}>
       <StatusBar backgroundColor={primaryColor} barStyle="light-content" />
-      {console.log('####################')}
+
       <TouchableOpacity
         style={styles.backButton}
         onPress={() => navigation.goBack()}
@@ -97,7 +97,7 @@ const BeautyExpertDetailsScreen = ({ navigation, route }) => {
         <Ionicons name="chevron-back" size={24} color="#fff" />
         <Text style={styles.backButtonText}>Back</Text>
       </TouchableOpacity>
-      {console.log('expert============', expert ? expert : 'no expert')}
+
       {loading ? (
         <Loader />
       ) : (
