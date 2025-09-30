@@ -9,6 +9,8 @@ import {
   StatusBar,
 } from 'react-native';
 import React, { useContext, useEffect, useState } from 'react';
+import { GOOGLE_MAPS_API_KEY } from '@env';
+import { checkLocationAccuracy } from 'react-native-permissions';
 
 import EvilIcons from 'react-native-vector-icons/EvilIcons';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -17,15 +19,58 @@ import { primaryColor, secondaryColor } from '../../constants/colors';
 import {
   getAllParlours,
   getNotificationsCountByCustomerId,
+  updateCustomer,
+  updateUserData,
 } from '../../apis/services';
 import CardSkeleton from '../../components/CardSkeleton/CardSkeleton';
 import { AuthContext } from '../../context/AuthContext';
+import EmptyComponent from '../../components/EmptyComponent/EmptyComponent';
+import { getLocationPermission } from '../../apis/permissions';
+import Geolocation from '@react-native-community/geolocation';
 
 const HomeScreen = ({ navigation }) => {
   const [shops, setShops] = useState([]);
   const [loading, setLoading] = useState(false);
   const [notificationCount, setNotificationCount] = useState(0);
   const { user } = useContext(AuthContext);
+
+  const getCurrentLocation = async () => {
+    getLocationPermission().then(granted => {
+      console.log('GRANGED--------------', granted ? granted : 'on granted');
+      if (!granted) {
+        console.log('Location permission denied');
+        return;
+      }
+
+      Geolocation.getCurrentPosition(
+        async position => {
+          console.log('POSITION============', position);
+          const { latitude, longitude } = position.coords;
+          console.log('Latitude:', latitude, 'Longitude:', longitude);
+
+          if (user && user.uid) {
+            await updateCustomer(user.uid, {
+              coordinates: {
+                latitude,
+                longitude,
+              },
+            });
+          }
+        },
+        error => {
+          console.log('Error getting location:', error.message);
+        },
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 },
+      );
+    });
+  };
+
+  useEffect(() => {
+    const askPermission = async () => {
+      getCurrentLocation();
+    };
+    askPermission();
+  }, []);
 
   useEffect(() => {
     const fetchShops = async () => {
@@ -164,14 +209,7 @@ const HomeScreen = ({ navigation }) => {
           <View style={styles.servicesContainer}>
             {services.map(service => (
               <View key={service.id}>
-                <TouchableOpacity
-                  style={styles.serviceCard}
-                  onPress={() =>
-                    navigation.navigate('Appointment', {
-                      service: service.name,
-                    })
-                  }
-                >
+                <TouchableOpacity style={styles.serviceCard}>
                   <Image source={service.image} style={styles.smallImage} />
                 </TouchableOpacity>
                 <Text style={styles.serviceName}>{service.name}</Text>
@@ -183,36 +221,50 @@ const HomeScreen = ({ navigation }) => {
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Popular Beauty Parlour</Text>
-        <View style={styles.featuredContainer}>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            {loading ? (
-              <View>
-                <CardSkeleton />
-              </View>
-            ) : (
-              shops &&
-              shops.length > 0 &&
-              shops.map((shop, index) => (
-                <TouchableOpacity
-                  key={index}
-                  onPress={() =>
-                    navigation.navigate('ParlourDetails', {
-                      parlourData: shop,
-                    })
-                  }
-                >
-                  <Card
-                    image={shop.profileImage}
-                    title={shop.parlourName}
-                    location={shop.address}
-                    rating={shop.rating ?? 0}
-                    status={shop.status ?? 'closed'}
-                  />
-                </TouchableOpacity>
-              ))
-            )}
-          </ScrollView>
-        </View>
+        {loading ? (
+          <CardSkeleton />
+        ) : !loading && shops.length == 0 ? (
+          <>
+            <EmptyComponent title="No shops available" />
+          </>
+        ) : (
+          shops &&
+          shops.length > 0 &&
+          shops.map((shop, index) => (
+            <View style={styles.featuredContainer}>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                {loading ? (
+                  <View>
+                    <CardSkeleton />
+                  </View>
+                ) : !loading && shops.length == 0 ? (
+                  <>
+                    <EmptyComponent title="No shops available" />
+                  </>
+                ) : (
+                  <>
+                    <TouchableOpacity
+                      key={index}
+                      onPress={() =>
+                        navigation.navigate('ParlourDetails', {
+                          parlourData: shop,
+                        })
+                      }
+                    >
+                      <Card
+                        image={shop.profileImage}
+                        title={shop.parlourName}
+                        location={shop.address}
+                        rating={shop.totalRating ?? 0}
+                        status={shop.status ?? 'closed'}
+                      />
+                    </TouchableOpacity>
+                  </>
+                )}
+              </ScrollView>
+            </View>
+          ))
+        )}
       </View>
       {/* <View style={styles.section}>
         <Text style={styles.sectionTitle}>Popular Categories</Text>

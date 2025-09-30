@@ -1,15 +1,18 @@
 import { View, Text, StyleSheet, Image } from 'react-native';
 import React from 'react';
 
-const EmptyComponent = () => {
+const EmptyComponent = ({
+  title = 'No Data Available',
+  description = "There's nothing to show here yet",
+}) => {
   return (
     <View style={styles.container}>
       <Image
         source={require('../../assets/images/forgot-password.png')}
         style={styles.image}
       />
-      <Text style={styles.title}>No Data Available</Text>
-      <Text style={styles.subtitle}>There's nothing to show here yet</Text>
+      <Text style={styles.title}>{title}</Text>
+      <Text style={styles.subtitle}>{description}</Text>
     </View>
   );
 };

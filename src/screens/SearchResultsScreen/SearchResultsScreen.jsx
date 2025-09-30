@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useContext } from 'react';
 import {
   View,
   Text,
@@ -17,6 +17,7 @@ import { NO_IMAGE } from '../../constants/images';
 import Loader from '../../components/Loader/Loader';
 import EmptyComponent from '../../components/EmptyComponent/EmptyComponent';
 import { searchShops, searchShopsByService } from '../../apis/services';
+import { AuthContext } from '../../context/AuthContext';
 
 const debounce = (func, wait) => {
   let timeout;
@@ -42,7 +43,9 @@ const SearchItem = ({ item, navigation }) => {
           <Text style={styles.shopName}>{item.parlourName ?? ''}</Text>
           <View style={styles.distanceContainer}>
             <Icon name="map-marker" size={16} color="#888" />
-            <Text style={styles.totalDistance}>{item.totalDistance}</Text>
+            <Text style={styles.totalDistance}>
+              {parseInt(item.distance).toFixed(1)} km
+            </Text>
           </View>
         </View>
         <Text style={styles.about}>{item.about}</Text>
@@ -51,9 +54,9 @@ const SearchItem = ({ item, navigation }) => {
             <Icon
               key={i}
               name={
-                i < Math.floor(item.rating)
+                i < Math.floor(item.totalRating)
                   ? 'star'
-                  : i < item.rating
+                  : i < item.totalRating
                   ? 'star-half-full'
                   : 'star-outline'
               }
@@ -83,6 +86,7 @@ const SearchResultsScreen = ({ navigation }) => {
   const [searchResults, setSearchResults] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [searchCount, setSearchCount] = useState(0);
+  const { userData } = useContext(AuthContext);
 
   const debouncedSearch = useCallback(
     debounce(term => {
@@ -90,6 +94,21 @@ const SearchResultsScreen = ({ navigation }) => {
     }, 500),
     [],
   );
+
+  const calculateDistance = useCallback((lat1, lon1, lat2, lon2) => {
+    const R = 6371;
+    const dLat = ((lat2 - lat1) * Math.PI) / 180;
+    const dLon = ((lon2 - lon1) * Math.PI) / 180;
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos((lat1 * Math.PI) / 180) *
+        Math.cos((lat2 * Math.PI) / 180) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const distance = R * c;
+    return distance.toFixed(2);
+  }, []);
 
   useEffect(() => {
     if (searchTerm.trim() !== '') {
@@ -111,8 +130,38 @@ const SearchResultsScreen = ({ navigation }) => {
           results = await searchShops(term);
         }
       }
+      console.log('results------------', results ? results : 'no results');
+      if (results && results.length > 0) {
+        const shopsWithDistance = results.map(parlour => {
+          if (
+            userData?.coordinates &&
+            parlour?.coordinates?._latitude &&
+            parlour?.coordinates?._longitude
+          ) {
+            const origin = {
+              latitude: userData.coordinates.latitude,
+              longitude: userData.coordinates.longitude,
+            };
+            const destination = {
+              latitude: parlour.coordinates._latitude,
+              longitude: parlour.coordinates._longitude,
+            };
+            const distance = calculateDistance(
+              origin.latitude,
+              origin.longitude,
+              destination.latitude,
+              destination.longitude,
+            );
+            return { ...parlour, distance: distance };
+          }
+          return { ...parlour, distance: null };
+        });
+        //setShops(shopsWithDistance);
+        setSearchResults(shopsWithDistance);
+      } else {
+        setSearchResults([]);
+      }
 
-      setSearchResults(results);
       setSearchCount(results.length);
     } catch (error) {
       setSearchResults([]);
@@ -140,6 +189,7 @@ const SearchResultsScreen = ({ navigation }) => {
 
       <View style={styles.container}>
         <View style={styles.searchBox}>
+          {console.log('searchResults=================', searchResults)}
           <View style={styles.searchBar}>
             <TextInput
               placeholder="Spa, Facial, Makeup"

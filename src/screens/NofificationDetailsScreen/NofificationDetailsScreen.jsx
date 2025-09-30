@@ -16,6 +16,7 @@ import { DEFAULT_AVATAR } from '../../constants/images';
 
 const NofificationDetailsScreen = ({ route, navigation }) => {
   const { notification } = route.params;
+  console.log('NOTIFICATION=================', notification);
 
   useEffect(() => {
     if (notification && notification.id) {

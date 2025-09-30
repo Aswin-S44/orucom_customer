@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import {
   View,
   Text,
@@ -14,6 +14,8 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import Feather from 'react-native-vector-icons/Feather';
 import { primaryColor } from '../../constants/colors';
 import { login } from '../../apis/auth';
+import auth from '@react-native-firebase/auth'; // Import Firebase auth
+import { AuthContext } from '../../context/AuthContext'; // Import AuthContext
 
 const SignInScreen = ({ navigation }) => {
   const [rememberMe, setRememberMe] = useState(false);
@@ -24,9 +26,12 @@ const SignInScreen = ({ navigation }) => {
   const [errors, setErrors] = useState({});
   const [submitted, setSubmitted] = useState(false);
   const [loginError, setLoginError] = useState('');
+  const [isSignInButtonEnabled, setIsSignInButtonEnabled] = useState(false);
+
+  // Get refreshUser from AuthContext
+  const { user, refreshUser, userData } = useContext(AuthContext);
 
   useEffect(() => {
-    if (!submitted) return;
     let newErrors = {};
     if (!email) newErrors.email = 'Email is required';
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
@@ -35,26 +40,52 @@ const SignInScreen = ({ navigation }) => {
     else if (password.length < 6)
       newErrors.password = 'Password must be at least 6 characters';
     setErrors(newErrors);
-  }, [email, password, submitted]);
+    setIsSignInButtonEnabled(
+      Object.keys(newErrors).length === 0 && email !== '' && password !== '',
+    );
+  }, [email, password]);
 
   const handleSignIn = async () => {
     setSubmitted(true);
     setLoginError('');
-    let newErrors = {};
-    if (!email) newErrors.email = 'Email is required';
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
-      newErrors.email = 'Invalid email format';
-    if (!password) newErrors.password = 'Password is required';
-    else if (password.length < 6)
-      newErrors.password = 'Password must be at least 6 characters';
-    setErrors(newErrors);
-    if (Object.keys(newErrors).length > 0) return;
+
+    if (!isSignInButtonEnabled) return;
 
     setIsLoading(true);
     try {
-      await login(email, password);
+      await login(email, password); // Your custom login function
+      const firebaseUser = auth().currentUser;
+      console.log('SER DATA----------', userData ? userData : 'no userdata');
+
+      console.log('Email Verified:', firebaseUser.emailVerified);
+
+      if (firebaseUser) {
+        // Reload user to get latest verification status
+
+        await firebaseUser.reload();
+        await refreshUser(); // Update AuthContext with latest user data
+        console.log();
+        if (!userData.emailVerified) {
+          navigation.navigate('OTPVerificationScreen', { userEmail: email });
+        }
+        console.log('=================');
+        // Navigation is now handled by App.js based on AuthContext's user.emailVerified
+        // or the isEmailVerified state. If the user is not verified, App.js will
+        // redirect them to OTPVerificationScreen.
+      }
     } catch (error) {
-      setLoginError('Invalid email or password');
+      console.error('Login error:', error);
+      if (
+        error.code === 'auth/user-not-found' ||
+        error.code === 'auth/wrong-password' ||
+        error.code === 'auth/invalid-credential'
+      ) {
+        setLoginError('Invalid email or password.');
+      } else if (error.code === 'auth/too-many-requests') {
+        setLoginError('Too many failed login attempts. Try again later.');
+      } else {
+        setLoginError('Failed to sign in. Please try again.');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -74,6 +105,12 @@ const SignInScreen = ({ navigation }) => {
       <View style={styles.container}>
         <ScrollView showsVerticalScrollIndicator={false}>
           <Text style={styles.mainTitle}>Sign In</Text>
+
+          {loginError ? (
+            <View style={styles.errorBox}>
+              <Text style={styles.loginErrorText}>{loginError}</Text>
+            </View>
+          ) : null}
 
           <View style={styles.inputGroup}>
             <Text style={styles.inputLabel}>Email</Text>
@@ -141,10 +178,6 @@ const SignInScreen = ({ navigation }) => {
             )}
           </View>
 
-          {loginError ? (
-            <Text style={styles.loginError}>{loginError}</Text>
-          ) : null}
-
           <View style={styles.optionsContainer}>
             <TouchableOpacity
               style={styles.rememberMe}
@@ -162,10 +195,12 @@ const SignInScreen = ({ navigation }) => {
           <TouchableOpacity
             style={[
               styles.signInButton,
-              isLoading && { backgroundColor: '#ccc' },
+              (!isSignInButtonEnabled || isLoading) && {
+                backgroundColor: '#ccc',
+              },
             ]}
             onPress={handleSignIn}
-            disabled={isLoading}
+            disabled={!isSignInButtonEnabled || isLoading}
           >
             <Text style={styles.signInButtonText}>
               {isLoading ? 'Signing in...' : 'SIGN IN ACCOUNT'}
@@ -191,7 +226,6 @@ const SignInScreen = ({ navigation }) => {
     </View>
   );
 };
-
 const styles = StyleSheet.create({
   outerContainer: { flex: 1, backgroundColor: primaryColor },
   backButton: {
@@ -218,6 +252,20 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 10,
     marginBottom: 30,
+  },
+  errorBox: {
+    backgroundColor: '#ffebeb',
+    padding: 10,
+    borderRadius: 8,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: '#ff0000',
+    alignItems: 'center',
+  },
+  loginErrorText: {
+    color: '#ff0000',
+    fontSize: 14,
+    textAlign: 'center',
   },
   inputGroup: { marginBottom: 20 },
   inputLabel: {
@@ -260,12 +308,6 @@ const styles = StyleSheet.create({
   signUpText: { fontSize: 15, color: '#555' },
   signUpLink: { fontSize: 15, color: primaryColor, fontWeight: '500' },
   errorText: { color: 'red', fontSize: 13, marginTop: 5 },
-  loginError: {
-    color: 'red',
-    fontSize: 14,
-    textAlign: 'center',
-    marginBottom: 15,
-  },
   loadingOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.6)',

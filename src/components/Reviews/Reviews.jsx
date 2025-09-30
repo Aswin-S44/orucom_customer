@@ -1,7 +1,11 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Image, FlatList } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { primaryColor, starColor } from '../../constants/colors';
+import { getReviews } from '../../apis/services';
+import { DEFAULT_AVATAR } from '../../constants/images';
+import ServiceCardSkeleton from '../ServiceCardSkeleton/ServiceCardSkeleton';
+import EmptyComponent from '../EmptyComponent/EmptyComponent';
 
 const reviewsData = [
   {
@@ -86,45 +90,92 @@ const ProgressBar = ({ label, percentage }) => (
 
 const ReviewItem = ({ item }) => (
   <View style={styles.reviewItemContainer}>
-    <Image source={item.image} style={styles.avatar} />
+    <Image
+      source={{
+        uri:
+          typeof item?.profile_photo_url === 'string'
+            ? item.profile_photo_url
+            : DEFAULT_AVATAR,
+      }}
+      style={styles.avatar}
+    />
+    {/* profile_photo_url */}
     <View style={styles.reviewContent}>
       <View style={styles.reviewHeader}>
-        <Text style={styles.reviewerName}>{item.name}</Text>
+        <Text style={styles.reviewerName}>{item?.author_name ?? '-'}</Text>
       </View>
       <View style={styles.ratingRow}>
-        <Text style={styles.reviewTime}>{item.time}</Text>
+        <Text style={styles.reviewTime}>
+          {item?.relative_time_description ?? 'unavailable'}
+        </Text>
         <StarRating rating={item.rating} />
       </View>
-      <Text style={styles.reviewComment}>{item.comment}</Text>
+      <Text style={styles.reviewComment}>{item?.text ?? ''}</Text>
     </View>
   </View>
 );
 
-const Reviews = () => {
+const Reviews = ({ placeId }) => {
+  const [reviews, setReviews] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [avgRating, setAvgRating] = useState(0);
+
+  useEffect(() => {
+    if (placeId) {
+      const fetchReviews = async () => {
+        try {
+          setLoading(true);
+          const res = await getReviews(placeId);
+          console.log('res------------', res ? res : 'no res');
+          if (res && res.rating && res.reviews) {
+            setAvgRating(res.rating);
+            setReviews(res.reviews);
+          }
+        } catch (error) {
+          console.log('Error while fetching reviews : ', error);
+          setError(error);
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchReviews();
+    }
+  }, [placeId]);
+
   return (
     <View style={styles.container}>
-      <FlatList
-        data={reviewsData}
-        renderItem={({ item }) => <ReviewItem item={item} />}
-        keyExtractor={item => item.id}
-        ItemSeparatorComponent={() => <View style={styles.separator} />}
-      />
-      <View style={styles.overallRatingContainer}>
-        <View style={styles.overallHeader}>
-          <Text style={styles.overallRatingNumber}>4.9</Text>
-          <View>
-            <Text style={styles.overallRatingTitle}>Overall Rating</Text>
-            <View style={styles.overallStarsRow}>
-              <StarRating rating={4.9} size={18} />
-              <Text style={styles.reviewCountText}>(120) Good (5)</Text>
+      {console.log('reviews====================', reviews)}
+      {loading ? (
+        <ServiceCardSkeleton />
+      ) : !loading && reviews.length == 0 ? (
+        <EmptyComponent />
+      ) : (
+        <>
+          <FlatList
+            data={reviews}
+            renderItem={({ item }) => <ReviewItem item={item} />}
+            keyExtractor={item => item.id}
+            ItemSeparatorComponent={() => <View style={styles.separator} />}
+          />
+          <View style={styles.overallRatingContainer}>
+            <View style={styles.overallHeader}>
+              <Text style={styles.overallRatingNumber}>{avgRating}</Text>
+              <View>
+                <Text style={styles.overallRatingTitle}>Overall Rating</Text>
+                <View style={styles.overallStarsRow}>
+                  <StarRating rating={avgRating} size={18} />
+                  <Text style={styles.reviewCountText}>({reviews.length})</Text>
+                </View>
+              </View>
+            </View>
+            <View style={styles.progressSection}>
+              <ProgressBar label="Service" percentage={90} />
+              <ProgressBar label="Price" percentage={75} />
             </View>
           </View>
-        </View>
-        <View style={styles.progressSection}>
-          <ProgressBar label="Service" percentage={90} />
-          <ProgressBar label="Price" percentage={75} />
-        </View>
-      </View>
+        </>
+      )}
     </View>
   );
 };

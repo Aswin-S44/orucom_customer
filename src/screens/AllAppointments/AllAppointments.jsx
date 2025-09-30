@@ -106,7 +106,7 @@ const AllAppointments = () => {
       };
       fetchAppointmentHistory();
     }
-  }, [user]);
+  }, []);
 
   if (loading) {
     return <AllAppointmentsScreenSkeleton />;
@@ -114,36 +114,47 @@ const AllAppointments = () => {
 
   return (
     <View style={styles.outerContainer}>
-      {!loading && appointments.length == 0 ? (
-        <EmptyComponent />
-      ) : (
-        <>
-          <StatusBar backgroundColor={primaryColor} barStyle="light-content" />
-          <View style={styles.container}>
-            <Text style={styles.mainTitle}>Appointment History</Text>
-            <View style={styles.headerRow}>
-              <Text style={[styles.headerText, { flex: 1.5 }]}>
-                Beauty Expert
-              </Text>
-              <Text style={[styles.headerText, { flex: 1.2 }]}>
-                Description
-              </Text>
-              <Text
-                style={[styles.headerText, { flex: 0.8, textAlign: 'right' }]}
-              >
-                Status
-              </Text>
-            </View>
-            <FlatList
-              data={appointments}
-              renderItem={({ item }) => <HistoryItem item={item} />}
-              keyExtractor={item => item.id}
-              showsVerticalScrollIndicator={false}
-              ItemSeparatorComponent={() => <View style={styles.separator} />}
-            />
-          </View>
-        </>
-      )}
+      <>
+        <StatusBar backgroundColor={primaryColor} barStyle="light-content" />
+        <View style={styles.container}>
+          <Text style={styles.mainTitle}>Appointment History</Text>
+          <>
+            {loading ? (
+              <AllAppointmentsScreenSkeleton />
+            ) : !loading && appointments.length == 0 ? (
+              <EmptyComponent title="No appointments Found" />
+            ) : (
+              <>
+                <View style={styles.headerRow}>
+                  <Text style={[styles.headerText, { flex: 1.5 }]}>
+                    Beauty Expert
+                  </Text>
+                  <Text style={[styles.headerText, { flex: 1.2 }]}>
+                    Description
+                  </Text>
+                  <Text
+                    style={[
+                      styles.headerText,
+                      { flex: 0.8, textAlign: 'right' },
+                    ]}
+                  >
+                    Status
+                  </Text>
+                </View>
+                <FlatList
+                  data={appointments}
+                  renderItem={({ item }) => <HistoryItem item={item} />}
+                  keyExtractor={item => item.id}
+                  showsVerticalScrollIndicator={false}
+                  ItemSeparatorComponent={() => (
+                    <View style={styles.separator} />
+                  )}
+                />
+              </>
+            )}
+          </>
+        </View>
+      </>
     </View>
   );
 };

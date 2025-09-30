@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,7 @@ import {
   LayoutAnimation,
   Platform,
   UIManager,
+  RefreshControl, // Import RefreshControl
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import Icon from 'react-native-vector-icons/FontAwesome';
@@ -19,6 +20,8 @@ import ProfileScreenSkeleton from '../../components/ProfileScreenSkeleton/Profil
 import { createNotification, getCustomerById } from '../../apis/services';
 import { generateRandomName } from '../../utils/utils';
 import { DEFAULT_AVATAR } from '../../constants/images';
+import { useFocusEffect } from '@react-navigation/native'; // Import useFocusEffect
+import PrivacyPolicyScreen from '../PrivacyPolicyScreen/PrivacyPolicyScreen';
 
 if (Platform.OS === 'android') {
   if (UIManager.setLayoutAnimationEnabledExperimental) {
@@ -31,7 +34,13 @@ const StarRating = ({ rating, count }) => {
   return (
     <View style={styles.starRatingContainer}>
       {stars.map((_, index) => (
-        <Ionicons key={index} name="star" size={18} color={starColor} />
+        <Ionicons
+          key={index}
+          name="star"
+          size={18}
+          color={starColor}
+          style={styles.starIcon}
+        />
       ))}
       <Text style={styles.ratingText}>
         {' '}
@@ -51,7 +60,11 @@ const AccordionMenuItem = ({ iconName, label, children }) => {
 
   return (
     <View style={styles.accordionContainer}>
-      <TouchableOpacity style={styles.menuItem} onPress={toggleAccordion}>
+      <TouchableOpacity
+        style={styles.menuItem}
+        onPress={toggleAccordion}
+        activeOpacity={0.8}
+      >
         <View style={styles.menuItemIconContainer}>
           <Ionicons name={iconName} size={24} color="#555" />
         </View>
@@ -68,63 +81,68 @@ const AccordionMenuItem = ({ iconName, label, children }) => {
 };
 
 const ProfileScreen = ({ navigation }) => {
-  const { user, userData, loading } = useContext(AuthContext);
+  const { user, userData, loading, refreshUser, logout } =
+    useContext(AuthContext); // Get refreshUser
+  const [refreshing, setRefreshing] = useState(false);
 
-  const [profile, setProfile] = useState(null);
-  const [profileLoading, setProfileLoading] = useState(false);
+  // Use useFocusEffect to refresh data when screen is focused
+  useFocusEffect(
+    useCallback(() => {
+      if (user?.uid) {
+        refreshUser(); // Fetch the latest user data from the backend
+      }
+    }, [user?.uid, refreshUser]),
+  );
 
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    if (user?.uid) {
+      await refreshUser();
+    }
+    setRefreshing(false);
+  }, [user?.uid, refreshUser]);
+
+  // For development only (if still needed, keep it)
   useEffect(() => {
-    // For development only
     const createNotificationData = async () => {
-      await createNotification();
+      // await createNotification();
     };
     createNotificationData();
   }, []);
 
-  useEffect(() => {
-    if (user && user.uid) {
-      const fetchProfile = async () => {
-        try {
-          setProfileLoading(true);
-          const res = await getCustomerById(user.uid);
-
-          setProfileLoading(false);
-          if (res) {
-            setProfile(res);
-          }
-        } catch (error) {
-          console.log('Error while fetching profile : ', error);
-        }
-      };
-      fetchProfile();
-    }
-  }, [user]);
-
   return (
     <View style={styles.outerContainer}>
-      {profileLoading ? (
-        <>
-          <ProfileScreenSkeleton />
-        </>
+      {loading ? ( // Use the loading from AuthContext
+        <ProfileScreenSkeleton />
       ) : (
         <>
           <StatusBar backgroundColor={primaryColor} barStyle="light-content" />
 
           <View style={styles.container}>
-            <ScrollView showsVerticalScrollIndicator={false}>
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              refreshControl={
+                <RefreshControl
+                  refreshing={refreshing}
+                  onRefresh={onRefresh}
+                  tintColor="#fff"
+                />
+              }
+            >
               <Text style={styles.mainTitle}>Profile</Text>
               <TouchableOpacity
                 style={styles.editIcon}
                 onPress={() => navigation.navigate('EditProfileScreen')}
               >
-                <Icon name="pencil" size={24} color="#111" />
+                <Icon name="pencil" size={20} color="#666" />
               </TouchableOpacity>
               <View style={styles.profileSection}>
                 <Image
                   source={{
                     uri:
-                      typeof profile?.profileImage === 'string'
-                        ? profile.profileImage
+                      typeof userData?.profileImage === 'string' &&
+                      userData.profileImage
+                        ? userData.profileImage
                         : DEFAULT_AVATAR,
                   }}
                   style={styles.avatar}
@@ -132,27 +150,92 @@ const ProfileScreen = ({ navigation }) => {
                 <Text style={styles.userName}>
                   {userData?.fullName ?? generateRandomName()}
                 </Text>
+                {/* You might want to add other profile details here, like email/phone if desired */}
+                {userData?.email && (
+                  <Text style={styles.userContact}>{userData.email}</Text>
+                )}
+                {userData?.phone && (
+                  <Text style={styles.userContact}>{userData.phone}</Text>
+                )}
               </View>
 
               <View style={styles.menuSection}>
-                <AccordionMenuItem iconName="settings-outline" label="Settings">
+                {/* <AccordionMenuItem iconName="settings-outline" label="Settings">
                   <Text style={styles.accordionText}>
-                    TODO: Need to confirm what are the things under settings tab
+                    Manage your account preferences and app settings here.
                   </Text>
-                </AccordionMenuItem>
+
+                  <TouchableOpacity style={styles.accordionSubItem}>
+                    <Text style={styles.accordionSubItemText}>
+                      Notification Preferences
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.accordionSubItem}>
+                    <Text style={styles.accordionSubItemText}>
+                      Privacy Settings
+                    </Text>
+                  </TouchableOpacity>
+                </AccordionMenuItem> */}
                 <AccordionMenuItem
-                  iconName="person-outline"
-                  label="Support Request"
+                  iconName="help-circle-outline" // Changed icon for support
+                  label="Support & Help"
                 >
                   <View style={styles.row}>
-                    <Ionicons name="mail" size={18} />
-                    <Text>support@gmail.com</Text>
+                    <Ionicons
+                      name="mail-outline"
+                      size={20}
+                      color="#555"
+                      style={styles.contactIcon}
+                    />
+                    <Text style={styles.contactText}>support@example.com</Text>
                   </View>
                   <View style={styles.row}>
-                    <Icon name="phone" size={24} color="#111" />
-                    <Text>+91-8181717171</Text>
+                    <Ionicons
+                      name="call-outline"
+                      size={20}
+                      color="#555"
+                      style={styles.contactIcon}
+                    />
+                    <Text style={styles.contactText}>+91-8181717171</Text>
                   </View>
                 </AccordionMenuItem>
+
+                {/* <TouchableOpacity style={styles.menuItem} activeOpacity={0.8}>
+                  <View style={styles.menuItemIconContainer}>
+                    <Ionicons name="wallet-outline" size={24} color="#555" />
+                  </View>
+                  <Text style={styles.menuItemText}>My Wallet</Text>
+                  <Ionicons name="chevron-forward" size={22} color="#BDBDBD" />
+                </TouchableOpacity> */}
+
+                {/* <TouchableOpacity style={styles.menuItem} activeOpacity={0.8}>
+                  <View style={styles.menuItemIconContainer}>
+                    <Ionicons name="documents-outline" size={24} color="#555" />
+                  </View>
+                  <Text style={styles.menuItemText}>Terms & Conditions</Text>
+                  <Ionicons name="chevron-forward" size={22} color="#BDBDBD" />
+                </TouchableOpacity> */}
+
+                <AccordionMenuItem
+                  iconName="help-circle-outline" // Changed icon for support
+                  label="Terms & Conditions"
+                >
+                  <PrivacyPolicyScreen />
+                </AccordionMenuItem>
+
+                <TouchableOpacity
+                  style={[styles.menuItem, styles.logoutButton]}
+                  activeOpacity={0.8}
+                  onPress={logout}
+                >
+                  <View style={styles.menuItemIconContainer}>
+                    <Ionicons name="log-out-outline" size={24} color="red" />
+                  </View>
+                  <Text style={[styles.menuItemText, styles.logoutText]}>
+                    Logout
+                  </Text>
+                  <Ionicons name="chevron-forward" size={22} color="#BDBDBD" />
+                </TouchableOpacity>
               </View>
             </ScrollView>
           </View>
@@ -169,82 +252,104 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    marginTop: 80,
+    marginTop: 60, // Slightly reduced margin to give more space
     backgroundColor: '#fff',
-    borderTopLeftRadius: 40,
-    borderTopRightRadius: 40,
-    paddingHorizontal: 25,
+    borderTopLeftRadius: 35, // Slightly less aggressive radius
+    borderTopRightRadius: 35,
+    paddingHorizontal: 20, // Reduced horizontal padding
     position: 'relative',
   },
   editIcon: {
     position: 'absolute',
-    top: 20,
+    top: 25, // Adjusted position
     right: 25,
     zIndex: 1,
+    backgroundColor: '#F0F0F0', // Light background for edit icon
+    borderRadius: 20,
+    padding: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
   },
   mainTitle: {
-    fontSize: 28,
-    fontWeight: '400',
+    fontSize: 26, // Slightly smaller title
+    fontWeight: '600', // Bolder title
     color: '#333',
     textAlign: 'center',
-    marginTop: 25,
-    marginBottom: 20,
+    marginTop: 30, // Increased margin
+    marginBottom: 25,
   },
   profileSection: {
     alignItems: 'center',
-    marginBottom: 30,
+    marginBottom: 40, // Increased margin
   },
   avatar: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+    width: 110, // Slightly larger avatar
+    height: 110,
+    borderRadius: 55,
     marginBottom: 15,
+    borderWidth: 3, // Added a border to the avatar
+    borderColor: primaryColor, // Primary color border
   },
   userName: {
-    fontSize: 22,
-    fontWeight: '500',
+    fontSize: 24, // Larger name
+    fontWeight: '700', // Bolder name
     color: '#333',
+    marginBottom: 5,
   },
-  userSpecialty: {
-    fontSize: 16,
+  userContact: {
+    fontSize: 15,
     color: '#777',
-    marginVertical: 4,
+    marginBottom: 2,
   },
   starRatingContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     marginTop: 8,
+    backgroundColor: '#F0F8FF', // Light background for rating
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+  },
+  starIcon: {
+    marginHorizontal: 1,
   },
   ratingText: {
     fontSize: 15,
     color: '#777',
-    marginLeft: 5,
+    marginLeft: 8,
+    fontWeight: '500',
   },
   menuSection: {
     width: '100%',
+    paddingBottom: 20, // Added padding to bottom
   },
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FAFAFA',
+    backgroundColor: '#FFFFFF', // White background
     borderRadius: 15,
-    padding: 15,
-    marginBottom: 15,
+    padding: 16, // Increased padding
+    marginBottom: 12, // Reduced margin between items
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
       height: 1,
     },
-    shadowOpacity: 0.05,
+    shadowOpacity: 0.08, // Subtle shadow
     shadowRadius: 2,
     elevation: 2,
   },
   menuItemIconContainer: {
-    width: 40,
-    height: 40,
+    width: 35, // Slightly smaller icon container
+    height: 35,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 15,
+    borderRadius: 8, // Rounded corners for icon background
+    backgroundColor: '#E8F5E9', // Light green background
   },
   menuItemText: {
     flex: 1,
@@ -253,23 +358,52 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   accordionContainer: {
-    marginBottom: 15,
+    marginBottom: 12,
   },
   accordionContent: {
-    backgroundColor: '#F0F0F0',
     padding: 15,
-    paddingTop: 0,
+    paddingTop: 10,
     borderBottomLeftRadius: 15,
     borderBottomRightRadius: 15,
+    borderTopWidth: 0,
   },
   accordionText: {
     fontSize: 14,
-    color: '#555',
+    color: '#666',
+    marginBottom: 10,
+    lineHeight: 20,
+  },
+  accordionSubItem: {
+    paddingVertical: 8,
+    paddingHorizontal: 5,
+    borderBottomWidth: 0, // Removed border
+    borderBottomColor: '#eee',
+  },
+  accordionSubItemText: {
+    fontSize: 15,
+    color: '#444',
+    fontWeight: '500',
   },
   row: {
-    display: 'flex',
     flexDirection: 'row',
-    padding: 10,
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 5,
+  },
+  contactIcon: {
+    marginRight: 10,
+  },
+  contactText: {
+    fontSize: 15,
+    color: '#555',
+  },
+  logoutButton: {
+    marginTop: 20, // More space above logout
+    backgroundColor: '#FFF0F0', // Light red background
+  },
+  logoutText: {
+    color: 'red',
+    fontWeight: '600',
   },
 });
 

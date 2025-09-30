@@ -8,9 +8,10 @@ import {
   StyleSheet,
   StatusBar,
   Platform,
+  Alert,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import DateTimePicker from '@react-native-community/datetimepicker';
+import { Calendar } from 'react-native-calendars';
 import { bookedColor, lightPurple, primaryColor } from '../../constants/colors';
 import { getExpertsByShopId, getServiceById } from '../../apis/services';
 import BookingScreenSkeleton from '../../components/BookingScreenSkeleton/BookingScreenSkeleton';
@@ -19,48 +20,20 @@ import firestore from '@react-native-firebase/firestore';
 import moment from 'moment';
 import { AuthContext } from '../../context/AuthContext';
 
-const timeSlots = [
-  '8:00 am',
-  '9:00 am',
-  '10:00 am',
-  '11:00 am',
-  '12:00 pm',
-  '1:00 pm',
-  '2:00 pm',
-  '3:00 pm',
-  '4:00 pm',
-  '5:00 pm',
-  '6:00 pm',
-  '7:00 pm',
-  '8:00 pm',
-  '9:00 pm',
-];
-
-const bookedSlots = ['10:00 am', '4:00 pm', '6:00 pm'];
-
 const BookingScreen = ({ route, navigation }) => {
   const { user, userData } = useContext(AuthContext);
   const [selectedExpert, setSelectedExpert] = useState(null);
   const [selectedTime, setSelectedTime] = useState(null);
   const [selectedServices, setSelectedServices] = useState(null);
-  // const [selectedDate, setSelectedDate] = useState(new Date());
-  const [showDatePicker, setShowDatePicker] = useState(false);
   const [loading, setLoading] = useState(false);
   const [experts, setExperts] = useState([]);
   const [slots, setSlots] = useState({});
+  const [selectedDate, setSelectedDate] = useState(
+    moment().format('YYYY-MM-DD'),
+  );
 
-  // const [selectedDate, setSelectedDate] = useState(
-  //   moment().format('YYYY-MM-DD'),
-  // );
-
-  const [selectedDate, setSelectedDate] = useState(new Date());
-
-  const formattedDate = moment(selectedDate).format('YYYY-MM-DD');
+  const formattedDate = selectedDate;
   const slotsForDate = slots[formattedDate] || [];
-
-  // const onDayPress = day => {
-  //   setSelectedDate(day.dateString);
-  // };
 
   const { shopId, serviceId } = route.params;
 
@@ -69,7 +42,6 @@ const BookingScreen = ({ route, navigation }) => {
 
     setLoading(true);
 
-    // React Native Firebase realtime listener
     const unsubscribe = firestore()
       .collection('slots')
       .where('shopId', '==', route.params.shopId)
@@ -134,32 +106,20 @@ const BookingScreen = ({ route, navigation }) => {
     }
   }, [shopId, serviceId]);
 
-  // const onDateChange = selectedDate => {
-  //   const currentDate = selectedDate || selectedDate;
-  //   setShowDatePicker(Platform.OS === 'ios');
-  //   //setSelectedDate(new Date(currentDate));
-  //   setSelectedDate(selectedDate.toDateString);
-  // };
-
-  const onDateChange = (event, date) => {
-    if (date) {
-      setSelectedDate(date);
-    }
-    setShowDatePicker(false);
+  const onDayPress = day => {
+    setSelectedDate(day.dateString);
+    setSelectedTime(null);
   };
 
   const handleNext = () => {
     navigation.navigate('BookingSummaryScreen', {
-      selectedDate: selectedDate.toDateString(),
+      selectedDate: selectedDate,
       selectedTime: selectedTime,
       selectedServices: selectedServices,
       selectedExpert: experts.find(expert => expert.id === selectedExpert),
       shopId,
     });
   };
-
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
 
   if (loading) {
     return <BookingScreenSkeleton />;
@@ -168,7 +128,7 @@ const BookingScreen = ({ route, navigation }) => {
   return (
     <View style={styles.outerContainer}>
       <StatusBar backgroundColor={primaryColor} barStyle="light-content" />
-      {console.log('selectedDate------------', selectedDate)}
+
       <TouchableOpacity
         style={styles.backButton}
         onPress={() => navigation.goBack()}
@@ -194,9 +154,8 @@ const BookingScreen = ({ route, navigation }) => {
             contentContainerStyle={styles.expertScroll}
           >
             {experts.map(expert => (
-              <View>
+              <View key={expert.id}>
                 <TouchableOpacity
-                  key={expert.id}
                   style={styles.expertCard}
                   onPress={() => {
                     setSelectedExpert(expert.id);
@@ -222,15 +181,13 @@ const BookingScreen = ({ route, navigation }) => {
                   </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  key={expert.id}
-                  style={styles.expertCard}
+                  style={[styles.expertCard, { marginTop: 5 }]}
                   onPress={() => {
                     navigation.navigate('BeautyExpertDetailsScreen', {
                       expertId: expert.id,
                     });
                   }}
                 >
-                  {' '}
                   <Ionicons name="eye" size={18} color="#111" />
                 </TouchableOpacity>
               </View>
@@ -238,39 +195,24 @@ const BookingScreen = ({ route, navigation }) => {
           </ScrollView>
 
           <Text style={styles.sectionTitle}>Select Date</Text>
-          {/* <TouchableOpacity
-            style={styles.datePicker}
-            onPress={() => setShowDatePicker(true)}
-          >
-            <Text style={styles.dateText}>{selectedDate.toDateString}</Text>
-            {console.log(
-              'selectedDate----------',
-              selectedDate ? selectedDate : 'no selectedDate',
-            )}
-            <Ionicons name="calendar-outline" size={22} color="#888" />
-          </TouchableOpacity> */}
-
-          <TouchableOpacity
-            style={styles.datePicker}
-            onPress={() => setShowDatePicker(true)}
-          >
-            <Text style={styles.dateText}>
-              {selectedDate ? selectedDate.toDateString() : 'Select Date'}
-            </Text>
-            <Ionicons name="calendar-outline" size={22} color="#888" />
-          </TouchableOpacity>
-
-          {showDatePicker && (
-            <DateTimePicker
-              testID="datePicker"
-              value={selectedDate}
-              mode="date"
-              display="default"
-              onChange={onDateChange}
-              minimumDate={today}
-              accentColor="#FF69B4"
-            />
-          )}
+          <Calendar
+            onDayPress={onDayPress}
+            markedDates={{
+              [selectedDate]: {
+                selected: true,
+                disableTouchEvent: true,
+                selectedDotColor: 'orange',
+              },
+            }}
+            theme={{
+              selectedDayBackgroundColor: primaryColor,
+              selectedDayTextColor: '#ffffff',
+              todayTextColor: primaryColor,
+              arrowColor: primaryColor,
+            }}
+            minDate={moment().format('YYYY-MM-DD')}
+            style={styles.calendar}
+          />
 
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Select Time Slot</Text>
@@ -292,10 +234,8 @@ const BookingScreen = ({ route, navigation }) => {
               </Text>
             ) : (
               slotsForDate.map(slot => {
-                console.log('selectedTime-----------', selectedTime);
                 const slotLabel = `${slot.startTime} - ${slot.endTime}`;
                 const isSelected = selectedTime?.id === slot.id;
-                // const isSelected = false;
                 const isDisabled = !slot.isAvailable;
 
                 return (
@@ -306,14 +246,14 @@ const BookingScreen = ({ route, navigation }) => {
                     style={[
                       styles.timeSlot,
                       isSelected && styles.timeSlotSelected,
-                      isDisabled && { backgroundColor: '#d8b4fe' }, // light purple
+                      isDisabled && { backgroundColor: '#d8b4fe' },
                     ]}
                   >
                     <Text
                       style={[
                         styles.timeSlotText,
                         isSelected && styles.timeSlotTextSelected,
-                        isDisabled && { color: '#aaa' }, // grey text for disabled
+                        isDisabled && { color: '#aaa' },
                       ]}
                     >
                       {slotLabel}
@@ -360,7 +300,6 @@ const BookingScreen = ({ route, navigation }) => {
               ))}
           </View>
         </ScrollView>
-        {console.log('selectedExpert--------------', selectedExpert)}
         <TouchableOpacity
           style={[
             styles.nextButton,
@@ -460,19 +399,9 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#555',
   },
-  datePicker: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
+  calendar: {
     borderRadius: 12,
-    padding: 15,
     marginBottom: 25,
-  },
-  dateText: {
-    fontSize: 16,
-    color: '#555',
   },
   legendContainer: {
     flexDirection: 'row',
@@ -497,13 +426,11 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   timeSlot: {
-    // width: '23%',
     backgroundColor: lightPurple,
     borderRadius: 10,
     paddingVertical: 12,
-    alignItems: 'left',
+    alignItems: 'flex-start',
     marginBottom: 10,
-    whiteSpace: 'nowrap',
     width: '30%',
   },
   timeSlotSelected: {
@@ -516,7 +443,6 @@ const styles = StyleSheet.create({
     color: primaryColor,
     fontWeight: '600',
     left: 10,
-    whiteSpace: 'nowrap',
     fontSize: 12,
   },
   timeSlotTextSelected: {

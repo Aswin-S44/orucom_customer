@@ -20,7 +20,7 @@ import AboutSection from '../../sections/AboutSection/AboutSection';
 const ParlourDetails = ({ route, navigation }) => {
   const { parlourData } = route.params;
   const [activeTab, setActiveTab] = React.useState('Service');
-
+  console.log('parlor data============', parlourData);
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       <StatusBar barStyle="light-content" />
@@ -134,7 +134,7 @@ const ParlourDetails = ({ route, navigation }) => {
 
       {activeTab === 'Review' && (
         <View style={styles.content}>
-          <Reviews />
+          <Reviews placeId={parlourData?.placeId ?? null} />
         </View>
       )}
     </ScrollView>

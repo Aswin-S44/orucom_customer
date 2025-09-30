@@ -11,10 +11,14 @@ import {
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { primaryColor } from '../../constants/colors';
-import { APPOINTMENT_STATUSES } from '../../constants/variables';
+import {
+  APPOINTMENT_STATUSES,
+  APPOINTMENT_TYPES,
+} from '../../constants/variables';
 import { AuthContext } from '../../context/AuthContext';
 import {
   createAppointment,
+  createNotification,
   sendAppointmentNofification,
 } from '../../apis/services';
 import { firestore } from '../../config/firebase';
@@ -110,13 +114,17 @@ const BookingSummaryScreen = ({ route, navigation }) => {
 
       try {
         const res = await createAppointment(bookingData);
-
+        // await createNotification(user.uid, route.params.shopId);
         await updateSlotInFirestore(selectedSlot.id, { isAvailable: false });
 
         if (res && res.success) {
           setModalVisible(true);
-
-          await sendAppointmentNofification(user.uid, route.params.shopId);
+          // await createNotification(user.uid, route.params.shopId);
+          await sendAppointmentNofification(
+            user.uid,
+            route.params.shopId,
+            APPOINTMENT_TYPES.BOOKING_REQUEST_SENT,
+          );
         }
       } catch (error) {
         console.error('Error creating appointment:', error);

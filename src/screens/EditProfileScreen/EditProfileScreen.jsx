@@ -16,8 +16,8 @@ import { primaryColor } from '../../constants/colors';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { TextInput } from 'react-native';
 
-const EditProfileScreen = ({navigation}) => {
-  const { user } = useContext(AuthContext);
+const EditProfileScreen = ({ navigation }) => {
+  const { user, refreshUser } = useContext(AuthContext);
   const [name, setName] = useState('');
   const [imageUri, setImageUri] = useState(null);
   const [profileLoading, setProfileLoading] = useState(true);
@@ -34,6 +34,7 @@ const EditProfileScreen = ({navigation}) => {
       const fetchUserData = async () => {
         try {
           const res = await getCustomerById(user.uid);
+          console.log('RES=============', res ? res : 'no res');
           if (res) {
             setName(res.fullName || '');
             setPhone(res.phone || '');
@@ -92,7 +93,9 @@ const EditProfileScreen = ({navigation}) => {
     };
     try {
       await updateUserData(user.uid, updatedData);
+      await refreshUser(); // Refresh user data in AuthContext
       setToastMessage('Profile updated successfully!');
+      navigation.goBack(); // Navigate back after successful update
     } catch (error) {
       console.error('Error updating profile:', error);
       setToastMessage('Failed to update profile.');
@@ -105,7 +108,7 @@ const EditProfileScreen = ({navigation}) => {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" />
+      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Icon name="arrow-back" size={28} color="#333" />
@@ -116,47 +119,50 @@ const EditProfileScreen = ({navigation}) => {
         </TouchableOpacity>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false}>
-        <View style={styles.content}>
-          <View style={styles.imageContainer}>
-            <Image source={imageSource} style={styles.avatar} />
-            <TouchableOpacity
-              style={styles.editImageIcon}
-              onPress={selectImage}
-            >
-              <Icon name="camera" size={24} color="#fff" />
-            </TouchableOpacity>
-          </View>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
+        <View style={styles.imageContainer}>
+          <Image source={imageSource} style={styles.avatar} />
+          <TouchableOpacity style={styles.editImageIcon} onPress={selectImage}>
+            <Icon name="camera" size={24} color="#fff" />
+          </TouchableOpacity>
+        </View>
 
-          <View style={styles.inputSection}>
-            <Text style={styles.label}>Name</Text>
-            <TextInput
-              style={styles.input}
-              value={name}
-              onChangeText={setName}
-              placeholder="Your Name"
-            />
-          </View>
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>Full Name</Text>
+          <TextInput
+            style={styles.input}
+            value={name}
+            onChangeText={setName}
+            placeholder="Enter your full name"
+            placeholderTextColor="#999"
+          />
+        </View>
 
-          <View style={styles.inputSection}>
-            <Text style={styles.label}>Email</Text>
-            <TextInput
-              style={styles.input}
-              value={email}
-              onChangeText={setEmail}
-              placeholder="Your email"
-            />
-          </View>
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>Email Address</Text>
+          <TextInput
+            style={styles.input}
+            value={email}
+            onChangeText={setEmail}
+            placeholder="Enter your email address"
+            placeholderTextColor="#999"
+            keyboardType="email-address"
+          />
+        </View>
 
-          <View style={styles.inputSection}>
-            <Text style={styles.label}>Phone</Text>
-            <TextInput
-              style={styles.input}
-              value={phone}
-              onChangeText={setPhone}
-              placeholder="Your phone"
-            />
-          </View>
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>Phone Number</Text>
+          <TextInput
+            style={styles.input}
+            value={phone}
+            onChangeText={setPhone}
+            placeholder="Enter your phone number"
+            placeholderTextColor="#999"
+            keyboardType="phone-pad"
+          />
         </View>
       </ScrollView>
 
@@ -164,7 +170,7 @@ const EditProfileScreen = ({navigation}) => {
         <View style={styles.loadingOverlay}>
           <ActivityIndicator size="large" color={primaryColor} />
           <Text style={styles.loadingText}>
-            {isSaving ? 'Saving...' : 'Loading...'}
+            {isSaving ? 'Saving profile...' : 'Loading profile...'}
           </Text>
         </View>
       )}
@@ -181,74 +187,92 @@ const EditProfileScreen = ({navigation}) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#F7F7F7', // Lighter background for a cleaner look
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 15,
+    paddingTop: 15, // Adjusted padding
+    paddingBottom: 12,
     backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomWidth: 0, // Removed borderBottom
+    shadowColor: '#000', // Added shadow for header
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 3,
   },
   headerTitle: {
-    fontSize: 20,
+    fontSize: 22, // Slightly larger title
     fontWeight: 'bold',
     color: '#333',
   },
   saveText: {
-    fontSize: 16,
+    fontSize: 17, // Slightly larger save text
     fontWeight: 'bold',
     color: primaryColor,
   },
-  content: {
-    padding: 20,
+  scrollContent: {
+    paddingVertical: 30, // Increased vertical padding
+    paddingHorizontal: 25, // Increased horizontal padding
   },
   imageContainer: {
     alignItems: 'center',
-    marginBottom: 30,
+    marginBottom: 40, // Increased margin
   },
   avatar: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: '#e0e0e0',
+    width: 130, // Slightly larger avatar
+    height: 130,
+    borderRadius: 65,
+    backgroundColor: '#E0E0E0',
+    borderWidth: 3, // Added subtle border
+    borderColor: '#fff',
+    shadowColor: '#000', // Added shadow to avatar
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+    elevation: 5,
   },
   editImageIcon: {
     position: 'absolute',
-    bottom: 5,
-    right: '32%',
+    bottom: 0, // Moved to bottom center
+    right: '35%',
     backgroundColor: primaryColor,
-    padding: 8,
-    borderRadius: 20,
+    padding: 10, // Larger touch target
+    borderRadius: 25, // Perfectly round
     borderWidth: 2,
     borderColor: '#fff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.3,
+    shadowRadius: 2,
+    elevation: 4,
   },
-  inputSection: {
-    marginBottom: 20,
+  inputGroup: {
+    marginBottom: 25, // Increased spacing between input groups
   },
   label: {
-    fontSize: 16,
-    color: '#666',
-    marginBottom: 8,
+    fontSize: 15,
+    color: '#555',
+    marginBottom: 10, // Increased margin for label
     fontWeight: '600',
   },
   input: {
-    backgroundColor: '#f9f9f9',
-    borderRadius: 10,
-    paddingHorizontal: 15,
-    paddingVertical: 12,
+    backgroundColor: '#FFFFFF', // White background for inputs
+    borderRadius: 12, // More rounded corners
+    paddingHorizontal: 18, // Increased padding
+    paddingVertical: 14, // Increased padding
     fontSize: 16,
     color: '#333',
     borderWidth: 1,
-    borderColor: '#eee',
-  },
-  textArea: {
-    height: 120,
-    textAlignVertical: 'top',
+    borderColor: '#E0E0E0', // Lighter border color
+    shadowColor: '#000', // Added subtle shadow to inputs
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
   loadingOverlay: {
     position: 'absolute',
@@ -256,31 +280,38 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(0, 0, 0, 0.6)', // Slightly darker overlay
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 1000,
   },
   loadingText: {
-    marginTop: 10,
+    marginTop: 15, // Increased margin
     color: '#fff',
-    fontSize: 16,
+    fontSize: 17, // Slightly larger font
+    fontWeight: '500',
   },
   toastContainer: {
     position: 'absolute',
-    bottom: 30,
+    bottom: 40, // Moved slightly up
     left: 20,
     right: 20,
-    backgroundColor: '#333',
-    borderRadius: 25,
-    padding: 15,
+    backgroundColor: '#4CAF50', // Green for success
+    borderRadius: 30, // More rounded
+    padding: 18, // Increased padding
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 2000,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
   toastText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: 17, // Slightly larger font
+    fontWeight: '600',
   },
 });
 

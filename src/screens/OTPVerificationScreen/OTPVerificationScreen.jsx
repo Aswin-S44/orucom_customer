@@ -11,9 +11,11 @@ import {
   Alert,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import Toast from 'react-native-toast-message';
 import { primaryColor } from '../../constants/colors';
-import { AuthContext } from '../../context/AuthContext';
-import { updateShop, verifyOtp } from '../../apis/auth';
+import { AuthContext, verifyOtp } from '../../context/AuthContext';
+import { updateCustomer } from '../../apis/services';
+import { resentOTP } from '../../apis/auth';
 
 const OTPVerificationScreen = ({ navigation }) => {
   const firstInput = useRef();
@@ -24,27 +26,57 @@ const OTPVerificationScreen = ({ navigation }) => {
   const sixthInput = useRef();
 
   const [otp, setOtp] = useState({ 1: '', 2: '', 3: '', 4: '', 5: '', 6: '' });
+  const [error, setError] = useState('');
 
   const { user, userData, loading } = useContext(AuthContext);
 
   const handleVerifyOTP = async () => {
-    // console.log('USER--------', user?.email);
-    // console.log('OTP values----', otp);
-    // const otpValue = Object.values(otp).join('');
-    // console.log('OTP String:', otpValue);
-    // try {
-    //   if (user && user.email && user.uid) {
-    //     const res = await verifyOtp(user?.email, otpValue);
-    //     console.log('res------------', res ? res : 'no res');
-    //     if (res && res.success) {
-    //       await updateShop(user.uid, { isOTPVerified: true });
-    //     } else {
-    //       Alert('Invalid OTP');
-    //     }
-    //   }
-    // } catch (error) {
-    //   console.log('Error while verifying OTP : ', error);
-    // }
+    setError('');
+    const otpValue = Object.values(otp).join('');
+    if (otpValue.length !== 6) {
+      setError('Please enter the complete OTP.');
+      return;
+    }
+
+    try {
+      if (user && user.email && user.uid) {
+        const res = await verifyOtp(user?.email, otpValue);
+        if (res && res.success) {
+          await updateCustomer(user.uid, {
+            isOTPVerified: true,
+            emailVerified: true,
+          });
+          Toast.show({
+            type: 'success',
+            text1: 'OTP Verified!',
+            text2: 'You have successfully verified your email.',
+            visibilityTime: 3000,
+            autoHide: true,
+            topOffset: 30,
+          });
+          navigation.navigate('SignIn');
+        } else {
+          setError('Invalid OTP. Please try again.');
+        }
+      } else {
+        setError('User data is missing. Please try signing in again.');
+      }
+    } catch (err) {
+      console.log('Error while verifying OTP : ', err);
+      setError('Something went wrong. Please try again later.');
+    }
+  };
+
+  const handleResentOTP = async () => {
+    if (user && user.email) {
+      try {
+        const res = await resentOTP(user?.email);
+        setOtp({ 1: '', 2: '', 3: '', 4: '', 5: '', 6: '' });
+      } catch (error) {
+        console.log('Error while resent otp : ', error);
+        setError(error);
+      }
+    }
   };
 
   return (
@@ -68,7 +100,7 @@ const OTPVerificationScreen = ({ navigation }) => {
         <Text style={styles.infoText}>Enter OTP Sent To:</Text>
         <View style={styles.resendContainer}>
           <Text style={styles.resendText}>Didn't get OTP code? </Text>
-          <TouchableOpacity>
+          <TouchableOpacity onPress={handleResentOTP}>
             <Text style={styles.resendLink}>RESEND</Text>
           </TouchableOpacity>
         </View>
@@ -91,16 +123,21 @@ const OTPVerificationScreen = ({ navigation }) => {
                   maxLength={1}
                   ref={refs[index]}
                   onChangeText={text => {
-                    // Update OTP state
                     setOtp({ ...otp, [digit]: text });
-
-                    // Auto-focus to next input if text exists
+                    setError('');
                     if (text && index < 5) {
                       refs[index + 1].current.focus();
                     }
-
-                    // Auto-focus to previous input if text is deleted (backspace)
                     if (!text && index > 0) {
+                      refs[index - 1].current.focus();
+                    }
+                  }}
+                  onKeyPress={({ nativeEvent }) => {
+                    if (
+                      nativeEvent.key === 'Backspace' &&
+                      !otp[digit] &&
+                      index > 0
+                    ) {
                       refs[index - 1].current.focus();
                     }
                   }}
@@ -109,6 +146,8 @@ const OTPVerificationScreen = ({ navigation }) => {
             );
           })}
         </View>
+
+        {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
         <TouchableOpacity style={styles.createButton} onPress={handleVerifyOTP}>
           <Text style={styles.createButtonText}>NEXT</Text>
@@ -121,6 +160,7 @@ const OTPVerificationScreen = ({ navigation }) => {
           </TouchableOpacity>
         </View>
       </ScrollView>
+      <Toast />
     </View>
   );
 };
@@ -193,6 +233,12 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     width: '100%',
     height: '100%',
+  },
+  errorText: {
+    color: 'red',
+    fontSize: 14,
+    marginTop: 10,
+    textAlign: 'center',
   },
   createButton: {
     backgroundColor: primaryColor,

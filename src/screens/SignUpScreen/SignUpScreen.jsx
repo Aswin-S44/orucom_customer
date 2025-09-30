@@ -8,14 +8,15 @@ import {
   TextInput,
   ScrollView,
   ActivityIndicator,
+  Modal,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import Feather from 'react-native-vector-icons/Feather';
 import { primaryColor } from '../../constants/colors';
 import { signup } from '../../apis/auth';
-import { Modal } from 'react-native';
-const SignUpScreen = ({ navigation, route }) => {
-  const { signIn } = route.params;
+import auth from '@react-native-firebase/auth'; // Import Firebase auth
+
+const SignUpScreen = ({ navigation }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [securePassword, setSecurePassword] = useState(true);
@@ -28,22 +29,20 @@ const SignUpScreen = ({ navigation, route }) => {
   const [errors, setErrors] = useState({});
   const [isFormValid, setIsFormValid] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  const [loginError, setLoginError] = useState('');
-  const [privacyTermsAccepted, setPrivacyTermAccepted] = useState(false);
-
-  const checkPasswordStrength = pass => {
-    if (pass.length === 0) return '';
-    if (pass.length < 6) return 'Weak';
-    if (/^(?=.*[A-Z])(?=.*[a-z])(?=.*\d).{6,}$/.test(pass)) return 'Strong';
-    return 'Medium';
-  };
+  const [signupError, setSignupError] = useState('');
 
   useEffect(() => {
-    console.log('Email changed:', email);
-  }, [email]);
-
-  useEffect(() => {
-    if (!submitted) return;
+    if (
+      !submitted &&
+      !acceptedTerms &&
+      email === '' &&
+      password === '' &&
+      confirmPassword === ''
+    ) {
+      // Don't validate on initial render if not submitted
+      setIsFormValid(false);
+      return;
+    }
 
     let newErrors = {};
 
@@ -62,7 +61,7 @@ const SignUpScreen = ({ navigation, route }) => {
       newErrors.terms = 'You must accept the terms and privacy policy';
 
     setErrors(newErrors);
-    setIsFormValid(Object.keys(newErrors).length === 0);
+    setIsFormValid(Object.keys(newErrors).length === 0 && acceptedTerms);
   }, [email, password, confirmPassword, acceptedTerms, submitted]);
 
   const handleSubmit = () => {
@@ -74,11 +73,23 @@ const SignUpScreen = ({ navigation, route }) => {
 
   const createAccount = async () => {
     setIsLoading(true);
+    setSignupError('');
     try {
-      await signup(email, password);
-      setIsLoading(false);
+      const user = await signup(email, password); // Your custom signup function
+      if (user) {
+        // Send email verification right after signup
+        await auth().currentUser.sendEmailVerification();
+        navigation.navigate('OTPVerificationScreen', { userEmail: email });
+      }
     } catch (error) {
-      alert(error.message);
+      console.error('Signup error:', error);
+      if (error.code === 'auth/email-already-in-use') {
+        setSignupError(
+          'This email is already in use. Please sign in or use a different email.',
+        );
+      } else {
+        setSignupError('Failed to create account. Please try again.');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -100,7 +111,10 @@ const SignUpScreen = ({ navigation, route }) => {
         <ScrollView showsVerticalScrollIndicator={false}>
           <Text style={styles.mainTitle}>Sign Up</Text>
 
-          {/* Email */}
+          {signupError ? (
+            <Text style={styles.signupErrorBox}>{signupError}</Text>
+          ) : null}
+
           <View style={styles.inputGroup}>
             <Text style={styles.inputLabel}>Email</Text>
             <View
@@ -129,7 +143,7 @@ const SignUpScreen = ({ navigation, route }) => {
               <Text style={styles.errorText}>{errors.email}</Text>
             )}
           </View>
-          {/* Password */}
+
           <View style={styles.inputGroup}>
             <Text style={styles.inputLabel}>Password</Text>
             <View
@@ -167,11 +181,6 @@ const SignUpScreen = ({ navigation, route }) => {
             )}
           </View>
 
-          {loginError ? (
-            <Text style={styles.loginError}>{loginError}</Text>
-          ) : null}
-
-          {/* Confirm Password */}
           <View style={styles.inputGroup}>
             <Text style={styles.inputLabel}>Confirm Password</Text>
             <View
@@ -211,7 +220,6 @@ const SignUpScreen = ({ navigation, route }) => {
             )}
           </View>
 
-          {/* Terms */}
           <TouchableOpacity
             style={styles.termsContainer}
             onPress={() => setAcceptedTerms(!acceptedTerms)}
@@ -230,14 +238,13 @@ const SignUpScreen = ({ navigation, route }) => {
             <Text style={styles.errorText}>{errors.terms}</Text>
           )}
 
-          {/* Create Button */}
           <TouchableOpacity
             style={[
               styles.createButton,
-              submitted && !isFormValid && { backgroundColor: '#ccc' },
+              (!isFormValid || isLoading) && { backgroundColor: '#ccc' },
             ]}
             onPress={handleSubmit}
-            disabled={isLoading}
+            disabled={!isFormValid || isLoading}
           >
             <Text style={styles.signInButtonText}>
               {isLoading ? 'Please wait....' : 'CREATE ACCOUNT'}
@@ -281,7 +288,18 @@ const styles = StyleSheet.create({
     color: '#333',
     textAlign: 'center',
     marginTop: 10,
-    marginBottom: 30,
+    marginBottom: 10,
+  },
+  signupErrorBox: {
+    color: 'red',
+    fontSize: 14,
+    textAlign: 'center',
+    marginBottom: 20,
+    backgroundColor: '#ffe0e0',
+    padding: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'red',
   },
   inputGroup: { marginBottom: 20 },
   inputLabel: {
@@ -315,15 +333,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 30,
   },
-  createButtonText: { color: '#fff', fontSize: 16, fontWeight: '500' },
+  signInButtonText: { color: '#fff', fontSize: 16, fontWeight: '500' },
   errorText: { color: 'red', fontSize: 13, marginTop: 5 },
-  strengthText: { fontSize: 13, marginTop: 5 },
-  loginError: {
-    color: 'red',
-    fontSize: 14,
-    textAlign: 'center',
-    marginBottom: 15,
-  },
   loadingOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.6)',

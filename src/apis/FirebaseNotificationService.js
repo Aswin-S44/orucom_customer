@@ -60,7 +60,7 @@ class FirebaseNotificationService {
     try {
       const currentUser = auth().currentUser;
       if (currentUser) {
-        await firestore().collection('shop-owners').doc(currentUser.uid).set(
+        await firestore().collection('customers').doc(currentUser.uid).set(
           {
             fcmToken: token,
             updatedAt: firestore.FieldValue.serverTimestamp(),

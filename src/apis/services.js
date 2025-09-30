@@ -1,15 +1,22 @@
 import auth from '@react-native-firebase/auth';
-import firestore, { doc } from '@react-native-firebase/firestore';
+import firestore, {
+  doc,
+  getDoc,
+  getFirestore,
+  updateDoc,
+} from '@react-native-firebase/firestore';
 import axios from 'axios';
 import { BACKEND_URL, NOTIFICATION_TYPES } from '../constants/variables';
 const CLOUDINARY_URL =
   'https://api.cloudinary.com/v1_1/personalprojectaswins/image/upload';
 const CLOUDINARY_UPLOAD_PRESET = 'cloudinary_react';
+import { GOOGLE_MAPS_API_KEY } from '@env';
 
 export const getAllParlours = async () => {
   const querySnapshot = await firestore()
     .collection('shop-owners')
     .where('isOnboarded', '==', true)
+    .where('profileCompleted', '==', true)
     .get();
 
   return querySnapshot.docs.map(doc => ({
@@ -202,7 +209,10 @@ export const searchShopsByService = async searchTerm => {
 
 export const searchShops = async searchTerm => {
   try {
-    const shopsSnapshot = await firestore().collection('shop-owners').get();
+    const shopsSnapshot = await firestore()
+      .collection('shop-owners')
+      .where('profileCompleted', '==', true)
+      .get();
     const allShops = shopsSnapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data(),
@@ -226,7 +236,10 @@ export const searchShops = async searchTerm => {
 
 const getShopOwnerByShopId = async shopId => {
   try {
-    const shopsSnapshot = await firestore().collection('shop-owners').get();
+    const shopsSnapshot = await firestore()
+      .collection('shop-owners')
+      .where('profileCompleted', '==', true)
+      .get();
     const allShops = shopsSnapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data(),
@@ -253,15 +266,21 @@ const getServicesByShopId = async shopId => {
     return [];
   }
 };
-export const sendAppointmentNofification = async (customerId, shopId) => {
+export const sendAppointmentNofification = async (
+  customerId,
+  shopId,
+  appointmentType,
+) => {
   try {
-    const res = await axios.post(
-      `https://beauty-parlor-app-backend.onrender.com/api/v1/user/appointment`,
-      {
-        customerId,
-        shopId,
-      },
-    );
+    console.log('CUSSTOMER ID ---------------', customerId);
+    console.log('SHOP ID --------------------', shopId);
+    await createNotification(customerId, shopId);
+    const url = `${BACKEND_URL}/appointment`;
+    const res = await axios.post(url, {
+      customerId,
+      shopId,
+      appointmentType,
+    });
     console.log('notification res---------------', res ? res : 'no res');
   } catch (error) {
     console.log('Error whilel sending notification : ', error);
@@ -270,8 +289,12 @@ export const sendAppointmentNofification = async (customerId, shopId) => {
 
 export const getCustomerById = async id => {
   try {
-    const docSnap = await firestore().collection('customers').doc(id).get();
+    console.log('ID===============', id);
+    console.log('11111111111111');
 
+    const docSnap = await firestore().collection('customers').doc(id).get();
+    console.log('22222222222222');
+    console.log('docSnap==============', docSnap);
     if (docSnap.exists) {
       return { id: docSnap.id, ...docSnap.data() };
     } else {
@@ -284,24 +307,38 @@ export const getCustomerById = async id => {
 
 export const updateUserData = async (uid, updateData) => {
   try {
-    console.log('update data---------', updateData);
+    const customer = await getCustomerById(uid);
+
+    console.log('updateData-------------', updateData);
+
+    console.log(
+      'CEHCK-------------------------',
+      (updateData.profileImage &&
+        typeof updateData.profileImage === 'string' &&
+        updateData.profileImage.startsWith('file://')) ||
+        updateData.profileImage.startsWith('data:image/'),
+    );
     if (
       updateData.profileImage &&
       typeof updateData.profileImage === 'string' &&
-      updateData.profileImage.startsWith('file://')
+      (updateData.profileImage.startsWith('file://') ||
+        updateData.profileImage.startsWith('data:image/'))
     ) {
+      console.log('*************************');
       const formData = new FormData();
       formData.append('file', {
         uri: updateData.profileImage,
         type: 'image/jpeg',
         name: 'upload.jpg',
       });
+      console.log('=====================');
       formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
-
+      console.log('&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&');
       const response = await fetch(CLOUDINARY_URL, {
         method: 'POST',
         body: formData,
       });
+      console.log('########################');
       const responseData = await response.json();
       console.log(
         'responseData---------',
@@ -322,21 +359,23 @@ export const updateUserData = async (uid, updateData) => {
   }
 };
 
-export const createNotification = async notification => {
+export const createNotification = async (fromId, toId) => {
   try {
     const user = auth().currentUser;
+    console.log('user---------', user);
     if (!user) {
       throw new Error('User not authenticated');
     }
 
     const notificationData = {
-      fromId: '7UMCTcRXfNPOi3xNd3ha297qhJF2',
-      toId: 'GbsbBUL7GBVqfH2gIdPtjwUao0n1',
+      fromId,
+      toId,
       notificationType: NOTIFICATION_TYPES.APPOINTMENT_REQUEST,
       createdAt: new Date(),
       isRead: false,
       message: 'Sent an appointment request',
     };
+    console.log('notificationData------------', notificationData);
 
     const docRef = await firestore()
       .collection('notifications')
@@ -480,5 +519,45 @@ export const getNotificationsCountByCustomerId = async customerId => {
   } catch (error) {
     console.error('Error fetching notifications:', error);
     return 0;
+  }
+};
+
+export const updateCustomer = async (uid, dataToUpdate) => {
+  console.log('UID-----------', uid);
+  console.log('data to update--------', dataToUpdate);
+
+  try {
+    const db = getFirestore(); // ✅ modular way
+    const customerRef = doc(db, 'customers', uid); // ✅ use doc()
+    const docSnapshot = await getDoc(customerRef);
+
+    if (!docSnapshot.exists()) {
+      return { success: false, message: 'Customer not found' };
+    }
+
+    await updateDoc(customerRef, dataToUpdate); // ✅ modular update
+
+    return { success: true };
+  } catch (error) {
+    console.error('Error updating customer:', error);
+    return { success: false, error };
+  }
+};
+
+export const getReviews = async placeId => {
+  const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=name,rating,reviews&key=${GOOGLE_MAPS_API_KEY}`;
+  try {
+    const res = await axios.get(url);
+    const reviewResponse = {
+      rating: 0,
+      reviews: [],
+    };
+    if (res && res.data && res.data?.result) {
+      return res.data.result;
+    } else {
+      return reviewResponse;
+    }
+  } catch (error) {
+    return error;
   }
 };

@@ -30,7 +30,7 @@ import { primaryColor } from './constants/colors';
 import { AuthContext, AuthProvider } from './context/AuthContext';
 import SearchResultsScreen from './screens/SearchResultsScreen/SearchResultsScreen';
 import FirebaseNotificationService from './apis/FirebaseNotificationService';
-import { auth } from './config/firebase';
+import { auth } from './config/firebase'; // Keep this for direct Firebase access if needed
 import EditProfileScreen from './screens/EditProfileScreen/EditProfileScreen';
 import AllNotificationScreen from './screens/AllNotificationScreen/AllNotificationScreen';
 import NofificationDetailsScreen from './screens/NofificationDetailsScreen/NofificationDetailsScreen';
@@ -38,8 +38,6 @@ import NofificationDetailsScreen from './screens/NofificationDetailsScreen/Nofif
 const Tab = createMaterialBottomTabNavigator();
 const Drawer = createDrawerNavigator();
 const Stack = createStackNavigator();
-
-// const { user, loading } = useContext(AuthContext);
 
 function HomeStack() {
   return (
@@ -56,12 +54,10 @@ function HomeStack() {
         name="BeautyExpertDetailsScreen"
         component={BeautyExpertDetailsScreen}
       />
-      {/* SearchResultsScreen */}
       <Stack.Screen
         name="SearchResultsScreen"
         component={SearchResultsScreen}
       />
-      {/*  */}
       <Stack.Screen
         name="AllNotificationScreen"
         component={AllNotificationScreen}
@@ -167,88 +163,110 @@ function MainAppStack() {
       />
       <Stack.Screen name="HelpSupportScreen" component={HelpSupportScreen} />
       <Stack.Screen name="EditProfileScreen" component={EditProfileScreen} />
+      <Stack.Screen name="ParlourDetails" component={ParlourDetails} />
+      <Stack.Screen
+        name="SearchResultsScreen"
+        component={SearchResultsScreen}
+      />
     </Stack.Navigator>
   );
 }
 
 export default function App() {
-  const [isSignedIn, setIsSignedIn] = useState(false);
+  const { user, userData, loading, isEmailVerified } = useContext(AuthContext);
 
-  const { user, loading } = useContext(AuthContext);
-
-  // const authContext = useMemo(
-  //   () => ({
-  //     signIn: () => setIsSignedIn(true),
-  //     signOut: () => setIsSignedIn(false),
-  //   }),
-  //   [],
-  // );
-
-  const [isLoading, setIsLoading] = useState(false);
-
-  const [fcmToken, setFcmToken] = useState('');
+  const [notificationSetupComplete, setNotificationSetupComplete] =
+    useState(false);
 
   useEffect(() => {
-    const initializeApp = async () => {
-      try {
-        FirebaseNotificationService.setupNotificationHandlers();
+    const initializeNotifications = async () => {
+      console.log('*************************8', notificationSetupComplete);
+      if (!notificationSetupComplete) {
+        try {
+          FirebaseNotificationService.setupNotificationHandlers();
+          const hasPermission =
+            await FirebaseNotificationService.requestNotificationPermission();
 
-        const hasPermission =
-          await FirebaseNotificationService.requestNotificationPermission();
-
-        if (hasPermission) {
-          const token = await FirebaseNotificationService.getFCMToken();
-
-          setFcmToken(token);
+          if (hasPermission && user) {
+            const token = await FirebaseNotificationService.getFCMToken();
+            console.log('TOEN----------------', token);
+          }
+          setNotificationSetupComplete(true);
+        } catch (error) {
+          console.error('App initialization error:', error);
         }
-
-        setIsLoading(false);
-      } catch (error) {
-        console.error('App initialization error:', error);
-        setIsLoading(false);
       }
     };
 
-    initializeApp();
+    if (!loading) {
+      initializeNotifications();
+    }
+  }, [loading, user, notificationSetupComplete]);
 
-    const unsubscribeAuth = auth().onAuthStateChanged(async user => {
-      if (user) {
-        const token = await FirebaseNotificationService.getFCMToken();
-        setFcmToken(token);
+  const getInitialRoute = () => {
+    if (loading) {
+      return 'Splash';
+    }
+
+    if (userData) {
+      if (userData.emailVerified || isEmailVerified) {
+        return 'MainAppStack';
+      } else {
+        return 'OTPVerificationScreen';
       }
-    });
+    }
+    // No user, go through the onboarding/auth flow
+    return 'AuthScreen';
+  };
 
-    return () => {
-      unsubscribeAuth();
-    };
-  }, []);
+  const initialRouteName = getInitialRoute();
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <NavigationContainer>
         <Stack.Navigator screenOptions={{ headerShown: false }}>
-          {user ? (
-            <Stack.Screen name="MainAppStack" component={MainAppStack} />
-          ) : (
+          {initialRouteName === 'Splash' && (
+            <Stack.Screen name="Splash" component={SplashScreen} />
+          )}
+          {/* AuthScreen */}
+          {initialRouteName === 'Onboarding' && (
             <>
-              <Stack.Screen name="Splash" component={SplashScreen} />
               <Stack.Screen name="Onboarding" component={OnboardingScreen} />
               <Stack.Screen name="Welcome" component={WelcomeScreen} />
-              <Stack.Screen
-                name="SignIn"
-                component={SignInScreen}
-                initialParams={{ signIn: AuthContext.signIn }}
-              />
-              <Stack.Screen
-                name="SignUp"
-                component={SignUpScreen}
-                initialParams={{ signIn: AuthContext.signIn }}
-              />
+              <Stack.Screen name="SignIn" component={SignInScreen} />
+              <Stack.Screen name="SignUp" component={SignUpScreen} />
               <Stack.Screen
                 name="OTPVerificationScreen"
                 component={OTPVerificationScreen}
               />
             </>
+          )}
+          {initialRouteName === 'AuthScreen' && (
+            <>
+              <Stack.Screen name="SignIn" component={SignInScreen} />
+              <Stack.Screen name="SignUp" component={SignUpScreen} />
+              <Stack.Screen
+                name="OTPVerificationScreen"
+                component={OTPVerificationScreen}
+              />
+              <Stack.Screen name="Onboarding" component={OnboardingScreen} />
+              <Stack.Screen name="Welcome" component={WelcomeScreen} />
+            </>
+          )}
+
+          {initialRouteName === 'OTPVerificationScreen' && (
+            <>
+              {/* This ensures OTPVerificationScreen is accessible directly if needed */}
+              <Stack.Screen name="SignIn" component={SignInScreen} />
+              <Stack.Screen name="SignUp" component={SignUpScreen} />
+              <Stack.Screen
+                name="OTPVerificationScreen"
+                component={OTPVerificationScreen}
+              />
+            </>
+          )}
+          {initialRouteName === 'MainAppStack' && (
+            <Stack.Screen name="MainAppStack" component={MainAppStack} />
           )}
         </Stack.Navigator>
       </NavigationContainer>

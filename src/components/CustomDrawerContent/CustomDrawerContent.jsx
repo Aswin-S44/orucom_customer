@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import React, { useCallback, useContext, useState } from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
 import { DrawerContentScrollView } from '@react-navigation/drawer';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -7,6 +7,7 @@ import { primaryColor } from '../../constants/colors';
 import { AuthContext } from '../../context/AuthContext';
 import { DEFAULT_AVATAR } from '../../constants/images';
 import { generateRandomName } from '../../utils/utils';
+import { useFocusEffect } from '@react-navigation/native';
 
 const DrawerItem = ({ icon, label, onPress }) => (
   <TouchableOpacity onPress={onPress} style={styles.drawerItem}>
@@ -16,7 +17,26 @@ const DrawerItem = ({ icon, label, onPress }) => (
 );
 
 const CustomDrawerContent = props => {
-  const { user, userData, logout } = useContext(AuthContext);
+  const { user, userData, loading, refreshUser, logout } =
+    useContext(AuthContext); // Get refreshUser
+  const [refreshing, setRefreshing] = useState(false);
+
+  // Use useFocusEffect to refresh data when screen is focused
+  useFocusEffect(
+    useCallback(() => {
+      if (user?.uid) {
+        refreshUser(); // Fetch the latest user data from the backend
+      }
+    }, [user?.uid, refreshUser]),
+  );
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    if (user?.uid) {
+      await refreshUser();
+    }
+    setRefreshing(false);
+  }, [user?.uid, refreshUser]);
 
   return (
     <View style={styles.container}>
@@ -30,7 +50,7 @@ const CustomDrawerContent = props => {
             <Text style={styles.userName}>
               {userData?.fullName ?? generateRandomName()}
             </Text>
-            <Text style={styles.userPhone}>{userData?.phone ?? '_'}</Text>
+            <Text style={styles.userPhone}>{userData?.email ?? '_'}</Text>
           </View>
         </View>
 

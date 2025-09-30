@@ -18,6 +18,7 @@ import { primaryColor } from '../../constants/colors';
 import EmptyComponent from '../../components/EmptyComponent/EmptyComponent';
 import { Swipeable } from 'react-native-gesture-handler';
 import AllNotificationsScreenSkeleton from '../AllNotificationsScreenSkeleton/AllNotificationsScreenSkeleton';
+import { getNotificationTitle } from '../../constants/variables';
 
 const AllNotificationScreen = ({ navigation }) => {
   const [loading, setLoading] = useState(false);
@@ -32,7 +33,7 @@ const AllNotificationScreen = ({ navigation }) => {
       setLoading(false);
       setNotifications(res || []);
     }
-  }, [user]);
+  }, []);
 
   useEffect(() => {
     fetchNotifications();
@@ -82,7 +83,7 @@ const AllNotificationScreen = ({ navigation }) => {
           styles.notificationItem,
           item.isRead && styles.readNotification,
         ]}
-        onPress={() => handleNotificationPress(item)}
+        //onPress={() => handleNotificationPress(item)}
       >
         <Image
           source={{
@@ -92,8 +93,10 @@ const AllNotificationScreen = ({ navigation }) => {
         />
         <View style={styles.notificationContent}>
           <Text style={styles.notificationTitle}>
-            {item.notificationType === 'appointment_request'
-              ? 'Appointment Request'
+            {item.notificationType == 'appointment_accepted'
+              ? 'Appointment accepted'
+              : item.notificationType == 'appointment_rejected'
+              ? 'Appointment rejected'
               : 'Notification'}
           </Text>
           <Text style={styles.notificationMessage}>{item.message}</Text>
@@ -108,6 +111,7 @@ const AllNotificationScreen = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
+      {console.log('notifications----------------', notifications)}
       <StatusBar barStyle="light-content" />
       <View style={styles.header}>
         <Image

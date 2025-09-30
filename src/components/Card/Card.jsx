@@ -3,7 +3,7 @@ import { View, Text, Image, StyleSheet } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { NO_IMAGE } from '../../constants/images';
 
-const Card = ({ image, title, location, rating, status }) => {
+const Card = ({ image, title, location, rating, status, distance }) => {
   return (
     <View style={styles.card}>
       <View style={styles.imageContainer}>
@@ -22,12 +22,17 @@ const Card = ({ image, title, location, rating, status }) => {
           <View style={styles.statusBadge}>
             <Text style={styles.statusBadgeText}>{status}</Text>
           </View>
+          {distance && (
+            <View style={styles.distanceBadge}>
+              <Text style={styles.distanceBadgeText}>{distance}</Text>
+            </View>
+          )}
         </View>
       </View>
 
       <View style={styles.detailsContainer}>
         <Text style={styles.cardTitle}>{title}</Text>
-        <Text style={styles.cardLocation}>{location}</Text>
+        {/* <Text style={styles.cardLocation}>{location}</Text> */}
       </View>
     </View>
   );
@@ -83,6 +88,17 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
     justifyContent: 'center',
   },
+  distanceBadge: {
+    backgroundColor: '#EDE68E',
+    borderRadius: 20,
+    paddingHorizontal: 9,
+    paddingVertical: 5,
+    justifyContent: 'center',
+  },
+  distanceBadgeText: {
+    color: '#3B392B',
+    fontWeight: '600',
+  },
   statusBadgeText: {
     color: '#8E44AD',
     fontSize: 14,
@@ -92,7 +108,7 @@ const styles = StyleSheet.create({
     padding: 15,
   },
   cardTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 500,
     color: '#333',
     marginBottom: 4,
