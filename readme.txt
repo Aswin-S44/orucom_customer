@@ -10,3 +10,5 @@ emai is not sending automatically
 rating
 check logout
 reviews are not listing
+check distance in search 
+need to set teh corect status mesage

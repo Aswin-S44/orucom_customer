@@ -6,7 +6,6 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import Icon from 'react-native-vector-icons/FontAwesome';
-
 import HomeScreen from './screens/HomeScreen/HomeScreen';
 import ProfileScreen from './screens/ProfileScreen/ProfileScreen';
 import AllAppointments from './screens/AllAppointments/AllAppointments';
@@ -25,15 +24,14 @@ import OnboardingScreen from './screens/OnboardingScreen/OnboardingScreen';
 import WelcomeScreen from './screens/WelcomeScreen/WelcomeScreen';
 import SignInScreen from './screens/SignInScreen/SignInScreen';
 import SignUpScreen from './screens/SignUpScreen/SignUpScreen';
-
 import { primaryColor } from './constants/colors';
-import { AuthContext, AuthProvider } from './context/AuthContext';
+import { AuthContext } from './context/AuthContext';
 import SearchResultsScreen from './screens/SearchResultsScreen/SearchResultsScreen';
 import FirebaseNotificationService from './apis/FirebaseNotificationService';
-import { auth } from './config/firebase'; // Keep this for direct Firebase access if needed
 import EditProfileScreen from './screens/EditProfileScreen/EditProfileScreen';
 import AllNotificationScreen from './screens/AllNotificationScreen/AllNotificationScreen';
 import NofificationDetailsScreen from './screens/NofificationDetailsScreen/NofificationDetailsScreen';
+import SigninWithGoogleScreen from './screens/SigninWithGoogleScreen/SigninWithGoogleScreen';
 
 const Tab = createMaterialBottomTabNavigator();
 const Drawer = createDrawerNavigator();
@@ -174,7 +172,6 @@ function MainAppStack() {
 
 export default function App() {
   const { user, userData, loading, isEmailVerified } = useContext(AuthContext);
-
   const [notificationSetupComplete, setNotificationSetupComplete] =
     useState(false);
 
@@ -185,9 +182,8 @@ export default function App() {
           FirebaseNotificationService.setupNotificationHandlers();
           const hasPermission =
             await FirebaseNotificationService.requestNotificationPermission();
-
-          if (hasPermission && user) {
-            const token = await FirebaseNotificationService.getFCMToken();
+          if (hasPermission && user && !userData.fcmToken) {
+            await FirebaseNotificationService.getFCMToken();
           }
           setNotificationSetupComplete(true);
         } catch (error) {
@@ -195,25 +191,17 @@ export default function App() {
         }
       }
     };
-
     if (!loading) {
       initializeNotifications();
     }
-  }, [loading, user, notificationSetupComplete]);
+  }, [loading, user, notificationSetupComplete, userData]);
 
   const getInitialRoute = () => {
-    if (loading) {
-      return 'Splash';
-    }
-
+    if (loading) return 'Splash';
     if (userData) {
-      if (userData.emailVerified || isEmailVerified) {
-        return 'MainAppStack';
-      } else {
-        return 'OTPVerificationScreen';
-      }
+      if (userData.emailVerified || isEmailVerified) return 'MainAppStack';
+      else return 'OTPVerificationScreen';
     }
-    // No user, go through the onboarding/auth flow
     return 'AuthScreen';
   };
 
@@ -226,35 +214,14 @@ export default function App() {
           {initialRouteName === 'Splash' && (
             <Stack.Screen name="Splash" component={SplashScreen} />
           )}
-          {/* AuthScreen */}
-          {initialRouteName === 'Onboarding' && (
-            <>
-              <Stack.Screen name="Onboarding" component={OnboardingScreen} />
-              <Stack.Screen name="Welcome" component={WelcomeScreen} />
-              <Stack.Screen name="SignIn" component={SignInScreen} />
-              <Stack.Screen name="SignUp" component={SignUpScreen} />
-              <Stack.Screen
-                name="OTPVerificationScreen"
-                component={OTPVerificationScreen}
-              />
-            </>
-          )}
           {initialRouteName === 'AuthScreen' && (
-            <>
-              <Stack.Screen name="SignIn" component={SignInScreen} />
-              <Stack.Screen name="SignUp" component={SignUpScreen} />
-              <Stack.Screen
-                name="OTPVerificationScreen"
-                component={OTPVerificationScreen}
-              />
-              <Stack.Screen name="Onboarding" component={OnboardingScreen} />
-              <Stack.Screen name="Welcome" component={WelcomeScreen} />
-            </>
+            <Stack.Screen
+              name="SigninWithGoogleScreen"
+              component={SigninWithGoogleScreen}
+            />
           )}
-
           {initialRouteName === 'OTPVerificationScreen' && (
             <>
-              {/* This ensures OTPVerificationScreen is accessible directly if needed */}
               <Stack.Screen name="SignIn" component={SignInScreen} />
               <Stack.Screen name="SignUp" component={SignUpScreen} />
               <Stack.Screen

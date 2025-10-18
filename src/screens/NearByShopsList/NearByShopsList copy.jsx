@@ -54,8 +54,7 @@ const NearByShopsList = ({ navigation }) => {
         Math.sin(dLon / 2) *
         Math.sin(dLon / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    const distance = R * c;
-    return distance.toFixed(2);
+    return (R * c).toFixed(2);
   }, []);
 
   const requestLocationPermission = async () => {
@@ -63,7 +62,6 @@ const NearByShopsList = ({ navigation }) => {
       Platform.OS === 'ios'
         ? PERMISSIONS.IOS.LOCATION_WHEN_IN_USE
         : PERMISSIONS.ANDROID.ACCESS_FINE_LOCATION;
-
     const permissionStatus = await check(permission);
     if (permissionStatus !== RESULTS.GRANTED) {
       const reqStatus = await request(permission);
@@ -80,53 +78,13 @@ const NearByShopsList = ({ navigation }) => {
     }
   };
 
-  // const getUserLocation = useCallback(async () => {
-  //   return new Promise(resolve => {
-  //     Geolocation.getCurrentPosition(
-  //       async position => {
-  //         setIsLocationEnabled(true);
-  //         updateUserData({
-  //           ...userData,
-  //           coordinates: {
-  //             latitude: position.coords.latitude,
-  //             longitude: position.coords.longitude,
-  //           },
-  //         });
-  //         resolve(true);
-  //       },
-  //       error => {
-  //         if (error.code === 2) {
-  //           setIsLocationEnabled(false);
-  //         } else {
-  //           console.log('Error getting location:', error.message);
-  //         }
-  //         resolve(false);
-  //       },
-  //       { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 },
-  //     );
-  //   });
-  // }, [userData]);
-
-  // const checkAndSetLocation = useCallback(async () => {
-  //   setLoading(true);
-  //   const permissionGranted = await requestLocationPermission();
-
-  //   if (permissionGranted) {
-  //     const locationEnabled = await getUserLocation();
-  //     if (locationEnabled) {
-  //       setMapLoaded(false);
-  //     }
-  //   }
-  //   setLoading(false);
-  // }, [getUserLocation]);
-
-  const getUserLocation = useCallback(async currentData => {
+  const getUserLocation = useCallback(async () => {
     return new Promise(resolve => {
       Geolocation.getCurrentPosition(
-        async position => {
+        position => {
           setIsLocationEnabled(true);
           updateUserData({
-            ...currentData,
+            ...userData,
             coordinates: {
               latitude: position.coords.latitude,
               longitude: position.coords.longitude,
@@ -135,11 +93,7 @@ const NearByShopsList = ({ navigation }) => {
           resolve(true);
         },
         error => {
-          if (error.code === 2) {
-            setIsLocationEnabled(false);
-          } else {
-            console.log('Error getting location:', error.message);
-          }
+          if (error.code === 2) setIsLocationEnabled(false);
           resolve(false);
         },
         { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 },
@@ -147,32 +101,18 @@ const NearByShopsList = ({ navigation }) => {
     });
   }, []);
 
-  const checkAndSetLocation = useCallback(
-    async (retries = 3) => {
-      setLoading(true);
-      const permissionGranted = await requestLocationPermission();
-      if (permissionGranted) {
-        for (let i = 0; i < retries; i++) {
-          const locationEnabled = await getUserLocation(userData);
-          if (locationEnabled) {
-            setMapLoaded(false);
-            break;
-          }
-          await new Promise(r => setTimeout(r, 2000));
-        }
-      }
-      setLoading(false);
-    },
-    [getUserLocation],
-  );
+  const checkAndSetLocation = useCallback(async () => {
+    setLoading(true);
+    const permissionGranted = await requestLocationPermission();
+    if (permissionGranted) {
+      const locationEnabled = await getUserLocation();
+      if (locationEnabled) setMapLoaded(false);
+    }
+    setLoading(false);
+  }, [getUserLocation]);
 
   useEffect(() => {
     checkAndSetLocation();
-  }, []);
-
-  useEffect(() => {
-    checkAndSetLocation();
-
     const handleAppStateChange = async nextAppState => {
       if (
         appState.current.match(/inactive|background/) &&
@@ -182,96 +122,77 @@ const NearByShopsList = ({ navigation }) => {
       }
       appState.current = nextAppState;
     };
-
     const appStateSubscription = AppState.addEventListener(
       'change',
       handleAppStateChange,
     );
-
     const unsubscribeFocus = navigation.addListener('focus', () => {
       checkAndSetLocation();
     });
-
     return () => {
       unsubscribeFocus();
       appStateSubscription.remove();
     };
-  }, [navigation, checkAndSetLocation]);
+  }, [ checkAndSetLocation]);
 
-  useEffect(
-    () => {
+  useEffect(() => {
+    const fetchShops = async () => {
       if (hasLocationPermission && isLocationEnabled && userData?.coordinates) {
-        const fetchShops = async () => {
-          try {
-            setLoading(true);
-            const res = await getAllParlours();
-
-            if (res && res.length > 0) {
-              const shopsWithDistance = res.map(parlour => {
-                if (
-                  userData?.coordinates &&
-                  parlour?.geolocation?.latitude &&
-                  parlour?.geolocation?.longitude
-                ) {
-                  const origin = {
-                    latitude: userData.coordinates.latitude,
-                    longitude: userData.coordinates.longitude,
-                  };
-                  const destination = {
-                    latitude: parlour?.geolocation?.latitude,
-                    longitude: parlour?.geolocation?.longitude,
-                  };
-                  const distance = calculateDistance(
-                    origin?.latitude,
-                    origin?.longitude,
-                    destination?.latitude,
-                    destination?.longitude,
-                  );
-                  return { ...parlour, distance: distance };
-                }
-                return { ...parlour, distance: null };
-              });
-
-              setShops(shopsWithDistance);
-              if (mapRef.current) {
-                const coords = [
-                  {
-                    latitude: userData?.coordinates?.latitude,
-                    longitude: userData?.coordinates?.longitude,
-                  },
-                  ...res.map(s => ({
-                    latitude: s.geolocation?.latitude,
-                    longitude: s.geolocation?.longitude,
-                  })),
-                ];
-                mapRef.current.fitToCoordinates(coords, {
-                  edgePadding: { top: 100, right: 100, bottom: 250, left: 100 },
-                  animated: true,
-                });
+        try {
+          setLoading(true);
+          const res = await getAllParlours();
+          if (res && res.length > 0) {
+            const shopsWithDistance = res.map(parlour => {
+              if (
+                userData?.coordinates &&
+                parlour?.geolocation?.latitude &&
+                parlour?.geolocation?.longitude
+              ) {
+                const distance = calculateDistance(
+                  userData.coordinates.latitude,
+                  userData.coordinates.longitude,
+                  parlour.geolocation.latitude,
+                  parlour.geolocation.longitude,
+                );
+                return { ...parlour, distance };
               }
-            } else {
-              setShops([]);
+              return { ...parlour, distance: null };
+            });
+            setShops(shopsWithDistance);
+            if (mapRef.current) {
+              const coords = [
+                {
+                  latitude: userData.coordinates.latitude,
+                  longitude: userData.coordinates.longitude,
+                },
+                ...res.map(s => ({
+                  latitude: s.geolocation?.latitude,
+                  longitude: s.geolocation?.longitude,
+                })),
+              ];
+              mapRef.current.fitToCoordinates(coords, {
+                edgePadding: { top: 100, right: 100, bottom: 250, left: 100 },
+                animated: true,
+              });
             }
-          } catch (err) {
-            setShops([]);
-          } finally {
-            setLoading(false);
-          }
-        };
-        fetchShops();
+          } else setShops([]);
+        } catch {
+          setShops([]);
+        } finally {
+          setLoading(false);
+        }
       } else {
         setLoading(false);
         setShops([]);
       }
-    },
-    [
-      calculateDistance,
-      hasLocationPermission,
-      isLocationEnabled, // Added to dependency array
-      // userData?.coordinates,
-    ],
-    [],
-  );
+    };
+    fetchShops();
+  }, [
+    calculateDistance,
+    hasLocationPermission,
+    isLocationEnabled,
+    //userData?.coordinates,
+  ]);
 
   const handleMarkerPress = useCallback(
     parlour => {
@@ -280,12 +201,12 @@ const NearByShopsList = ({ navigation }) => {
         mapRef.current.fitToCoordinates(
           [
             {
-              latitude: userData?.coordinates?.latitude,
-              longitude: userData?.coordinates?.longitude,
+              latitude: userData.coordinates.latitude,
+              longitude: userData.coordinates.longitude,
             },
             {
-              latitude: parlour?.geolocation?.latitude,
-              longitude: parlour?.geolocation?.longitude,
+              latitude: parlour.geolocation.latitude,
+              longitude: parlour.geolocation.longitude,
             },
           ],
           {
@@ -307,7 +228,7 @@ const NearByShopsList = ({ navigation }) => {
     }
   }, []);
 
-  if (!hasLocationPermission && !loading) {
+  if (!hasLocationPermission && !loading)
     return (
       <View style={styles.permissionContainer}>
         <Text style={styles.permissionText}>
@@ -321,9 +242,8 @@ const NearByShopsList = ({ navigation }) => {
         </TouchableOpacity>
       </View>
     );
-  }
 
-  if (!isLocationEnabled && !loading) {
+  if (!isLocationEnabled && !loading)
     return (
       <View style={styles.permissionContainer}>
         <Text style={styles.permissionText}>
@@ -331,16 +251,15 @@ const NearByShopsList = ({ navigation }) => {
         </Text>
       </View>
     );
-  }
 
   return (
     <View style={styles.container}>
       <StatusBar backgroundColor={primaryColor} barStyle="light-content" />
-      {loading || !mapLoaded ? (
+      {loading && (
         <View style={styles.loadingOverlay}>
           <ActivityIndicator size="large" color={primaryColor} />
         </View>
-      ) : null}
+      )}
       <MapView
         ref={mapRef}
         provider={PROVIDER_GOOGLE}
@@ -364,116 +283,75 @@ const NearByShopsList = ({ navigation }) => {
             pinColor="red"
           />
         )}
-
-        {shops &&
-          shops.length > 0 &&
-          shops.map(parlour => (
-            <Marker
-              key={parlour.id}
-              coordinate={{
-                latitude: parlour?.geolocation?.latitude,
-                longitude: parlour?.geolocation?.longitude,
-              }}
-              title={parlour.parlourName || 'No Name'}
-              description={parlour.address || 'No Address'}
-              onPress={() => handleMarkerPress(parlour)}
-            >
-              <View style={styles.markerOuter}>
-                <View style={styles.markerInner} />
-              </View>
-            </Marker>
-          ))}
+        {shops.map(parlour => (
+          <Marker
+            key={parlour.id}
+            coordinate={{
+              latitude: parlour.geolocation.latitude,
+              longitude: parlour.geolocation.longitude,
+            }}
+            title={parlour.parlourName || 'No Name'}
+            description={parlour.address || 'No Address'}
+            onPress={() => handleMarkerPress(parlour)}
+          >
+            <View style={styles.markerOuter}>
+              <View style={styles.markerInner} />
+            </View>
+          </Marker>
+        ))}
         {selectedParlour && userData?.coordinates && (
           <MapViewDirections
-            origin={{
-              latitude: userData.coordinates.latitude,
-              longitude: userData.coordinates.longitude,
-            }}
-            destination={{
-              latitude: selectedParlour?.geolocation?.latitude,
-              longitude: selectedParlour?.geolocation?.longitude,
-            }}
+            origin={userData.coordinates}
+            destination={selectedParlour.geolocation}
             apikey={GOOGLE_MAPS_API_KEY}
             strokeWidth={4}
             strokeColor={primaryColor}
-            optimizeWaypoints
             onReady={onDirectionsReady}
           />
         )}
       </MapView>
 
       <View style={styles.header}>
-        <View>
-          <TouchableOpacity
-            style={styles.searchBar}
-            onPress={() => navigation.navigate('SearchResultsScreen')}
-          >
-            <TextInput
-              placeholder="Spa, Facial, Makeup"
-              placeholderTextColor="#FFFFFF"
-              style={styles.searchInput}
-              editable={false}
-            />
-            <Ionicons name="search" size={24} color="#fff" />
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity
+          style={styles.searchBar}
+          onPress={() => navigation.navigate('SearchResultsScreen')}
+        >
+          <TextInput
+            placeholder="Spa, Facial, Makeup"
+            placeholderTextColor="#FFFFFF"
+            style={styles.searchInput}
+            editable={false}
+          />
+          <Ionicons name="search" size={24} color="#fff" />
+        </TouchableOpacity>
       </View>
 
       <View style={styles.mapTypeContainer}>
-        <TouchableOpacity
-          style={[
-            styles.mapTypeButton,
-            mapType === 'standard' && styles.selectedMapType,
-          ]}
-          onPress={() => setMapType('standard')}
-        >
-          <Text
+        {['standard', 'satellite', 'hybrid'].map(type => (
+          <TouchableOpacity
+            key={type}
             style={[
-              styles.mapTypeButtonText,
-              mapType === 'standard' && styles.selectedMapText,
+              styles.mapTypeButton,
+              mapType === type && styles.selectedMapType,
             ]}
+            onPress={() => setMapType(type)}
           >
-            Standard
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[
-            styles.mapTypeButton,
-            mapType === 'satellite' && styles.selectedMapType,
-          ]}
-          onPress={() => setMapType('satellite')}
-        >
-          <Text
-            style={[
-              styles.mapTypeButtonText,
-              mapType === 'satellite' && styles.selectedMapText,
-            ]}
-          >
-            Satellite
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[
-            styles.mapTypeButton,
-            mapType === 'hybrid' && styles.selectedMapType,
-          ]}
-          onPress={() => setMapType('hybrid')}
-        >
-          <Text
-            style={[
-              styles.mapTypeButtonText,
-              mapType === 'hybrid' && styles.selectedMapText,
-            ]}
-          >
-            Hybrid
-          </Text>
-        </TouchableOpacity>
+            <Text
+              style={[
+                styles.mapTypeButtonText,
+                mapType === type && styles.selectedMapText,
+              ]}
+            >
+              {type.charAt(0).toUpperCase() + type.slice(1)}
+            </Text>
+          </TouchableOpacity>
+        ))}
       </View>
 
       <View style={styles.cardListContainer}>
-        {loading || !mapLoaded ? (
+        {loading ? (
           <CardSkeleton />
-        ) : !loading && shops.length === 0 ? (
+        ) : shops.length === 0 ? (
           <NoShopsAvailable />
         ) : (
           <FlatList
@@ -495,12 +373,12 @@ const NearByShopsList = ({ navigation }) => {
                 }
               >
                 <Card
-                  image={item?.profileImage}
-                  title={item?.parlourName}
-                  location={item?.address}
-                  rating={item?.totalRating ?? 0}
-                  status={item?.status ?? 'closed'}
-                  distance={item?.distance ? `${item.distance} km` : 'N/A'}
+                  image={item.profileImage}
+                  title={item.parlourName}
+                  location={item.address}
+                  rating={item.totalRating ?? 0}
+                  status={item.status ?? 'closed'}
+                  distance={item.distance ? `${item.distance} km` : 'N/A'}
                 />
               </TouchableOpacity>
             )}
@@ -530,7 +408,7 @@ const styles = StyleSheet.create({
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    backgroundColor: 'rgba(255,255,255,0.3)',
     borderRadius: 12,
     paddingHorizontal: 15,
   },
@@ -544,7 +422,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: 'rgba(142, 68, 173, 0.3)',
+    backgroundColor: 'rgba(142,68,173,0.3)',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -568,7 +446,7 @@ const styles = StyleSheet.create({
     top: 130,
     right: 20,
     flexDirection: 'row',
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    backgroundColor: 'rgba(255,255,255,0.9)',
     borderRadius: 10,
     padding: 5,
   },
@@ -607,7 +485,7 @@ const styles = StyleSheet.create({
   },
   loadingOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    backgroundColor: 'rgba(255,255,255,0.8)',
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 100,

@@ -57,6 +57,7 @@ const ServiceItem = ({ item, shopId }) => {
 
 const OfferItem = ({ item, shopId }) => {
   const navigation = useNavigation();
+
   return (
     <View style={styles.card}>
       <Image
@@ -71,7 +72,10 @@ const OfferItem = ({ item, shopId }) => {
       <View style={styles.cardTextContainer}>
         <Text style={styles.cardTitle}>{item.serviceName}</Text>
 
-        <OfferText regularPrice={500} offerPrice={450} />
+        <OfferText
+          regularPrice={item?.service?.servicePrice ?? 0}
+          offerPrice={item?.offerPrice ?? 0}
+        />
       </View>
       <TouchableOpacity
         style={[
@@ -104,13 +108,17 @@ const ServiceSection = ({ shopId, navigation }) => {
   const [loading, setLoading] = useState(false);
   const [offers, setOffers] = useState([]);
   const [offersLoading, setOffersLoading] = useState(false);
-
+  console.log('SHOPD ID------------------', shopId ? shopId : 'no shopID');
   useEffect(() => {
     if (shopId) {
       const fetchServices = async () => {
         try {
+          console.log('11111111111111111111111111');
           setLoading(true);
+
           const res = await getServicesByShop(shopId);
+          console.log('22222222222222222222222');
+
           setLoading(false);
 
           if (res && res.length > 0) {

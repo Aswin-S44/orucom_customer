@@ -27,6 +27,9 @@ const NofificationDetailsScreen = ({ route, navigation }) => {
   }, [notification]);
 
   const formatDate = (seconds, nanoseconds) => {
+    if (seconds === undefined || nanoseconds === undefined) {
+      return 'N/A';
+    }
     return moment
       .unix(seconds + nanoseconds / 1_000_000_000)
       .format('MMMM Do YYYY, h:mm a');
@@ -61,71 +64,114 @@ const NofificationDetailsScreen = ({ route, navigation }) => {
           <Text style={styles.title}>Notification Details</Text>
 
           <View style={styles.card}>
-            {notification.customer && notification.customer.profileImage ? (
-              <Image
-                source={getProfileImageSource(
-                  notification.customer.profileImage,
-                )}
-                style={styles.profileImage}
-              />
-            ) : (
-              <View style={styles.placeholderImage}>
-                <Icon name="person" size={40} color="#bbb" />
-              </View>
-            )}
-
+            <Image
+              source={{
+                uri: notification?.shop?.profileImage || DEFAULT_AVATAR,
+              }}
+              style={styles.profileImage}
+            />
             <Text style={styles.customerName}>
-              {notification.customer?.fullName ||
-                notification.customer?.firstName ||
-                'Unknown User'}
+              {notification.shop?.parlourName || 'N/A'}
             </Text>
             <Text style={styles.notificationMessage}>
-              {notification.message}
+              "{notification.message || 'No message provided.'}"
             </Text>
+
             <View style={styles.detailRow}>
-              <Text style={styles.label}>Type:</Text>
+              <Text style={styles.label}>Notification Type:</Text>
               <Text style={styles.value}>
-                {notification.notificationType?.replace(/_/g, ' ') || 'N/A'}
+                {notification.notificationType
+                  ? notification.notificationType
+                      .replace(/_/g, ' ')
+                      .replace(/\b\w/g, char => char.toUpperCase())
+                  : 'N/A'}
               </Text>
             </View>
 
             <View style={styles.detailRow}>
-              <Text style={styles.label}>Date:</Text>
+              <Text style={styles.label}>Status:</Text>
+              <Text
+                style={[
+                  styles.value,
+                  notification.isRead ? styles.read : styles.unread,
+                ]}
+              >
+                {notification.isRead ? 'Read' : 'Unread'}
+              </Text>
+            </View>
+
+            <View style={styles.detailRow}>
+              <Text style={styles.label}>Received On:</Text>
               <Text style={styles.value}>
-                {notification.createdAt
-                  ? formatDate(
-                      notification.createdAt._seconds,
-                      notification.createdAt._nanoseconds,
-                    )
-                  : 'N/A'}
+                {formatDate(
+                  notification.createdAt?._seconds,
+                  notification.createdAt?._nanoseconds,
+                )}
               </Text>
             </View>
 
             {notification.shop && (
               <View style={styles.customerInfo}>
+                <Text style={styles.customerInfoTitle}>Shop Details</Text>
+                <View style={styles.detailRow}>
+                  <Text style={styles.label}>Address:</Text>
+                  <Text style={styles.value}>
+                    {notification.shop.address || 'N/A'}
+                  </Text>
+                </View>
+              </View>
+            )}
+
+            {notification.appointment && (
+              <View style={styles.customerInfo}>
                 <Text style={styles.customerInfoTitle}>
-                  Customer Information:
+                  Appointment Details
                 </Text>
                 <View style={styles.detailRow}>
-                  <Text style={styles.label}>Email:</Text>
+                  <Text style={styles.label}>Status:</Text>
                   <Text style={styles.value}>
-                    {notification.shop.email || 'N/A'}
+                    {notification.appointment.appointmentStatus
+                      ? notification.appointment.appointmentStatus.replace(
+                          /\b\w/g,
+                          char => char.toUpperCase(),
+                        )
+                      : 'N/A'}
                   </Text>
                 </View>
                 <View style={styles.detailRow}>
-                  <Text style={styles.label}>Phone:</Text>
+                  <Text style={styles.label}>Date:</Text>
                   <Text style={styles.value}>
-                    {notification.customer.phone || 'N/A'}
+                    {notification.appointment.selectedDate || 'N/A'}
                   </Text>
                 </View>
-                {notification.customer.about ? (
-                  <View style={styles.detailRow}>
-                    <Text style={styles.label}>About:</Text>
-                    <Text style={styles.value}>
-                      {notification.customer.about}
+                <View style={styles.detailRow}>
+                  <Text style={styles.label}>Time:</Text>
+                  <Text style={styles.value}>
+                    {notification.appointment.selectedTime || 'N/A'}
+                  </Text>
+                </View>
+                <View style={styles.detailRow}>
+                  <Text style={styles.label}>Total Amount:</Text>
+                  <Text style={styles.value}>
+                    ₹{notification.appointment.totalAmount || '0'}
+                  </Text>
+                </View>
+              </View>
+            )}
+
+            {notification.services && notification.services.length > 0 && (
+              <View style={styles.customerInfo}>
+                <Text style={styles.customerInfoTitle}>Services Booked</Text>
+                {notification.services.map((service, index) => (
+                  <View key={service.id || index} style={styles.serviceItem}>
+                    <Text style={styles.serviceName}>
+                      {service.serviceName || 'N/A'}
+                    </Text>
+                    <Text style={styles.servicePrice}>
+                      ₹{service.servicePrice || '0'}
                     </Text>
                   </View>
-                ) : null}
+                ))}
               </View>
             )}
           </View>
@@ -195,7 +241,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
-    elevation: 5,
+    // elevation: 5,
     alignItems: 'center',
   },
   profileImage: {
@@ -203,17 +249,6 @@ const styles = StyleSheet.create({
     height: 80,
     borderRadius: 40,
     marginBottom: 15,
-    borderWidth: 2,
-    borderColor: '#800080',
-  },
-  placeholderImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    marginBottom: 15,
-    backgroundColor: '#f0f0f0',
-    justifyContent: 'center',
-    alignItems: 'center',
     borderWidth: 2,
     borderColor: '#800080',
   },
@@ -242,11 +277,12 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
     color: '#666',
+    flex: 1,
   },
   value: {
     fontSize: 15,
     color: '#333',
-    flexShrink: 1,
+    flex: 2,
     textAlign: 'right',
   },
   read: {
@@ -271,6 +307,24 @@ const styles = StyleSheet.create({
     color: '#800080',
     marginBottom: 15,
     alignSelf: 'center',
+  },
+  serviceItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+    marginBottom: 5,
+    paddingHorizontal: 10,
+  },
+  serviceName: {
+    fontSize: 15,
+    color: '#333',
+    flex: 1,
+  },
+  servicePrice: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#800080',
+    textAlign: 'right',
   },
 });
 

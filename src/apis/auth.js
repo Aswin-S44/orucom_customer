@@ -5,6 +5,20 @@ import { BACKEND_URL, USER_TYPES } from '../constants/variables';
 import axios from 'axios';
 import { generateRandomName } from '../utils/utils';
 
+export const googleSignUp = async(data)=>{
+  await firestore().collection('customers').doc(user.uid).set({
+    uid: user.uid,
+    fullName: generateRandomName(),
+    phone: '',
+    email,
+    createdAt: firestore.FieldValue.serverTimestamp(),
+    profileImage: DEFAULT_AVATAR,
+    fcmToken: null,
+    emailVerified: false,
+    otp: '123456',
+  });
+}
+
 export const signup = async (email, password) => {
   try {
     const userCredential = await auth().createUserWithEmailAndPassword(

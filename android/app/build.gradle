@@ -81,7 +81,7 @@ android {
 
     namespace "com.app"
     defaultConfig {
-        applicationId "saloon.beauty.customer.app"
+        applicationId "saloon.customer.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
@@ -113,13 +113,19 @@ android {
             signingConfig signingConfigs.debug
             minifyEnabled enableProguardInReleaseBuilds
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
+            //minifyEnabled false
+            shrinkResources false
         }
     }
+    
+
 }
 
 dependencies {
     // The version of react-native is set by the React Native Gradle Plugin
     implementation("com.facebook.react:react-android")
+    implementation 'com.google.android.gms:play-services-location:21.0.1'
+    
 
     if (hermesEnabled.toBoolean()) {
         implementation("com.facebook.react:hermes-android")
@@ -133,6 +139,8 @@ dependencies {
     }
     implementation 'com.google.android.gms:play-services-maps:18.1.0' // Use the latest version
     implementation 'com.google.android.gms:play-services-base:18.1.0'
+    // implementation project(':@react-native-google-signin_google-signin')
+
 }
 
 apply from: "../../node_modules/react-native-vector-icons/fonts.gradle"

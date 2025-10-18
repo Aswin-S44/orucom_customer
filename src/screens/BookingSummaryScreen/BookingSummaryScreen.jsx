@@ -19,6 +19,7 @@ import { AuthContext } from '../../context/AuthContext';
 import {
   createAppointment,
   createNotification,
+  getOfferByServiceAndShop,
   sendAppointmentNofification,
 } from '../../apis/services';
 import { firestore } from '../../config/firebase';
@@ -61,19 +62,50 @@ const BookingSummaryScreen = ({ route, navigation }) => {
 
   useEffect(() => {
     if (route.params) {
-      const { selectedDate, selectedTime, selectedServices, selectedExpert } =
-        route.params;
-      setSelectedDate(selectedDate);
-      setSelectedTime(`${selectedTime.startTime} - ${selectedTime.endTime}`);
-      setSelectedServices(selectedServices);
-      setSelectedExpert(selectedExpert.id);
-      setSelectedSlot(selectedTime);
+      const fetchData = async () => {
+        const { selectedDate, selectedTime, selectedServices, selectedExpert } =
+          route.params;
 
-      const calculatedSubtotal = selectedServices.reduce(
-        (sum, service) => sum + service.servicePrice,
-        0,
-      );
-      setSubtotal(calculatedSubtotal);
+        const [year, month, day] = selectedDate.split('-');
+        const formattedDate = `${day}-${month}-${year}`;
+        setSelectedDate(formattedDate);
+
+        const formatTime = time => {
+          const [hours, minutes] = time.split(':');
+          const hour = parseInt(hours, 10);
+          const ampm = hour >= 12 ? 'pm' : 'am';
+          const formattedHour = hour % 12 === 0 ? 12 : hour % 12;
+          return `${formattedHour}${ampm}`;
+        };
+
+        const formattedStartTime = formatTime(selectedTime.startTime);
+        const formattedEndTime = formatTime(selectedTime.endTime);
+        setSelectedTime(`${formattedStartTime} - ${formattedEndTime}`);
+
+        const updatedServices = await Promise.all(
+          selectedServices.map(async service => {
+            const offer = await getOfferByServiceAndShop(
+              service.id,
+              service.shopId,
+            );
+            if (offer) {
+              return { ...service, offerPrice: offer.offerPrice };
+            }
+            return service;
+          }),
+        );
+        setSelectedServices(updatedServices);
+
+        setSelectedExpert(selectedExpert.id);
+        setSelectedSlot(selectedTime);
+
+        const calculatedSubtotal = selectedServices.reduce(
+          (sum, service) => sum + service.servicePrice,
+          0,
+        );
+        setSubtotal(calculatedSubtotal);
+      };
+      fetchData();
     }
   }, [route.params]);
 
@@ -114,16 +146,27 @@ const BookingSummaryScreen = ({ route, navigation }) => {
 
       try {
         const res = await createAppointment(bookingData);
-        // await createNotification(user.uid, route.params.shopId);
+        console.log(
+          'APPOINTMENT**************8',
+          res ? res : 'no appoitnemtne',
+        );
         await updateSlotInFirestore(selectedSlot.id, { isAvailable: false });
 
         if (res && res.success) {
           setModalVisible(true);
-          // await createNotification(user.uid, route.params.shopId);
           await sendAppointmentNofification(
             user.uid,
             route.params.shopId,
             APPOINTMENT_TYPES.BOOKING_REQUEST_SENT,
+            res?.id ?? null,
+          );
+          //setConfirming(false);
+          navigation.navigate('Appointment', { newAppointment: true });
+          await sendAppointmentNofification(
+            user.uid,
+            route.params.shopId,
+            APPOINTMENT_TYPES.BOOKING_REQUEST_SENT,
+            res?.id ?? null,
           );
         }
       } catch (error) {
@@ -159,8 +202,6 @@ const BookingSummaryScreen = ({ route, navigation }) => {
               style={styles.okButton}
               onPress={() => {
                 setModalVisible(false);
-
-                navigation.navigate('Appointment');
               }}
             >
               <Text style={styles.okButtonText}>OK</Text>

@@ -7,12 +7,11 @@ import {
   ScrollView,
   StyleSheet,
   StatusBar,
-  Platform,
   Alert,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { Calendar } from 'react-native-calendars';
-import { bookedColor, lightPurple, primaryColor } from '../../constants/colors';
+import { lightPurple, primaryColor } from '../../constants/colors';
 import { getExpertsByShopId, getServiceById } from '../../apis/services';
 import BookingScreenSkeleton from '../../components/BookingScreenSkeleton/BookingScreenSkeleton';
 import { NO_IMAGE } from '../../constants/images';
@@ -22,7 +21,10 @@ import { AuthContext } from '../../context/AuthContext';
 
 const BookingScreen = ({ route, navigation }) => {
   const { user, userData } = useContext(AuthContext);
-  const [selectedExpert, setSelectedExpert] = useState(null);
+
+  const [selectedExpert, setSelectedExpert] = useState(
+    route?.selectedExpert ?? null,
+  );
   const [selectedTime, setSelectedTime] = useState(null);
   const [selectedServices, setSelectedServices] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -31,6 +33,7 @@ const BookingScreen = ({ route, navigation }) => {
   const [selectedDate, setSelectedDate] = useState(
     moment().format('YYYY-MM-DD'),
   );
+  const [expertsLoading, setExpertsLoading] = useState(false);
 
   const formattedDate = selectedDate;
   const slotsForDate = slots[formattedDate] || [];
@@ -78,12 +81,15 @@ const BookingScreen = ({ route, navigation }) => {
       const fetchShopExperts = async () => {
         try {
           setLoading(true);
+          setExpertsLoading(true);
           const res = await getExpertsByShopId(shopId);
           setLoading(false);
 
           setExperts(res);
         } catch (error) {
           console.log('Error while fetching experts : ', error);
+        } finally {
+          setExpertsLoading(false);
         }
       };
       fetchShopExperts();
@@ -121,6 +127,24 @@ const BookingScreen = ({ route, navigation }) => {
     });
   };
 
+  const markedDates = {
+    [selectedDate]: {
+      selected: true,
+      disableTouchEvent: true,
+      selectedDotColor: 'orange',
+    },
+  };
+
+  Object.keys(slots).forEach(date => {
+    if (slots[date].length > 0) {
+      markedDates[date] = {
+        ...(markedDates[date] || {}),
+        marked: true,
+        dotColor: primaryColor,
+      };
+    }
+  });
+
   if (loading) {
     return <BookingScreenSkeleton />;
   }
@@ -148,67 +172,85 @@ const BookingScreen = ({ route, navigation }) => {
               <Ionicons name="chevron-forward" size={20} color="#333" />
             </View>
           </View>
+          {expertsLoading && <Text>Please wait....</Text>}
+
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.expertScroll}
           >
-            {experts.map(expert => (
-              <View key={expert.id}>
-                <TouchableOpacity
-                  style={styles.expertCard}
-                  onPress={() => {
-                    setSelectedExpert(expert.id);
-                  }}
-                >
-                  <View style={styles.avatarContainer}>
-                    <Image
-                      source={{
-                        uri:
-                          typeof expert.imageUrl === 'string'
-                            ? expert.imageUrl
-                            : NO_IMAGE,
-                      }}
-                      style={styles.avatar}
-                    />
-
-                    {selectedExpert === expert.id && (
-                      <View style={styles.avatarOverlay} />
-                    )}
+            {expertsLoading ? (
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.expertScroll}
+              >
+                {[...Array(4)].map((_, index) => (
+                  <View key={index} style={styles.expertCard}>
+                    <View style={styles.avatarContainer}>
+                      <View style={styles.avatar} />
+                    </View>
+                    <View style={styles.expertName} />
                   </View>
-                  <Text style={styles.expertName}>
-                    {expert.expertName ?? ''}
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.expertCard, { marginTop: 5 }]}
-                  onPress={() => {
-                    navigation.navigate('BeautyExpertDetailsScreen', {
-                      expertId: expert.id,
-                    });
-                  }}
-                >
-                  <Ionicons name="eye" size={18} color="#111" />
-                </TouchableOpacity>
-              </View>
-            ))}
+                ))}
+              </ScrollView>
+            ) : !loading && experts.length == 0 ? (
+              <>
+                <Text>No experts available</Text>
+              </>
+            ) : (
+              experts.map(expert => (
+                <View key={expert.id}>
+                  <TouchableOpacity
+                    style={styles.expertCard}
+                    onPress={() => {
+                      setSelectedExpert(expert.id);
+                    }}
+                  >
+                    <View style={styles.avatarContainer}>
+                      <Image
+                        source={{
+                          uri:
+                            typeof expert.imageUrl === 'string'
+                              ? expert.imageUrl
+                              : NO_IMAGE,
+                        }}
+                        style={styles.avatar}
+                      />
+
+                      {selectedExpert === expert.id && (
+                        <View style={styles.avatarOverlay} />
+                      )}
+                    </View>
+                    <Text style={styles.expertName}>
+                      {expert.expertName ?? ''}
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.expertCard, { marginTop: 5 }]}
+                    onPress={() => {
+                      navigation.navigate('BeautyExpertDetailsScreen', {
+                        expertId: expert.id,
+                      });
+                    }}
+                  >
+                    <Ionicons name="eye" size={18} color="#111" />
+                  </TouchableOpacity>
+                </View>
+              ))
+            )}
           </ScrollView>
 
           <Text style={styles.sectionTitle}>Select Date</Text>
           <Calendar
             onDayPress={onDayPress}
-            markedDates={{
-              [selectedDate]: {
-                selected: true,
-                disableTouchEvent: true,
-                selectedDotColor: 'orange',
-              },
-            }}
+            markedDates={markedDates}
             theme={{
               selectedDayBackgroundColor: primaryColor,
               selectedDayTextColor: '#ffffff',
               todayTextColor: primaryColor,
               arrowColor: primaryColor,
+              dotColor: primaryColor,
             }}
             minDate={moment().format('YYYY-MM-DD')}
             style={styles.calendar}
@@ -300,6 +342,10 @@ const BookingScreen = ({ route, navigation }) => {
               ))}
           </View>
         </ScrollView>
+        {console.log('selectedTime-----------', selectedTime)}
+        {console.log('selectedServices----------', selectedServices)}
+        {console.log('selectedDate---------', selectedDate)}
+        {console.log('selectedExpert---------', selectedExpert)}
         <TouchableOpacity
           style={[
             styles.nextButton,
@@ -436,9 +482,6 @@ const styles = StyleSheet.create({
   timeSlotSelected: {
     backgroundColor: primaryColor,
   },
-  timeSlotBooked: {
-    backgroundColor: bookedColor,
-  },
   timeSlotText: {
     color: primaryColor,
     fontWeight: '600',
@@ -447,9 +490,6 @@ const styles = StyleSheet.create({
   },
   timeSlotTextSelected: {
     color: '#fff',
-  },
-  timeSlotTextBooked: {
-    color: '#999',
   },
   table: {
     borderWidth: 1,
@@ -489,6 +529,27 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 18,
     fontWeight: 'bold',
+  },
+  expertScroll: {
+    paddingBottom: 25,
+  },
+  expertCard: {
+    alignItems: 'center',
+    marginRight: 20,
+  },
+  avatarContainer: {
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    marginBottom: 8,
+    backgroundColor: '#e0e0e0',
+    overflow: 'hidden',
+  },
+  avatar: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 35,
+    backgroundColor: '#d0d0d0',
   },
 });
 

@@ -25,6 +25,8 @@ const EditProfileScreen = ({ navigation }) => {
   const [toastMessage, setToastMessage] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
+  const [nameError, setNameError] = useState('');
+  const [phoneError, setPhoneError] = useState('');
 
   const initialImage = require('../../assets/images/user.png');
 
@@ -34,7 +36,6 @@ const EditProfileScreen = ({ navigation }) => {
       const fetchUserData = async () => {
         try {
           const res = await getCustomerById(user.uid);
-
           if (res) {
             setName(res.fullName || '');
             setPhone(res.phone || '');
@@ -43,6 +44,7 @@ const EditProfileScreen = ({ navigation }) => {
           }
         } catch (error) {
           console.error('Failed to fetch user data:', error);
+          setToastMessage('Failed to load profile data.');
         } finally {
           setProfileLoading(false);
         }
@@ -64,12 +66,13 @@ const EditProfileScreen = ({ navigation }) => {
 
   const selectImage = () => {
     launchImageLibrary(
-      { mediaType: 'photo', includeBase64: true },
+      { mediaType: 'photo', includeBase64: true, quality: 0.7 }, // Added quality
       response => {
         if (response.didCancel) {
           return;
         } else if (response.errorCode) {
           console.error('ImagePicker Error: ', response.errorMessage);
+          setToastMessage('Failed to select image.');
         } else {
           const asset = response.assets?.[0];
           if (asset && asset.base64) {
@@ -81,8 +84,37 @@ const EditProfileScreen = ({ navigation }) => {
     );
   };
 
+  const validateInputs = () => {
+    let isValid = true;
+    setNameError('');
+    setPhoneError('');
+
+    if (!name.trim()) {
+      setNameError('Full name cannot be empty');
+      isValid = false;
+    }
+
+    if (!phone.trim()) {
+      setPhoneError('Phone number cannot be empty');
+      isValid = false;
+    } else if (!/^\d{10}$/.test(phone)) {
+      setPhoneError('Phone number must be 10 digits');
+      isValid = false;
+    }
+
+    return isValid;
+  };
+
   const handleEditProfile = async () => {
-    if (!user) return;
+    if (!user) {
+      setToastMessage('User not logged in.');
+      return;
+    }
+
+    if (!validateInputs()) {
+      return;
+    }
+
     setIsSaving(true);
 
     const updatedData = {
@@ -93,9 +125,9 @@ const EditProfileScreen = ({ navigation }) => {
     };
     try {
       await updateUserData(user.uid, updatedData);
-      await refreshUser(); // Refresh user data in AuthContext
+      await refreshUser();
       setToastMessage('Profile updated successfully!');
-      navigation.goBack(); // Navigate back after successful update
+      navigation.goBack();
     } catch (error) {
       console.error('Error updating profile:', error);
       setToastMessage('Failed to update profile.');
@@ -115,7 +147,7 @@ const EditProfileScreen = ({ navigation }) => {
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Edit Profile</Text>
         <TouchableOpacity onPress={handleEditProfile} disabled={isSaving}>
-          <Text style={styles.saveText}>Save</Text>
+          <Text style={styles.saveText}>{isSaving ? 'Saving...' : 'Save'}</Text>
         </TouchableOpacity>
       </View>
 
@@ -133,12 +165,16 @@ const EditProfileScreen = ({ navigation }) => {
         <View style={styles.inputGroup}>
           <Text style={styles.label}>Full Name</Text>
           <TextInput
-            style={styles.input}
+            style={[styles.input, nameError && styles.inputError]}
             value={name}
-            onChangeText={setName}
+            onChangeText={text => {
+              setName(text);
+              setNameError('');
+            }}
             placeholder="Enter your full name"
             placeholderTextColor="#999"
           />
+          {nameError ? <Text style={styles.errorText}>{nameError}</Text> : null}
         </View>
 
         <View style={styles.inputGroup}>
@@ -150,19 +186,27 @@ const EditProfileScreen = ({ navigation }) => {
             placeholder="Enter your email address"
             placeholderTextColor="#999"
             keyboardType="email-address"
+            editable={false} // Email typically not editable
           />
         </View>
 
         <View style={styles.inputGroup}>
           <Text style={styles.label}>Phone Number</Text>
           <TextInput
-            style={styles.input}
+            style={[styles.input, phoneError && styles.inputError]}
             value={phone}
-            onChangeText={setPhone}
+            onChangeText={text => {
+              setPhone(text);
+              setPhoneError('');
+            }}
             placeholder="Enter your phone number"
             placeholderTextColor="#999"
             keyboardType="phone-pad"
+            maxLength={10} // Ensure phone number is max 10 digits
           />
+          {phoneError ? (
+            <Text style={styles.errorText}>{phoneError}</Text>
+          ) : null}
         </View>
       </ScrollView>
 
@@ -187,49 +231,48 @@ const EditProfileScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F7F7F7', // Lighter background for a cleaner look
+    backgroundColor: '#F7F7F7',
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: 15, // Adjusted padding
+    paddingTop: 15,
     paddingBottom: 12,
     backgroundColor: '#fff',
-    borderBottomWidth: 0, // Removed borderBottom
-    shadowColor: '#000', // Added shadow for header
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 3,
     elevation: 3,
   },
   headerTitle: {
-    fontSize: 22, // Slightly larger title
+    fontSize: 22,
     fontWeight: 'bold',
     color: '#333',
   },
   saveText: {
-    fontSize: 17, // Slightly larger save text
+    fontSize: 17,
     fontWeight: 'bold',
     color: primaryColor,
   },
   scrollContent: {
-    paddingVertical: 30, // Increased vertical padding
-    paddingHorizontal: 25, // Increased horizontal padding
+    paddingVertical: 30,
+    paddingHorizontal: 25,
   },
   imageContainer: {
     alignItems: 'center',
-    marginBottom: 40, // Increased margin
+    marginBottom: 40,
   },
   avatar: {
-    width: 130, // Slightly larger avatar
+    width: 130,
     height: 130,
     borderRadius: 65,
     backgroundColor: '#E0E0E0',
-    borderWidth: 3, // Added subtle border
+    borderWidth: 3,
     borderColor: '#fff',
-    shadowColor: '#000', // Added shadow to avatar
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 5,
@@ -237,11 +280,11 @@ const styles = StyleSheet.create({
   },
   editImageIcon: {
     position: 'absolute',
-    bottom: 0, // Moved to bottom center
+    bottom: 0,
     right: '35%',
     backgroundColor: primaryColor,
-    padding: 10, // Larger touch target
-    borderRadius: 25, // Perfectly round
+    padding: 10,
+    borderRadius: 25,
     borderWidth: 2,
     borderColor: '#fff',
     shadowColor: '#000',
@@ -251,28 +294,38 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   inputGroup: {
-    marginBottom: 25, // Increased spacing between input groups
+    marginBottom: 25,
   },
   label: {
     fontSize: 15,
     color: '#555',
-    marginBottom: 10, // Increased margin for label
+    marginBottom: 10,
     fontWeight: '600',
   },
   input: {
-    backgroundColor: '#FFFFFF', // White background for inputs
-    borderRadius: 12, // More rounded corners
-    paddingHorizontal: 18, // Increased padding
-    paddingVertical: 14, // Increased padding
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    paddingHorizontal: 18,
+    paddingVertical: 14,
     fontSize: 16,
     color: '#333',
     borderWidth: 1,
-    borderColor: '#E0E0E0', // Lighter border color
-    shadowColor: '#000', // Added subtle shadow to inputs
+    borderColor: '#E0E0E0',
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 2,
     elevation: 1,
+  },
+  inputError: {
+    borderColor: 'red',
+    borderWidth: 1,
+  },
+  errorText: {
+    color: 'red',
+    fontSize: 12,
+    marginTop: 5,
+    marginLeft: 5,
   },
   loadingOverlay: {
     position: 'absolute',
@@ -280,25 +333,25 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)', // Slightly darker overlay
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 1000,
   },
   loadingText: {
-    marginTop: 15, // Increased margin
+    marginTop: 15,
     color: '#fff',
-    fontSize: 17, // Slightly larger font
+    fontSize: 17,
     fontWeight: '500',
   },
   toastContainer: {
     position: 'absolute',
-    bottom: 40, // Moved slightly up
+    bottom: 40,
     left: 20,
     right: 20,
-    backgroundColor: '#4CAF50', // Green for success
-    borderRadius: 30, // More rounded
-    padding: 18, // Increased padding
+    backgroundColor: '#4CAF50',
+    borderRadius: 30,
+    padding: 18,
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 2000,
@@ -310,7 +363,7 @@ const styles = StyleSheet.create({
   },
   toastText: {
     color: '#fff',
-    fontSize: 17, // Slightly larger font
+    fontSize: 17,
     fontWeight: '600',
   },
 });

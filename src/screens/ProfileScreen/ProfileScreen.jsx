@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState, useCallback } from 'react';
+import React, { useContext, useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -10,17 +10,18 @@ import {
   LayoutAnimation,
   Platform,
   UIManager,
-  RefreshControl, // Import RefreshControl
+  RefreshControl,
+  Modal,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import Icon from 'react-native-vector-icons/FontAwesome';
-import { primaryColor, starColor } from '../../constants/colors';
+import ImageViewer from 'react-native-image-zoom-viewer';
+import { primaryColor } from '../../constants/colors';
 import { AuthContext } from '../../context/AuthContext';
 import ProfileScreenSkeleton from '../../components/ProfileScreenSkeleton/ProfileScreenSkeleton';
-import { createNotification, getCustomerById } from '../../apis/services';
 import { generateRandomName } from '../../utils/utils';
 import { DEFAULT_AVATAR } from '../../constants/images';
-import { useFocusEffect } from '@react-navigation/native'; // Import useFocusEffect
+import { useFocusEffect } from '@react-navigation/native';
 import PrivacyPolicyScreen from '../PrivacyPolicyScreen/PrivacyPolicyScreen';
 
 if (Platform.OS === 'android') {
@@ -28,27 +29,6 @@ if (Platform.OS === 'android') {
     UIManager.setLayoutAnimationEnabledExperimental(true);
   }
 }
-
-const StarRating = ({ rating, count }) => {
-  const stars = Array(5).fill(0);
-  return (
-    <View style={styles.starRatingContainer}>
-      {stars.map((_, index) => (
-        <Ionicons
-          key={index}
-          name="star"
-          size={18}
-          color={starColor}
-          style={styles.starIcon}
-        />
-      ))}
-      <Text style={styles.ratingText}>
-        {' '}
-        {rating} ({count})
-      </Text>
-    </View>
-  );
-};
 
 const AccordionMenuItem = ({ iconName, label, children }) => {
   const [expanded, setExpanded] = useState(false);
@@ -82,14 +62,14 @@ const AccordionMenuItem = ({ iconName, label, children }) => {
 
 const ProfileScreen = ({ navigation }) => {
   const { user, userData, loading, refreshUser, logout } =
-    useContext(AuthContext); // Get refreshUser
+    useContext(AuthContext);
   const [refreshing, setRefreshing] = useState(false);
+  const [isImageViewerVisible, setIsImageViewerVisible] = useState(false);
 
-  // Use useFocusEffect to refresh data when screen is focused
   useFocusEffect(
     useCallback(() => {
       if (user?.uid) {
-        refreshUser(); // Fetch the latest user data from the backend
+        refreshUser();
       }
     }, [user?.uid, refreshUser]),
   );
@@ -102,17 +82,16 @@ const ProfileScreen = ({ navigation }) => {
     setRefreshing(false);
   }, [user?.uid, refreshUser]);
 
-  // For development only (if still needed, keep it)
-  useEffect(() => {
-    const createNotificationData = async () => {
-      // await createNotification();
-    };
-    createNotificationData();
-  }, []);
+  const profileImageUri =
+    typeof userData?.profileImage === 'string' && userData.profileImage
+      ? userData.profileImage
+      : DEFAULT_AVATAR;
+
+  const images = [{ url: profileImageUri }];
 
   return (
     <View style={styles.outerContainer}>
-      {loading ? ( // Use the loading from AuthContext
+      {loading ? (
         <ProfileScreenSkeleton />
       ) : (
         <>
@@ -137,20 +116,15 @@ const ProfileScreen = ({ navigation }) => {
                 <Icon name="pencil" size={20} color="#666" />
               </TouchableOpacity>
               <View style={styles.profileSection}>
-                <Image
-                  source={{
-                    uri:
-                      typeof userData?.profileImage === 'string' &&
-                      userData.profileImage
-                        ? userData.profileImage
-                        : DEFAULT_AVATAR,
-                  }}
-                  style={styles.avatar}
-                />
+                <TouchableOpacity onPress={() => setIsImageViewerVisible(true)}>
+                  <Image
+                    source={{ uri: profileImageUri }}
+                    style={styles.avatar}
+                  />
+                </TouchableOpacity>
                 <Text style={styles.userName}>
                   {userData?.fullName ?? generateRandomName()}
                 </Text>
-                {/* You might want to add other profile details here, like email/phone if desired */}
                 {userData?.email && (
                   <Text style={styles.userContact}>{userData.email}</Text>
                 )}
@@ -160,24 +134,8 @@ const ProfileScreen = ({ navigation }) => {
               </View>
 
               <View style={styles.menuSection}>
-                {/* <AccordionMenuItem iconName="settings-outline" label="Settings">
-                  <Text style={styles.accordionText}>
-                    Manage your account preferences and app settings here.
-                  </Text>
-
-                  <TouchableOpacity style={styles.accordionSubItem}>
-                    <Text style={styles.accordionSubItemText}>
-                      Notification Preferences
-                    </Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity style={styles.accordionSubItem}>
-                    <Text style={styles.accordionSubItemText}>
-                      Privacy Settings
-                    </Text>
-                  </TouchableOpacity>
-                </AccordionMenuItem> */}
                 <AccordionMenuItem
-                  iconName="help-circle-outline" // Changed icon for support
+                  iconName="help-circle-outline"
                   label="Support & Help"
                 >
                   <View style={styles.row}>
@@ -200,24 +158,8 @@ const ProfileScreen = ({ navigation }) => {
                   </View>
                 </AccordionMenuItem>
 
-                {/* <TouchableOpacity style={styles.menuItem} activeOpacity={0.8}>
-                  <View style={styles.menuItemIconContainer}>
-                    <Ionicons name="wallet-outline" size={24} color="#555" />
-                  </View>
-                  <Text style={styles.menuItemText}>My Wallet</Text>
-                  <Ionicons name="chevron-forward" size={22} color="#BDBDBD" />
-                </TouchableOpacity> */}
-
-                {/* <TouchableOpacity style={styles.menuItem} activeOpacity={0.8}>
-                  <View style={styles.menuItemIconContainer}>
-                    <Ionicons name="documents-outline" size={24} color="#555" />
-                  </View>
-                  <Text style={styles.menuItemText}>Terms & Conditions</Text>
-                  <Ionicons name="chevron-forward" size={22} color="#BDBDBD" />
-                </TouchableOpacity> */}
-
                 <AccordionMenuItem
-                  iconName="help-circle-outline" // Changed icon for support
+                  iconName="document-text-outline"
                   label="Terms & Conditions"
                 >
                   <PrivacyPolicyScreen />
@@ -239,6 +181,14 @@ const ProfileScreen = ({ navigation }) => {
               </View>
             </ScrollView>
           </View>
+          <Modal visible={isImageViewerVisible} transparent={true}>
+            <ImageViewer
+              imageUrls={images}
+              enableSwipeDown
+              onSwipeDown={() => setIsImageViewerVisible(false)}
+              onCancel={() => setIsImageViewerVisible(false)}
+            />
+          </Modal>
         </>
       )}
     </View>
@@ -252,19 +202,19 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    marginTop: 60, // Slightly reduced margin to give more space
+    marginTop: 60,
     backgroundColor: '#fff',
-    borderTopLeftRadius: 35, // Slightly less aggressive radius
+    borderTopLeftRadius: 35,
     borderTopRightRadius: 35,
-    paddingHorizontal: 20, // Reduced horizontal padding
+    paddingHorizontal: 20,
     position: 'relative',
   },
   editIcon: {
     position: 'absolute',
-    top: 25, // Adjusted position
+    top: 25,
     right: 25,
     zIndex: 1,
-    backgroundColor: '#F0F0F0', // Light background for edit icon
+    backgroundColor: '#F0F0F0',
     borderRadius: 20,
     padding: 8,
     shadowColor: '#000',
@@ -274,28 +224,28 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   mainTitle: {
-    fontSize: 26, // Slightly smaller title
-    fontWeight: '600', // Bolder title
+    fontSize: 26,
+    fontWeight: '600',
     color: '#333',
     textAlign: 'center',
-    marginTop: 30, // Increased margin
+    marginTop: 30,
     marginBottom: 25,
   },
   profileSection: {
     alignItems: 'center',
-    marginBottom: 40, // Increased margin
+    marginBottom: 40,
   },
   avatar: {
-    width: 110, // Slightly larger avatar
+    width: 110,
     height: 110,
     borderRadius: 55,
     marginBottom: 15,
-    borderWidth: 3, // Added a border to the avatar
-    borderColor: primaryColor, // Primary color border
+    borderWidth: 3,
+    borderColor: primaryColor,
   },
   userName: {
-    fontSize: 24, // Larger name
-    fontWeight: '700', // Bolder name
+    fontSize: 24,
+    fontWeight: '700',
     color: '#333',
     marginBottom: 5,
   },
@@ -304,52 +254,34 @@ const styles = StyleSheet.create({
     color: '#777',
     marginBottom: 2,
   },
-  starRatingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 8,
-    backgroundColor: '#F0F8FF', // Light background for rating
-    borderRadius: 20,
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-  },
-  starIcon: {
-    marginHorizontal: 1,
-  },
-  ratingText: {
-    fontSize: 15,
-    color: '#777',
-    marginLeft: 8,
-    fontWeight: '500',
-  },
   menuSection: {
     width: '100%',
-    paddingBottom: 20, // Added padding to bottom
+    paddingBottom: 20,
   },
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF', // White background
+    backgroundColor: '#FFFFFF',
     borderRadius: 15,
-    padding: 16, // Increased padding
-    marginBottom: 12, // Reduced margin between items
+    padding: 16,
+    marginBottom: 12,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
       height: 1,
     },
-    shadowOpacity: 0.08, // Subtle shadow
+    shadowOpacity: 0.08,
     shadowRadius: 2,
     elevation: 2,
   },
   menuItemIconContainer: {
-    width: 35, // Slightly smaller icon container
+    width: 35,
     height: 35,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 15,
-    borderRadius: 8, // Rounded corners for icon background
-    backgroundColor: '#E8F5E9', // Light green background
+    borderRadius: 8,
+    backgroundColor: '#E8F5E9',
   },
   menuItemText: {
     flex: 1,
@@ -367,23 +299,6 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 15,
     borderTopWidth: 0,
   },
-  accordionText: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 10,
-    lineHeight: 20,
-  },
-  accordionSubItem: {
-    paddingVertical: 8,
-    paddingHorizontal: 5,
-    borderBottomWidth: 0, // Removed border
-    borderBottomColor: '#eee',
-  },
-  accordionSubItemText: {
-    fontSize: 15,
-    color: '#444',
-    fontWeight: '500',
-  },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -398,8 +313,8 @@ const styles = StyleSheet.create({
     color: '#555',
   },
   logoutButton: {
-    marginTop: 20, // More space above logout
-    backgroundColor: '#FFF0F0', // Light red background
+    marginTop: 20,
+    backgroundColor: '#FFF0F0',
   },
   logoutText: {
     color: 'red',

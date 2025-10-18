@@ -15,6 +15,7 @@ import { formatText } from '../../utils/utils';
 import { getExpertsWithShopDetailsByShopId } from '../../apis/services';
 import { DEFAULT_AVATAR } from '../../constants/images';
 import Loader from '../../components/Loader/Loader';
+import ProfileScreenSkeleton from '../../components/ProfileScreenSkeleton/ProfileScreenSkeleton';
 
 const StarRating = ({ rating, count }) => {
   const stars = [];
@@ -99,7 +100,7 @@ const BeautyExpertDetailsScreen = ({ navigation, route }) => {
       </TouchableOpacity>
 
       {loading ? (
-        <Loader />
+        <ProfileScreenSkeleton />
       ) : (
         <>
           <View style={styles.container}>
@@ -126,6 +127,7 @@ const BeautyExpertDetailsScreen = ({ navigation, route }) => {
                   onPress={() =>
                     navigation.navigate('BookingScreen', {
                       shopId: expert?.expert?.shopId,
+                      selectedExpert: expertId,
                     })
                   }
                 >
@@ -167,12 +169,12 @@ const BeautyExpertDetailsScreen = ({ navigation, route }) => {
                   <Text style={styles.addressText}>
                     {expert?.shopDetails?.address ?? '-'}
                   </Text>
-                  <Ionicons
+                  {/* <Ionicons
                     name="locate-outline"
                     size={24}
                     color={primaryColor}
                   />
-                  <Text style={styles.distanceText}>5 km</Text>
+                  <Text style={styles.distanceText}>5 km</Text> */}
                 </View>
               </View>
             </ScrollView>

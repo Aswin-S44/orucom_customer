@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -6,6 +6,7 @@ import {
   StatusBar,
   FlatList,
   Image,
+  RefreshControl,
 } from 'react-native';
 import { AuthContext } from '../../context/AuthContext';
 import { getAppointmentsByCustomerId } from '../../apis/services';
@@ -16,11 +17,9 @@ import {
   formatText,
   formatTimestamp,
 } from '../../utils/utils';
-import AppointmentHistorySkeleton from '../../components/AppointmentHistorySkeleton/AppointmentHistorySkeleton';
-import { primaryColor } from '../../constants/colors';
-import ServiceCardSkeleton from '../../components/ServiceCardSkeleton/ServiceCardSkeleton';
-import Loader from '../../components/Loader/Loader';
 import AllAppointmentsScreenSkeleton from '../AllAppointmentsScreenSkeleton/AllAppointmentsScreenSkeleton';
+import { primaryColor } from '../../constants/colors';
+import { useFocusEffect } from '@react-navigation/native';
 
 const getStatusStyles = status => {
   switch (status) {
@@ -51,23 +50,17 @@ const getStatusStyles = status => {
 
 const HistoryItem = ({ item }) => {
   const statusStyles = getStatusStyles(item.appointmentStatus);
+  const expertImageUrl =
+    typeof item.expert?.imageUrl === 'string' ? item.expert.imageUrl : NO_IMAGE;
 
   return (
     <View style={styles.itemContainer}>
       <View style={styles.expertColumn}>
-        <Image
-          source={{
-            uri:
-              typeof item.expert.imageUrl === 'string'
-                ? item.expert.imageUrl
-                : NO_IMAGE,
-          }}
-          style={styles.avatar}
-        />
+        <Image source={{ uri: expertImageUrl }} style={styles.avatar} />
         <View>
-          <Text style={styles.expertName}>{item.expert.expertName}</Text>
+          <Text style={styles.expertName}>{item.expert?.expertName}</Text>
           <Text style={styles.expertSpecialty}>
-            {formatText(item.expert.specialist ?? '')}
+            {formatText(item.expert?.specialist ?? '')}
           </Text>
         </View>
       </View>
@@ -89,72 +82,89 @@ const HistoryItem = ({ item }) => {
   );
 };
 
-const AllAppointments = () => {
+const AllAppointments = ({ route }) => {
   const { user } = useContext(AuthContext);
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const fetchAppointmentHistory = useCallback(async () => {
+    if (!user?.uid) {
+      return;
+    }
+    setLoading(true);
+    const res = await getAppointmentsByCustomerId(user.uid);
+    setLoading(false);
+    setAppointments(res || []);
+  }, [user?.uid]);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchAppointmentHistory();
+    }, [fetchAppointmentHistory]),
+  );
 
   useEffect(() => {
-    if (user && user.uid) {
-      const fetchAppointmentHistory = async () => {
-        setLoading(true);
-        const res = await getAppointmentsByCustomerId(user.uid);
-        setLoading(false);
-        if (res) {
-          setAppointments(res);
-        }
-      };
+    if (route.params?.newAppointment) {
       fetchAppointmentHistory();
     }
-  }, []);
+  }, [route.params?.newAppointment, fetchAppointmentHistory]);
 
-  if (loading) {
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await fetchAppointmentHistory();
+    setRefreshing(false);
+  }, [fetchAppointmentHistory]);
+
+  if (loading && !refreshing) {
     return <AllAppointmentsScreenSkeleton />;
   }
 
   return (
     <View style={styles.outerContainer}>
-      <>
-        <StatusBar backgroundColor={primaryColor} barStyle="light-content" />
-        <View style={styles.container}>
-          <Text style={styles.mainTitle}>Appointment History</Text>
-          <>
-            {loading ? (
-              <AllAppointmentsScreenSkeleton />
-            ) : !loading && appointments.length == 0 ? (
+      <StatusBar backgroundColor={primaryColor} barStyle="light-content" />
+      <View style={styles.container}>
+        <Text style={styles.mainTitle}>Appointment History</Text>
+        {appointments.length === 0 && !loading ? (
+          <FlatList
+            data={[]}
+            renderItem={null}
+            ListEmptyComponent={
               <EmptyComponent title="No appointments Found" />
-            ) : (
-              <>
-                <View style={styles.headerRow}>
-                  <Text style={[styles.headerText, { flex: 1.5 }]}>
-                    Beauty Expert
-                  </Text>
-                  <Text style={[styles.headerText, { flex: 1.2 }]}>
-                    Description
-                  </Text>
-                  <Text
-                    style={[
-                      styles.headerText,
-                      { flex: 0.8, textAlign: 'right' },
-                    ]}
-                  >
-                    Status
-                  </Text>
-                </View>
-                <FlatList
-                  data={appointments}
-                  renderItem={({ item }) => <HistoryItem item={item} />}
-                  keyExtractor={item => item.id}
-                  showsVerticalScrollIndicator={false}
-                  ItemSeparatorComponent={() => (
-                    <View style={styles.separator} />
-                  )}
-                />
-              </>
-            )}
+            }
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+            }
+            contentContainerStyle={styles.emptyListContainer}
+          />
+        ) : (
+          <>
+            <View style={styles.headerRow}>
+              <Text style={[styles.headerText, { flex: 1.5 }]}>
+                Beauty Expert
+              </Text>
+              <Text style={[styles.headerText, { flex: 1.2 }]}>
+                Description
+              </Text>
+              <Text
+                style={[styles.headerText, { flex: 0.8, textAlign: 'right' }]}
+              >
+                Status
+              </Text>
+            </View>
+            <FlatList
+              data={appointments}
+              renderItem={({ item }) => <HistoryItem item={item} />}
+              keyExtractor={item => item.id}
+              showsVerticalScrollIndicator={false}
+              ItemSeparatorComponent={() => <View style={styles.separator} />}
+              refreshControl={
+                <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+              }
+            />
           </>
-        </View>
-      </>
+        )}
+      </View>
     </View>
   );
 };
@@ -241,6 +251,11 @@ const styles = StyleSheet.create({
   separator: {
     height: 1,
     backgroundColor: '#F0F0F0',
+  },
+  emptyListContainer: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
 

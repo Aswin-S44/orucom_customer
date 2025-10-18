@@ -9,7 +9,11 @@ import {
 } from 'react-native';
 import React, { useCallback, useContext, useEffect, useState } from 'react';
 import { AuthContext } from '../../context/AuthContext';
-import { getNotificationsByCustomerId } from '../../apis/services';
+import {
+  deleteNotificationById,
+  getNotificationsByCustomerId,
+  markNotificationAsRead,
+} from '../../apis/services';
 import Icon from 'react-native-vector-icons/Ionicons';
 import Icons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { DEFAULT_AVATAR } from '../../constants/images';
@@ -44,18 +48,23 @@ const AllNotificationScreen = ({ navigation }) => {
     await fetchNotifications();
     setRefreshing(false);
   }, [fetchNotifications]);
-
+  console.log(
+    'notifications----------------',
+    notifications ? notifications : 'no notifications',
+  );
   const handleNotificationPress = async notification => {
     const updatedNotifications = notifications.map(item =>
       item.id === notification.id ? { ...item, isRead: true } : item,
     );
-    setNotifications(updatedNotifications);
 
+    setNotifications(updatedNotifications);
     navigation.navigate('NotificationDetailsScreen', { notification });
+    await markNotificationAsRead(notification.id);
   };
 
-  const deleteNotification = id => {
+  const deleteNotification = async id => {
     setNotifications(notifications.filter(item => item.id !== id));
+    await deleteNotificationById(id);
   };
 
   const renderRightActions = (progress, dragX, notification) => {
@@ -80,11 +89,11 @@ const AllNotificationScreen = ({ navigation }) => {
           styles.notificationItem,
           item.isRead && styles.readNotification,
         ]}
-        //onPress={() => handleNotificationPress(item)}
+        onPress={() => handleNotificationPress(item)}
       >
         <Image
           source={{
-            uri: item.customer?.profileImage || DEFAULT_AVATAR,
+            uri: item.shop?.profileImage || DEFAULT_AVATAR,
           }}
           style={styles.avatar}
         />

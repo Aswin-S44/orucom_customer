@@ -41,12 +41,15 @@ const SearchItem = ({ item, navigation }) => {
       <View style={styles.detailsContainer}>
         <View style={styles.header}>
           <Text style={styles.shopName}>{item.parlourName ?? ''}</Text>
-          <View style={styles.distanceContainer}>
+          {/* <View style={styles.distanceContainer}>
             <Icon name="map-marker" size={16} color="#888" />
             <Text style={styles.totalDistance}>
-              {parseInt(item.distance).toFixed(1)} km
+              {item.distance
+                ? parseInt(item.distance).toFixed(1)
+                : 'Unavailable'}{' '}
+              km
             </Text>
-          </View>
+          </View> */}
         </View>
         <Text style={styles.about}>{item.about}</Text>
         <View style={styles.ratingContainer}>
@@ -87,7 +90,7 @@ const SearchResultsScreen = ({ navigation }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [searchCount, setSearchCount] = useState(0);
   const { userData } = useContext(AuthContext);
-
+  console.log('USER DATA==============', userData ? userData : 'no userData');
   const debouncedSearch = useCallback(
     debounce(term => {
       performSearch(term);
@@ -146,11 +149,17 @@ const SearchResultsScreen = ({ navigation }) => {
               latitude: parlour.coordinates._latitude,
               longitude: parlour.coordinates._longitude,
             };
+
+            console.log('');
             const distance = calculateDistance(
               origin.latitude,
               origin.longitude,
               destination.latitude,
               destination.longitude,
+            );
+            console.log(
+              'DISTANCE---------',
+              distance ? distance : 'no distance',
             );
             return { ...parlour, distance: distance };
           }

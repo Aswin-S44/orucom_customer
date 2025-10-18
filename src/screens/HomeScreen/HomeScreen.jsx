@@ -7,11 +7,9 @@ import {
   TouchableOpacity,
   TextInput,
   StatusBar,
+  RefreshControl,
 } from 'react-native';
-import React, { useContext, useEffect, useState } from 'react';
-import { GOOGLE_MAPS_API_KEY } from '@env';
-import { checkLocationAccuracy } from 'react-native-permissions';
-
+import React, { useContext, useEffect, useState, useCallback } from 'react';
 import EvilIcons from 'react-native-vector-icons/EvilIcons';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import Card from '../../components/Card/Card';
@@ -20,24 +18,24 @@ import {
   getAllParlours,
   getNotificationsCountByCustomerId,
   updateCustomer,
-  updateUserData,
 } from '../../apis/services';
 import CardSkeleton from '../../components/CardSkeleton/CardSkeleton';
 import { AuthContext } from '../../context/AuthContext';
 import EmptyComponent from '../../components/EmptyComponent/EmptyComponent';
 import { getLocationPermission } from '../../apis/permissions';
 import Geolocation from '@react-native-community/geolocation';
+import { isShopOpen } from '../../utils/utils';
 
 const HomeScreen = ({ navigation }) => {
   const [shops, setShops] = useState([]);
   const [loading, setLoading] = useState(false);
   const [notificationCount, setNotificationCount] = useState(0);
+  const [refreshing, setRefreshing] = useState(false);
   const { user } = useContext(AuthContext);
 
   const getCurrentLocation = async () => {
     getLocationPermission().then(granted => {
       if (!granted) {
-        console.log('Location permission denied');
         return;
       }
 
@@ -62,29 +60,47 @@ const HomeScreen = ({ navigation }) => {
     });
   };
 
+  const fetchShops = async () => {
+    try {
+      setLoading(true);
+      const res = await getAllParlours();
+      if (res && res.length > 0) {
+        setShops(res);
+      } else {
+        setShops([]);
+      }
+    } catch (err) {
+      console.error('Error fetching shops:', err);
+      setShops([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchNotificationCount = async () => {
+    if (user && user.uid) {
+      const res = await getNotificationsCountByCustomerId(user.uid);
+      if (res) {
+        setNotificationCount(res);
+      }
+    }
+  };
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await Promise.all([
+      getCurrentLocation(),
+      fetchShops(),
+      fetchNotificationCount(),
+    ]);
+    setRefreshing(false);
+  }, [user]);
+
   useEffect(() => {
-    const askPermission = async () => {
-      getCurrentLocation();
-    };
-    askPermission();
+    getCurrentLocation();
   }, []);
 
   useEffect(() => {
-    const fetchShops = async () => {
-      try {
-        setLoading(true);
-        const res = await getAllParlours();
-
-        if (res && res.length > 0) {
-          setShops(res);
-        }
-        setShops(res);
-      } catch (err) {
-        console.error('Error fetching shops:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchShops();
   }, []);
 
@@ -92,43 +108,41 @@ const HomeScreen = ({ navigation }) => {
     {
       id: 1,
       name: 'HairCare',
-      icon: 'spa',
       image: require('../../assets/images/category/1.png'),
     },
     {
       id: 2,
       name: 'Makeover',
-      icon: 'smile-o',
       image: require('../../assets/images/category/2.png'),
     },
     {
       id: 3,
       name: 'Skin Care',
-      icon: 'female',
       image: require('../../assets/images/category/3.png'),
     },
     {
       id: 4,
       name: 'Facial',
-      icon: 'scissors',
       image: require('../../assets/images/category/4.png'),
     },
   ];
 
   useEffect(() => {
-    if (user && user.uid) {
-      const fetchNotificationCount = async () => {
-        const res = await getNotificationsCountByCustomerId(user.uid);
-        if (res) {
-          setNotificationCount(res);
-        }
-      };
-      fetchNotificationCount();
-    }
+    fetchNotificationCount();
   }, [user]);
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <ScrollView
+      style={styles.container}
+      showsVerticalScrollIndicator={false}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+          tintColor={primaryColor}
+        />
+      }
+    >
       <StatusBar
         backgroundColor="transparent"
         translucent={true}
@@ -152,14 +166,7 @@ const HomeScreen = ({ navigation }) => {
           </TouchableOpacity>
           <View>
             <TouchableOpacity
-              style={{
-                backgroundColor: '#fff',
-                width: 35,
-                height: 35,
-                alignItems: 'center',
-                justifyContent: 'center',
-                borderRadius: '50%',
-              }}
+              style={styles.notificationButton}
               onPress={() => navigation.navigate('AllNotificationScreen')}
             >
               <Ionicons
@@ -206,9 +213,9 @@ const HomeScreen = ({ navigation }) => {
           <View style={styles.servicesContainer}>
             {services.map(service => (
               <View key={service.id}>
-                <TouchableOpacity style={styles.serviceCard}>
+                <View style={styles.serviceCard}>
                   <Image source={service.image} style={styles.smallImage} />
-                </TouchableOpacity>
+                </View>
                 <Text style={styles.serviceName}>{service.name}</Text>
               </View>
             ))}
@@ -220,67 +227,33 @@ const HomeScreen = ({ navigation }) => {
         <Text style={styles.sectionTitle}>Popular Beauty Parlour</Text>
         {loading ? (
           <CardSkeleton />
-        ) : !loading && shops.length == 0 ? (
-          <>
-            <EmptyComponent title="No shops available" />
-          </>
+        ) : !loading && shops.length === 0 ? (
+          <EmptyComponent title="No shops available" />
         ) : (
-          shops &&
-          shops.length > 0 &&
-          shops.map((shop, index) => (
-            <View style={styles.featuredContainer}>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                {loading ? (
-                  <View>
-                    <CardSkeleton />
-                  </View>
-                ) : !loading && shops.length == 0 ? (
-                  <>
-                    <EmptyComponent title="No shops available" />
-                  </>
-                ) : (
-                  <>
-                    <TouchableOpacity
-                      key={index}
-                      onPress={() =>
-                        navigation.navigate('ParlourDetails', {
-                          parlourData: shop,
-                        })
-                      }
-                    >
-                      <Card
-                        image={shop.profileImage}
-                        title={shop.parlourName}
-                        location={shop.address}
-                        rating={shop.totalRating ?? 0}
-                        status={shop.status ?? 'closed'}
-                      />
-                    </TouchableOpacity>
-                  </>
-                )}
-              </ScrollView>
-            </View>
-          ))
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            {shops &&
+              shops.length > 0 &&
+              shops.map((shop, index) => (
+                <TouchableOpacity
+                  key={index}
+                  onPress={() =>
+                    navigation.navigate('ParlourDetails', {
+                      parlourData: shop,
+                    })
+                  }
+                >
+                  <Card
+                    image={shop.profileImage}
+                    title={shop.parlourName}
+                    location={shop.address}
+                    rating={shop.totalRating ?? 0}
+                    status={isShopOpen(shop.openingHours) ? 'open' : 'closed'}
+                  />
+                </TouchableOpacity>
+              ))}
+          </ScrollView>
         )}
       </View>
-      {/* <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Popular Categories</Text>
-        <View style={styles.featuredContainer}>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            {featuredSection.map((feature, index) => (
-              <View key={index}>
-                <Card
-                  image={feature.image}
-                  title={feature.serviceName}
-                  location={feature.location}
-                  rating={feature.rating}
-                  status={feature.status}
-                />
-              </View>
-            ))}
-          </ScrollView>
-        </View>
-      </View> */}
     </ScrollView>
   );
 };
@@ -309,6 +282,14 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     zIndex: 1,
+  },
+  notificationButton: {
+    backgroundColor: '#fff',
+    width: 35,
+    height: 35,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 50,
   },
   badgeContainer: {
     position: 'absolute',
@@ -390,7 +371,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 10,
   },
-
   serviceCard: {
     width: 72,
     alignItems: 'center',
@@ -401,16 +381,12 @@ const styles = StyleSheet.create({
     borderRadius: 50,
     justifyContent: 'center',
   },
-
   serviceName: {
     marginTop: 8,
     fontSize: 14,
     textAlign: 'center',
     color: '#333',
     fontWeight: '500',
-  },
-  featuredContainer: {
-    flexDirection: 'row',
   },
   hamburgerIconContainer: {
     padding: 5,

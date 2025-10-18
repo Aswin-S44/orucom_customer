@@ -17,8 +17,7 @@ const DrawerItem = ({ icon, label, onPress }) => (
 );
 
 const CustomDrawerContent = props => {
-  const { user, userData, loading, refreshUser, logout } =
-    useContext(AuthContext); // Get refreshUser
+  const { user, userData, refreshUser, logout } = useContext(AuthContext);
   const [refreshing, setRefreshing] = useState(false);
 
   // Use useFocusEffect to refresh data when screen is focused
@@ -55,13 +54,13 @@ const CustomDrawerContent = props => {
         </View>
 
         <View style={styles.drawerSection}>
-          <DrawerItem
+          {/* <DrawerItem
             label="Change Password"
             icon={
               <Ionicons name="sync-outline" size={24} color={primaryColor} />
             }
             onPress={() => props.navigation.navigate('ChangePasswordScreen')}
-          />
+          /> */}
           <DrawerItem
             label="Help & Support"
             icon={
