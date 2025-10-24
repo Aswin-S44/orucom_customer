@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useContext, useEffect } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { createDrawerNavigator } from '@react-navigation/drawer';
 import { createMaterialBottomTabNavigator } from '@react-navigation/material-bottom-tabs';
@@ -20,8 +20,6 @@ import NearByShopsList from './screens/NearByShopsList/NearByShopsList';
 import BeautyExpertDetailsScreen from './screens/BeautyExpertDetailsScreen/BeautyExpertDetailsScreen';
 import OTPVerificationScreen from './screens/OTPVerificationScreen/OTPVerificationScreen';
 import SplashScreen from './screens/SplashScreen/SplashScreen';
-import OnboardingScreen from './screens/OnboardingScreen/OnboardingScreen';
-import WelcomeScreen from './screens/WelcomeScreen/WelcomeScreen';
 import SignInScreen from './screens/SignInScreen/SignInScreen';
 import SignUpScreen from './screens/SignUpScreen/SignUpScreen';
 import { primaryColor } from './constants/colors';

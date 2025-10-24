@@ -19,19 +19,16 @@ import { AuthContext } from '../../context/AuthContext';
 import {
   createAppointment,
   createNotification,
+  getOfferByServiceAndShop,
   sendAppointmentNofification,
   updateSlotInFirestore,
 } from '../../apis/services';
+import { firestore } from '../../config/firebase';
 
-const Row = ({ icon, label, value }) => (
+const Row = ({ label, value }) => (
   <View style={styles.row}>
-    <View style={styles.rowLabelContainer}>
-      {icon && (
-        <Ionicons name={icon} size={18} color="#777" style={styles.rowIcon} />
-      )}
-      <Text style={styles.text}>{label}</Text>
-    </View>
-    <Text style={styles.textValue}>{value}</Text>
+    <Text style={styles.text}>{label}</Text>
+    <Text style={styles.text}>{value}</Text>
   </View>
 );
 
@@ -41,26 +38,20 @@ const AmountRow = ({ service, qty, price, isBold = false }) => (
       {service}
     </Text>
     <Text style={[styles.amountCell, isBold && styles.boldText]}>{qty}</Text>
-    <View
+    <Text
       style={[
         styles.amountCell,
-        {
-          flexDirection: 'row',
-          justifyContent: 'flex-end',
-          alignItems: 'center',
-        },
+        { textAlign: 'right' },
+        isBold && styles.boldText,
       ]}
     >
-      <Text style={[styles.currencyIcon, isBold && styles.boldText]}>₹</Text>
-      <Text style={[styles.amountText, isBold && styles.boldText]}>
-        {price}
-      </Text>
-    </View>
+      {price}
+    </Text>
   </View>
 );
 
 const BookingSummaryScreen = ({ route, navigation }) => {
-  const { userId } = useContext(AuthContext);
+  const { user, userId } = useContext(AuthContext);
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedTime, setSelectedTime] = useState('');
@@ -74,6 +65,7 @@ const BookingSummaryScreen = ({ route, navigation }) => {
   useEffect(() => {
     if (route.params) {
       const fetchData = async () => {
+        console.log('222222222222');
         setLoadingSummary(true);
         const {
           selectedDate,
@@ -86,6 +78,7 @@ const BookingSummaryScreen = ({ route, navigation }) => {
         const [year, month, day] = selectedDate.split('-');
         const formattedDate = `${day}-${month}-${year}`;
         setSelectedDate(formattedDate);
+        console.log('33333333333');
 
         const formatTime = time => {
           const [hours, minutes] = time.split(':');
@@ -98,9 +91,15 @@ const BookingSummaryScreen = ({ route, navigation }) => {
         const formattedStartTime = formatTime(selectedTime.startTime);
         const formattedEndTime = formatTime(selectedTime.endTime);
         setSelectedTime(`${formattedStartTime} - ${formattedEndTime}`);
-
+        console.log('4444444444');
+        console.log(
+          'selectedServices-------------',
+          selectedServices ? selectedServices : 'no selectedServices',
+        );
+        console.log('offers----------', offers ? offers : 'no offers');
         const updatedServices = await Promise.all(
           selectedServices.map(async service => {
+            // Check if offers array exists and has at least one element
             if (
               offers &&
               offers.length > 0 &&
@@ -108,8 +107,13 @@ const BookingSummaryScreen = ({ route, navigation }) => {
             ) {
               return { ...service, offerPrice: offers[0].offerPrice };
             }
-            return { ...service, offerPrice: 0 };
+            // If no offer or offerPrice is undefined, return the service as is or with a default 0
+            return { ...service, offerPrice: 0 }; // Or simply 'return service;' if you don't want to add offerPrice
           }),
+        );
+        console.log(
+          '11111111111111111',
+          updatedServices ? updatedServices : 'no updatedServices',
         );
         setSelectedServices(updatedServices);
 
@@ -128,6 +132,69 @@ const BookingSummaryScreen = ({ route, navigation }) => {
   }, [route.params]);
 
   const total = subtotal;
+
+  // const updateSlotInFirestore = async (slotId, slotData) => {
+  //   try {
+  //     await firestore()
+  //       .collection('slots')
+  //       .doc(slotId)
+  //       .update({
+  //         ...slotData,
+  //         updatedAt: new Date(),
+  //       });
+  //     return { success: true };
+  //   } catch (error) {
+  //     console.error('Error updating slot:', error);
+  //     throw error;
+  //   }
+  // };
+
+  // const handleConfirmBooking = async () => {
+  //   setConfirming(true);
+  //   if (userId) {
+  //     const serviceIds = selectedServices.map(service => service.id);
+
+  //     const bookingData = {
+  //       serviceIds,
+  //       selectedDate,
+  //       selectedTime,
+  //       appointmentStatus: APPOINTMENT_STATUSES.PENDING,
+  //       customerId: userId,
+  //       totalAmount: subtotal,
+  //       shopId: route.params.shopId,
+  //       expertId: selectedExpert,
+  //     };
+
+  //     try {
+  //       const res = await createAppointment(userId, bookingData);
+  //       await updateSlotInFirestore(selectedSlot.id, { isAvailable: false });
+  //       await createNotification(
+  //         userId,
+  //         route.params.shopId,
+  //         res?.id ?? null,
+  //       );
+
+  //       if (res && res.success) {
+  //         setModalVisible(true);
+
+  //         sendAppointmentNofification(
+  //           userId,
+  //           route.params.shopId,
+  //           APPOINTMENT_TYPES.BOOKING_REQUEST_SENT,
+  //           res?.id ?? null,
+  //         ).catch(err =>
+  //           console.log('Notification failed (non-blocking):', err),
+  //         );
+  //       }
+  //     } catch (error) {
+  //       console.error('Error creating appointment:', error);
+  //     } finally {
+  //       setConfirming(false);
+  //     }
+  //   } else {
+  //     setConfirming(false);
+  //   }
+  // };
 
   const handleConfirmBooking = async () => {
     if (!userId) return;
@@ -172,7 +239,7 @@ const BookingSummaryScreen = ({ route, navigation }) => {
         appointmentRes.id ?? null,
       );
 
-      await Promise.allSettled([notificationPromise, sendNotificationPromise]);
+     await Promise.allSettled([notificationPromise]);
       setModalVisible(true);
     } catch (error) {
       console.error('Error creating appointment:', error);
@@ -183,7 +250,7 @@ const BookingSummaryScreen = ({ route, navigation }) => {
 
   const handleModalClose = () => {
     setModalVisible(false);
-    navigation.navigate('Appointment', { newAppointment: true });
+    //navigation.navigate('Appointment', { newAppointment: true });
   };
 
   return (
@@ -231,39 +298,45 @@ const BookingSummaryScreen = ({ route, navigation }) => {
           </View>
         ) : (
           <ScrollView showsVerticalScrollIndicator={false}>
-            <Text style={styles.mainTitle}>Booking Summary</Text>
+            <Text style={styles.mainTitle}>Service Summary</Text>
 
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Appointment Details</Text>
-              <Row icon="calendar-outline" label="Date" value={selectedDate} />
-              <Row icon="time-outline" label="Time" value={selectedTime} />
+              <Text style={styles.sectionTitle}>Date & Time</Text>
+              <Row label="Date" value={selectedDate} />
+              <Row label="Time" value={selectedTime} />
             </View>
 
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Amount</Text>
-              <View style={styles.amountHeader}>
-                <Text style={[styles.amountCell, styles.boldText, { flex: 2 }]}>
-                  Service
-                </Text>
-                <Text style={[styles.amountCell, styles.boldText]}>Qty</Text>
-                <Text
-                  style={[
-                    styles.amountCell,
-                    styles.boldText,
-                    { textAlign: 'right' },
-                  ]}
-                >
-                  Price
-                </Text>
+              <View>
+                <View style={styles.amountHeader}>
+                  <Text
+                    style={[styles.amountCell, styles.boldText, { flex: 2 }]}
+                  >
+                    Service
+                  </Text>
+                  <Text style={[styles.amountCell, styles.boldText]}>
+                    Quantity
+                  </Text>
+                  <Text
+                    style={[
+                      styles.amountCell,
+                      styles.boldText,
+                      { textAlign: 'right' },
+                    ]}
+                  >
+                    Price
+                  </Text>
+                </View>
+                {selectedServices.map((service, index) => (
+                  <AmountRow
+                    key={index}
+                    service={service.serviceName}
+                    qty="01"
+                    price={`${service.offerPrice || service.servicePrice}`}
+                  />
+                ))}
               </View>
-              {selectedServices.map((service, index) => (
-                <AmountRow
-                  key={index}
-                  service={service.serviceName}
-                  qty="01"
-                  price={`${service.offerPrice || service.servicePrice}`}
-                />
-              ))}
 
               <View style={styles.separator} />
 
@@ -281,17 +354,15 @@ const BookingSummaryScreen = ({ route, navigation }) => {
           </ScrollView>
         )}
         <TouchableOpacity
-          style={[
-            styles.confirmButton,
-            (confirming || loadingSummary) && styles.disabledButton,
-          ]}
+          // style={[styles.confirmButton, confirming && styles.disabledButton]}
+          style={[styles.confirmButton]}
           onPress={handleConfirmBooking}
-          disabled={confirming || loadingSummary}
+          //disabled={confirming || loadingSummary}
         >
           {confirming ? (
             <ActivityIndicator color="#fff" />
           ) : (
-            <Text style={styles.confirmButtonText}>Confirm Booking</Text>
+            <Text style={styles.confirmButtonText}>Confirm</Text>
           )}
         </TouchableOpacity>
       </View>
@@ -316,7 +387,6 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 18,
     marginLeft: 5,
-    fontWeight: '500',
   },
   container: {
     flex: 1,
@@ -325,114 +395,71 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 40,
     borderTopRightRadius: 40,
     paddingHorizontal: 25,
-    paddingTop: 20,
   },
   mainTitle: {
-    fontSize: 28,
-    fontWeight: '500',
+    fontSize: 26,
+    fontWeight: '400',
     color: '#333',
     textAlign: 'center',
     marginVertical: 25,
   },
   section: {
-    marginBottom: 25,
-    paddingHorizontal: 5, // Keep a small horizontal padding for content alignment
+    marginBottom: 20,
   },
   sectionTitle: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: '500',
     color: '#333',
-    marginBottom: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-    paddingBottom: 10,
+    marginBottom: 15,
   },
   row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 15,
-  },
-  rowLabelContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  rowIcon: {
-    marginRight: 10,
+    marginBottom: 12,
   },
   text: {
-    fontSize: 17,
+    fontSize: 16,
     color: '#555',
-    fontWeight: '400',
-  },
-  textValue: {
-    fontSize: 17,
-    color: '#333',
-    fontWeight: '500',
   },
   amountHeader: {
     flexDirection: 'row',
     paddingBottom: 10,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    borderBottomColor: '#F0F0F0',
     marginBottom: 10,
-    backgroundColor: '#f8f8f8', // Slightly lighter background for header
-    paddingVertical: 10,
-    borderRadius: 8,
-    paddingHorizontal: 10,
   },
   amountRow: {
     flexDirection: 'row',
-    paddingVertical: 12,
-    alignItems: 'center',
-    paddingHorizontal: 5,
+    paddingVertical: 8,
   },
   amountCell: {
     flex: 1,
     fontSize: 16,
     color: '#555',
   },
-  currencyIcon: {
-    fontSize: 16,
-    color: '#555',
-    marginRight: 2,
-  },
-  amountText: {
-    fontSize: 16,
-    color: '#555',
-    textAlign: 'right',
-  },
   boldText: {
-    fontWeight: '500',
+    fontWeight: 'bold',
     color: '#333',
-    fontSize: 17,
   },
   separator: {
     height: 1,
-    backgroundColor: '#eee',
-    marginVertical: 15,
+    backgroundColor: '#F0F0F0',
+    marginVertical: 10,
   },
   confirmButton: {
     backgroundColor: primaryColor,
     padding: 18,
     borderRadius: 15,
     alignItems: 'center',
-    marginVertical: 20,
-    shadowColor: primaryColor,
-    shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
-    elevation: 5,
+    marginVertical: 10,
   },
   confirmButtonText: {
     color: '#fff',
-    fontSize: 19,
-    fontWeight: '500',
+    fontSize: 18,
+    fontWeight: 'bold',
   },
   disabledButton: {
-    backgroundColor: '#b0b0b0',
-    shadowOpacity: 0,
-    elevation: 0,
+    backgroundColor: '#cccccc',
   },
   modalBackdrop: {
     flex: 1,
@@ -442,45 +469,39 @@ const styles = StyleSheet.create({
   },
   modalContainer: {
     backgroundColor: 'white',
-    borderRadius: 20,
+    borderRadius: 16,
     width: '85%',
     alignItems: 'center',
     overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
-    elevation: 10,
   },
   successIconContainer: {
     backgroundColor: primaryColor,
-    width: 70,
-    height: 70,
-    borderRadius: 35,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 35,
-    marginBottom: 15,
+    marginTop: 30,
   },
   modalText: {
-    fontSize: 19,
+    fontSize: 18,
     fontWeight: '500',
     color: '#333',
     textAlign: 'center',
-    marginBottom: 30,
-    paddingHorizontal: 25,
-    lineHeight: 28,
+    marginVertical: 25,
+    paddingHorizontal: 20,
+    lineHeight: 26,
   },
   okButton: {
-    backgroundColor: '#333',
+    backgroundColor: '#111',
     width: '100%',
     padding: 20,
     alignItems: 'center',
   },
   okButtonText: {
     color: 'white',
-    fontSize: 19,
-    fontWeight: '500',
+    fontSize: 18,
+    fontWeight: 'bold',
   },
   summaryLoadingContainer: {
     flex: 1,
@@ -488,10 +509,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   summaryLoadingText: {
-    marginTop: 15,
-    fontSize: 19,
+    marginTop: 10,
+    fontSize: 18,
     color: '#555',
-    fontWeight: '500',
   },
 });
 

@@ -7,10 +7,15 @@ export const formatText = text =>
     .join(' ');
 
 export const formatTimestamp = timestamp => {
-  const date = new Date(
-    timestamp.seconds * 1000 + timestamp.nanoseconds / 1000000,
-  );
-  return format(date, 'dd MMM yyyy');
+  if (!timestamp || !timestamp.seconds) return '';
+  try {
+    const date = new Date(
+      timestamp.seconds * 1000 + (timestamp.nanoseconds || 0) / 1000000,
+    );
+    return format(date, 'dd MMM yyyy');
+  } catch {
+    return '';
+  }
 };
 
 export const convertFIrstCharToUpper = s => {

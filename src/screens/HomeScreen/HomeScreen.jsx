@@ -89,7 +89,7 @@ const HomeScreen = ({ navigation }) => {
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     await Promise.all([
-      getCurrentLocation(),
+      // getCurrentLocation(),
       fetchShops(),
       fetchNotificationCount(),
     ]);

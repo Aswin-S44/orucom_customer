@@ -592,47 +592,25 @@ export const getNotificationsByCustomerId = userId => {
     const unsubscribe = firestore()
       .collection('notifications')
       .where('toId', '==', userId)
+      .orderBy('createdAt', 'desc') // Order by createdAt for efficiency
       .onSnapshot(
-        async querySnapshot => {
+        querySnapshot => {
           if (querySnapshot.empty) {
             resolve([]);
             return;
           }
 
-          const shopIds = new Set();
-          querySnapshot.docs.forEach(doc => {
+          const notifications = querySnapshot.docs.map(doc => {
             const data = doc.data();
-            if (data.fromId) shopIds.add(data.fromId);
+            return {
+              id: doc.id,
+              ...data,
+              shop: {
+                parlourName: data.fromShopName || '',
+                profileImage: data.fromShopProfileImage || DEFAULT_AVATAR,
+              },
+            };
           });
-
-          const shopsData = await Promise.all(
-            Array.from(shopIds).map(async id => {
-              const snap = await firestore()
-                .collection('shop-owners')
-                .doc(id)
-                .get();
-              return [id, snap.exists ? snap.data() : null];
-            }),
-          );
-
-          const shopMap = Object.fromEntries(shopsData);
-
-          const notifications = querySnapshot.docs
-            .map(doc => {
-              const data = doc.data();
-              const shop = shopMap[data.fromId] || null;
-              return {
-                id: doc.id,
-                ...data,
-                shop: shop
-                  ? {
-                      parlourName: shop.parlourName || '',
-                      profileImage: shop.profileImage || DEFAULT_AVATAR,
-                    }
-                  : null,
-              };
-            })
-            .sort((a, b) => b.createdAt?.toDate() - a.createdAt?.toDate());
 
           resolve(notifications);
         },
@@ -642,7 +620,6 @@ export const getNotificationsByCustomerId = userId => {
     return unsubscribe;
   });
 };
-
 export const markNotificationAsRead = async id => {
   try {
     const notificationRef = firestore().collection('notifications').doc(id);

@@ -30,75 +30,17 @@ const AllNotificationScreen = ({ navigation }) => {
   const [refreshing, setRefreshing] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const { user, userId } = useContext(AuthContext);
-  //console.log('userId----------------', userId ? userId : 'no userId');
-
-  // const fetchNotifications = () => {
-  //   if (!userId) return;
-
-  //   setLoading(true);
-  //   const unsubscribeNotifications = firestore()
-  //     .collection('notifications')
-  //     .where('toId', '==', userId)
-  //     .onSnapshot(snapshot => {
-  //       if (snapshot.empty) {
-  //         setNotifications([]);
-  //         setLoading(false);
-  //         return;
-  //       }
-
-  //       const shopIds = new Set();
-  //       snapshot.docs.forEach(doc => {
-  //         const data = doc.data();
-  //         if (data.fromId) shopIds.add(data.fromId);
-  //       });
-
-  //       const shopUnsubscribes = [];
-  //       const shopMap = {};
-
-  //       Array.from(shopIds).forEach(id => {
-  //         const unsubscribeShop = firestore()
-  //           .collection('shop-owners')
-  //           .doc(id)
-  //           .onSnapshot(shopSnap => {
-  //             shopMap[id] = shopSnap.exists ? shopSnap.data() : null;
-
-  //             const formatted = snapshot.docs.map(doc => {
-  //               const data = doc.data();
-  //               const shop = shopMap[data.fromId] || null;
-  //               return {
-  //                 id: doc.id,
-  //                 ...data,
-  //                 shop: shop
-  //                   ? {
-  //                       parlourName: shop.parlourName || '',
-  //                       profileImage: shop.profileImage || DEFAULT_AVATAR,
-  //                     }
-  //                   : null,
-  //               };
-  //             });
-
-  //             setNotifications(formatted);
-  //             setLoading(false);
-  //           });
-
-  //         shopUnsubscribes.push(unsubscribeShop);
-  //       });
-
-  //       return () => shopUnsubscribes.forEach(unsub => unsub());
-  //     });
-
-  //   return () => unsubscribeNotifications();
-  // };
-
-  // useEffect(() => {
-  //   fetchNotifications();
-  // }, [userId]);
 
   const fetchNotifications = useCallback(async () => {
     if (userId) {
+      const start = performance.now();
       setLoading(true);
+
       const res = await getNotificationsByCustomerId(userId);
-      console.log('NEW NOTIFICAITONS---------------', res ? res : 'no res');
+
+      const end = performance.now();
+      console.log(`⏱️ Fetch time: ${(end - start).toFixed(2)} ms`);
+
       setLoading(false);
       setNotifications(res || []);
     }
@@ -120,7 +62,7 @@ const AllNotificationScreen = ({ navigation }) => {
     );
 
     setNotifications(updatedNotifications);
-    navigation.navigate('NotificationDetailsScreen', { notification });
+    //navigation.navigate('NotificationDetailsScreen', { notification });
     await markNotificationAsRead(notification.id);
   };
 
