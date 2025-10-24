@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -16,10 +16,35 @@ import GallerySection from '../../sections/GallerySection/GallerySection';
 import { NO_IMAGE } from '../../constants/images';
 import StarRating from '../../components/StarRating/StarRating';
 import AboutSection from '../../sections/AboutSection/AboutSection';
+import {
+  getGalleryImages,
+  getOffersByShop,
+  getServicesByShop,
+} from '../../apis/services';
 
 const ParlourDetails = ({ route, navigation }) => {
   const { parlourData } = route.params;
+
   const [activeTab, setActiveTab] = React.useState('Service');
+  const [services, setServices] = React.useState([]);
+  const [offers, setOffers] = React.useState([]);
+  const [loadingServices, setLoadingServices] = React.useState(false);
+  const [loadingOffers, setLoadingOffers] = React.useState(false);
+  const [experts, setExperts] = useState([]);
+
+  useEffect(() => {
+    if (parlourData) {
+      if (parlourData?.services?.length > 0) {
+        setServices(parlourData?.services ?? []);
+      }
+      if (parlourData?.offers?.length > 0) {
+        setOffers(parlourData?.offers ?? []);
+      }
+      if (parlourData?.experts?.length > 0) {
+        setExperts(parlourData?.experts ?? []);
+      }
+    }
+  }, [parlourData]);
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
@@ -53,12 +78,6 @@ const ParlourDetails = ({ route, navigation }) => {
               <StarRating rating={parlourData.rating ?? 4.5} />
             </View>
           </View>
-          {/* <TouchableOpacity
-            style={styles.bookButton}
-            onPress={() => navigation.navigate('AppointmentScreen')}
-          >
-            <Text style={styles.bookButtonText}>Book Now</Text>
-          </TouchableOpacity> */}
         </View>
       </View>
 
@@ -118,17 +137,29 @@ const ParlourDetails = ({ route, navigation }) => {
         </TouchableOpacity>
       </View>
 
-      {activeTab === 'About' && <AboutSection />}
+      {activeTab === 'About' && (
+        <AboutSection about={parlourData?.about ?? ''} />
+      )}
 
       {activeTab === 'Service' && (
         <View style={styles.content}>
-          <ServiceSection shopId={parlourData.uid} />
+          <ServiceSection
+            shopId={parlourData.uid}
+            initialServices={services}
+            initialOffers={offers}
+            loadingServices={loadingServices}
+            loadingOffers={loadingOffers}
+            experts={experts}
+          />
         </View>
       )}
 
       {activeTab === 'Gallery' && (
         <View style={styles.content}>
-          <GallerySection shopId={parlourData?.uid} />
+          <GallerySection
+            shopId={parlourData?.uid}
+            placeId={parlourData?.placeId}
+          />
         </View>
       )}
 

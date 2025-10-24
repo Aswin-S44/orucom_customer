@@ -11,7 +11,7 @@ export const signIn = async () => {
     const response = await GoogleSignin.signIn();
     if (isSuccessResponse(response)) {
       setState({ userInfo: response.data });
-      console.log('SIGNIN RESPOSE&&&&&&&&&&&&&&&&', response?.data ? response?.data : 'no response data')
+      //console.log('SIGNIN RESPOSE&&&&&&&&&&&&&&&&', response?.data ? response?.data : 'no response data')
     } else {
       // sign in was cancelled by user
     }

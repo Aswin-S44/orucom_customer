@@ -1,7 +1,7 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
-import { GoogleSignin } from '@react-native-google-signin/google-signin';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export const AuthContext = createContext();
 
@@ -10,12 +10,15 @@ export const AuthProvider = ({ children }) => {
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isEmailVerified, setIsEmailVerified] = useState(false);
+  const [userId, setUserId] = useState(null);
 
   useEffect(() => {
     const unsubscribe = auth().onAuthStateChanged(async firebaseUser => {
       if (firebaseUser) {
         setUser(firebaseUser);
         setIsEmailVerified(firebaseUser.emailVerified);
+        setUserId(firebaseUser.uid);
+        await AsyncStorage.setItem('user_uid', firebaseUser.uid);
         try {
           const docSnap = await firestore()
             .collection('customers')
@@ -33,27 +36,21 @@ export const AuthProvider = ({ children }) => {
         setUser(null);
         setUserData(null);
         setIsEmailVerified(false);
+        setUserId(null);
+        await AsyncStorage.removeItem('user_uid');
       }
       setLoading(false);
     });
     return unsubscribe;
   }, []);
 
-  // const logout = async () => {
-  //   try {
-  //     await GoogleSignin.signOut();
-  //     await auth().signOut();
-  //     setUser(null);
-  //     setUserData(null);
-  //     setIsEmailVerified(false);
-  //   } catch {}
-  // };
-
-  const logout = () => {
-    auth().signOut();
+  const logout = async () => {
+    await auth().signOut();
     setUser(null);
     setUserData(null);
     setIsEmailVerified(false);
+    setUserId(null);
+    await AsyncStorage.removeItem('user_uid');
   };
 
   const refreshUser = async () => {
@@ -62,6 +59,7 @@ export const AuthProvider = ({ children }) => {
       await firebaseUser.reload();
       setUser(auth().currentUser);
       setIsEmailVerified(auth().currentUser.emailVerified);
+      setUserId(auth().currentUser.uid);
       try {
         const docSnap = await firestore()
           .collection('customers')
@@ -82,6 +80,7 @@ export const AuthProvider = ({ children }) => {
         setLoading,
         isEmailVerified,
         refreshUser,
+        userId,
       }}
     >
       {children}

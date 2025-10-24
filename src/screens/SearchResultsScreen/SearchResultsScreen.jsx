@@ -90,7 +90,7 @@ const SearchResultsScreen = ({ navigation }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [searchCount, setSearchCount] = useState(0);
   const { userData } = useContext(AuthContext);
-  console.log('USER DATA==============', userData ? userData : 'no userData');
+ 
   const debouncedSearch = useCallback(
     debounce(term => {
       performSearch(term);
@@ -150,17 +150,14 @@ const SearchResultsScreen = ({ navigation }) => {
               longitude: parlour.coordinates._longitude,
             };
 
-            console.log('');
+          
             const distance = calculateDistance(
               origin.latitude,
               origin.longitude,
               destination.latitude,
               destination.longitude,
             );
-            console.log(
-              'DISTANCE---------',
-              distance ? distance : 'no distance',
-            );
+          
             return { ...parlour, distance: distance };
           }
           return { ...parlour, distance: null };

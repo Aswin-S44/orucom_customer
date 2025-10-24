@@ -77,3 +77,7 @@ yarn-error.log
 .env
 
 android/app/google-services.json
+google_maps_api.xml
+android/app/src/main/res/values/google_maps_api.xml
+android/app/src/main/res/values/google_maps_api.xml
+android/app/google-services.json

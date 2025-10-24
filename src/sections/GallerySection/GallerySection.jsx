@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -9,8 +9,9 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Modal,
+  Animated,
 } from 'react-native';
-import { getGalleryImagesByShopId } from '../../apis/services';
+import { getGalleryImages } from '../../apis/services';
 import EmptyComponent from '../../components/EmptyComponent/EmptyComponent';
 import { primaryColor } from '../../constants/colors';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -19,53 +20,89 @@ const { width } = Dimensions.get('window');
 const cardSize = (width - 24 * 2 - 16) / 2;
 
 const GalleryItem = ({ item, onPress }) => {
-  if (item.type === 'add') {
-    return (
-      <TouchableOpacity style={styles.card}>
-        <Image source={item.image} style={styles.image} />
-        <View style={styles.overlay}>
-          <Text style={styles.plusIcon}>+</Text>
-        </View>
-      </TouchableOpacity>
-    );
-  }
-
   return (
-    <TouchableOpacity style={styles.card} onPress={() => onPress(item.image)}>
-      <Image source={{ uri: item.image }} style={styles.image} />
+    <TouchableOpacity style={styles.card} onPress={() => onPress(item)}>
+      <Image source={{ uri: item }} style={styles.image} />
     </TouchableOpacity>
   );
 };
 
-const GallerySection = ({ shopId }) => {
+const GallerySection = ({ placeId }) => {
   const [loading, setLoading] = useState(false);
   const [images, setImages] = useState([]);
   const [modalVisible, setModalVisible] = useState(false);
-  const [selectedImage, setSelectedImage] = useState(null);
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const flatListRef = useRef(null);
+  const swipeHintAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    if (shopId) {
-      const fetchImages = async () => {
-        try {
-          setLoading(true);
-          const res = await getGalleryImagesByShopId(shopId);
-          if (res && res.length > 0) {
-            setImages(res);
-          }
-        } catch (err) {
-          console.error('Error fetching images:', err);
-        } finally {
-          setLoading(false);
+    const fetchGallery = async () => {
+      if (placeId) {
+        setLoading(true);
+        const res = await getGalleryImages(placeId);
+        if (res && res.length > 0) {
+          setImages(res);
         }
-      };
-      fetchImages();
-    }
-  }, [shopId]);
+        setLoading(false);
+      }
+    };
+    fetchGallery();
+  }, [placeId]);
 
   const handleImagePress = imageUrl => {
-    setSelectedImage(imageUrl);
+    const index = images.indexOf(imageUrl);
+    setSelectedImageIndex(index);
     setModalVisible(true);
+    triggerSwipeHint();
   };
+
+  const triggerSwipeHint = () => {
+    swipeHintAnim.setValue(0);
+    Animated.sequence([
+      Animated.timing(swipeHintAnim, {
+        toValue: 1,
+        duration: 11000,
+        useNativeDriver: true,
+      }),
+      Animated.timing(swipeHintAnim, {
+        toValue: 0,
+        duration: 11000,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  };
+
+  const goToNextImage = () => {
+    const newIndex =
+      selectedImageIndex === images.length - 1 ? 0 : selectedImageIndex + 1;
+    setSelectedImageIndex(newIndex);
+    flatListRef.current?.scrollToIndex({ index: newIndex, animated: true });
+  };
+
+  const goToPreviousImage = () => {
+    const newIndex =
+      selectedImageIndex === 0 ? images.length - 1 : selectedImageIndex - 1;
+    setSelectedImageIndex(newIndex);
+    flatListRef.current?.scrollToIndex({ index: newIndex, animated: true });
+  };
+
+  const renderModalImage = ({ item }) => (
+    <Image
+      source={{ uri: item }}
+      style={styles.fullScreenImage}
+      resizeMode="contain"
+    />
+  );
+
+  const swipeHintTranslateX = swipeHintAnim.interpolate({
+    inputRange: [0, 0.5, 1],
+    outputRange: [-20, 20, 0],
+  });
+
+  const swipeHintOpacity = swipeHintAnim.interpolate({
+    inputRange: [0, 0.5, 1],
+    outputRange: [0, 1, 0],
+  });
 
   return (
     <>
@@ -79,7 +116,7 @@ const GallerySection = ({ shopId }) => {
           renderItem={({ item }) => (
             <GalleryItem item={item} onPress={handleImagePress} />
           )}
-          keyExtractor={item => item.id}
+          keyExtractor={item => item}
           numColumns={2}
           contentContainerStyle={styles.container}
           columnWrapperStyle={styles.row}
@@ -94,16 +131,72 @@ const GallerySection = ({ shopId }) => {
       >
         <View style={styles.centeredView}>
           <View style={styles.modalView}>
-            <Image
-              source={{ uri: selectedImage }}
-              style={styles.fullScreenImage}
-              resizeMode="contain"
+            <FlatList
+              ref={flatListRef}
+              data={images}
+              renderItem={renderModalImage}
+              keyExtractor={(item, index) => item + index}
+              horizontal
+              pagingEnabled
+              showsHorizontalScrollIndicator={false}
+              initialScrollIndex={selectedImageIndex}
+              getItemLayout={(data, index) => ({
+                length: width,
+                offset: width * index,
+                index,
+              })}
+              onScrollToIndexFailed={info => {
+                const wait = new Promise(resolve => setTimeout(resolve, 500));
+                wait.then(() => {
+                  flatListRef.current?.scrollToIndex({
+                    index: info.index,
+                    animated: true,
+                  });
+                });
+              }}
+              onMomentumScrollEnd={event => {
+                const newIndex = Math.round(
+                  event.nativeEvent.contentOffset.x / width,
+                );
+                setSelectedImageIndex(newIndex);
+              }}
             />
+
+            <Animated.View
+              style={[
+                styles.swipeHintContainer,
+                {
+                  opacity: swipeHintOpacity,
+                  transform: [{ translateX: swipeHintTranslateX }],
+                },
+              ]}
+            >
+              <Ionicons
+                name="swap-horizontal-outline"
+                size={40}
+                color="white"
+              />
+              <Text style={styles.swipeHintText}>Swipe to view more</Text>
+            </Animated.View>
+
             <TouchableOpacity
               style={styles.closeButton}
               onPress={() => setModalVisible(false)}
             >
-              <Ionicons name="close" size={20} />
+              <Ionicons name="close" size={20} color="white" />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.navButtonLeft}
+              onPress={goToPreviousImage}
+            >
+              <Ionicons name="chevron-back" size={30} color="white" />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.navButtonRight}
+              onPress={goToNextImage}
+            >
+              <Ionicons name="chevron-forward" size={30} color="white" />
             </TouchableOpacity>
           </View>
         </View>
@@ -132,17 +225,6 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
-  overlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(142, 68, 173, 0.75)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  plusIcon: {
-    color: '#fff',
-    fontSize: 60,
-    fontWeight: '300',
-  },
   centeredView: {
     flex: 1,
     justifyContent: 'center',
@@ -150,31 +232,64 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.9)',
   },
   modalView: {
-    width: '90%',
-    height: '80%',
+    width: '100%',
+    height: '100%',
     backgroundColor: 'black',
-    borderRadius: 10,
-    overflow: 'hidden',
   },
   fullScreenImage: {
-    width: '100%',
+    width: Dimensions.get('window').width,
     height: '100%',
   },
   closeButton: {
     position: 'absolute',
-    top: 20,
+    top: 40,
     right: 20,
     backgroundColor: 'rgba(255,255,255,0.3)',
-    borderRadius: 15,
-    width: 30,
-    height: 30,
+    borderRadius: 20,
+    width: 40,
+    height: 40,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  closeButtonText: {
+  navButtonLeft: {
+    position: 'absolute',
+    top: '50%',
+    left: 10,
+    marginTop: -25,
+    backgroundColor: 'rgba(255,255,255,0.3)',
+    borderRadius: 25,
+    width: 50,
+    height: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  navButtonRight: {
+    position: 'absolute',
+    top: '50%',
+    right: 10,
+    marginTop: -25,
+    backgroundColor: 'rgba(255,255,255,0.3)',
+    borderRadius: 25,
+    width: 50,
+    height: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  swipeHintContainer: {
+    position: 'absolute',
+    bottom: 80,
+    alignSelf: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    paddingHorizontal: 15,
+    paddingVertical: 10,
+    borderRadius: 25,
+  },
+  swipeHintText: {
     color: 'white',
-    fontSize: 18,
-    fontWeight: 'bold',
+    marginLeft: 10,
+    fontSize: 16,
   },
 });
 

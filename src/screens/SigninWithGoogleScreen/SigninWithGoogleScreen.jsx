@@ -26,6 +26,7 @@ import { Image } from 'react-native';
 import { GOOGLE_ICON } from '../../constants/images';
 import { lightPurple, primaryColor } from '../../constants/colors';
 import LinearGradient from 'react-native-linear-gradient';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const SigninWithGoogleScreen = () => {
   const { user, refreshUser, userData } = useContext(AuthContext);
@@ -101,6 +102,7 @@ const SigninWithGoogleScreen = () => {
       }
       let res = await signInWithCredential(getAuth(), googleCredential);
       refreshUser();
+      await AsyncStorage.setItem('user_uid', firebaseUser?.uid);
       //return await signInWithCredential(getAuth(), googleCredential);
       return firebaseUser;
     } catch (error) {
@@ -136,7 +138,7 @@ const SigninWithGoogleScreen = () => {
         source={require('../../assets/images/splash_logo.png')}
         style={styles.welcomeImage}
       />
-      <Text style={styles.title}>Beauty Expert App</Text>
+      <Text style={styles.title}>Beauty Customer App</Text>
 
       <View style={styles.buttonContainer}>
         <TouchableOpacity

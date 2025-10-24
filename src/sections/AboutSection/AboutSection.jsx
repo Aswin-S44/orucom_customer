@@ -3,17 +3,13 @@ import React from 'react';
 import { StyleSheet } from 'react-native';
 import { primaryColor } from '../../constants/colors';
 
-const AboutSection = () => {
+const AboutSection = ({ about }) => {
   return (
     <View>
       <View style={styles.content}>
         <Text style={styles.subtitle}>Why Choose Us</Text>
-        <Text style={styles.description}>
-          Contrary to popular belief, Lorem Inosimplyrandom and text. It has
-          roots in a piece of classical Latin liteture 45 BC, making it over
-          2000 years old.
-        </Text>
-        <View style={styles.bulletPoint}>
+        <Text style={styles.description}>{about}</Text>
+        {/* <View style={styles.bulletPoint}>
           <View style={styles.bulletIcon} />
           <Text style={styles.bulletText}>
             Distracted by the readable content of a page when looking at its
@@ -26,28 +22,7 @@ const AboutSection = () => {
             Distracted by the readable content of a page when looking at its
             layout.
           </Text>
-        </View>
-
-        <Text style={styles.subtitle}>Our Mission and Vision</Text>
-        <Text style={styles.description}>
-          Contrary to popular belief, Loreipsnosimplyrandom car text. It has
-          roots a piece of classical Latin liteture 45 BC, making it over 2000
-          years old.
-        </Text>
-        <View style={styles.bulletPoint}>
-          <View style={styles.bulletIcon} />
-          <Text style={styles.bulletText}>
-            Distracted by the readable content of a page when looking at its
-            layout.
-          </Text>
-        </View>
-        <View style={styles.bulletPoint}>
-          <View style={styles.bulletIcon} />
-          <Text style={styles.bulletText}>
-            Distracted by the readable content of a page when looking at its
-            layout.
-          </Text>
-        </View>
+        </View> */}
       </View>
     </View>
   );

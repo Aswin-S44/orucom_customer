@@ -23,21 +23,86 @@ import EmptyComponent from '../../components/EmptyComponent/EmptyComponent';
 import { Swipeable } from 'react-native-gesture-handler';
 import AllNotificationsScreenSkeleton from '../AllNotificationsScreenSkeleton/AllNotificationsScreenSkeleton';
 import { getNotificationTitle } from '../../constants/variables';
+import firestore from '@react-native-firebase/firestore';
 
 const AllNotificationScreen = ({ navigation }) => {
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [notifications, setNotifications] = useState([]);
-  const { user } = useContext(AuthContext);
+  const { user, userId } = useContext(AuthContext);
+  //console.log('userId----------------', userId ? userId : 'no userId');
+
+  // const fetchNotifications = () => {
+  //   if (!userId) return;
+
+  //   setLoading(true);
+  //   const unsubscribeNotifications = firestore()
+  //     .collection('notifications')
+  //     .where('toId', '==', userId)
+  //     .onSnapshot(snapshot => {
+  //       if (snapshot.empty) {
+  //         setNotifications([]);
+  //         setLoading(false);
+  //         return;
+  //       }
+
+  //       const shopIds = new Set();
+  //       snapshot.docs.forEach(doc => {
+  //         const data = doc.data();
+  //         if (data.fromId) shopIds.add(data.fromId);
+  //       });
+
+  //       const shopUnsubscribes = [];
+  //       const shopMap = {};
+
+  //       Array.from(shopIds).forEach(id => {
+  //         const unsubscribeShop = firestore()
+  //           .collection('shop-owners')
+  //           .doc(id)
+  //           .onSnapshot(shopSnap => {
+  //             shopMap[id] = shopSnap.exists ? shopSnap.data() : null;
+
+  //             const formatted = snapshot.docs.map(doc => {
+  //               const data = doc.data();
+  //               const shop = shopMap[data.fromId] || null;
+  //               return {
+  //                 id: doc.id,
+  //                 ...data,
+  //                 shop: shop
+  //                   ? {
+  //                       parlourName: shop.parlourName || '',
+  //                       profileImage: shop.profileImage || DEFAULT_AVATAR,
+  //                     }
+  //                   : null,
+  //               };
+  //             });
+
+  //             setNotifications(formatted);
+  //             setLoading(false);
+  //           });
+
+  //         shopUnsubscribes.push(unsubscribeShop);
+  //       });
+
+  //       return () => shopUnsubscribes.forEach(unsub => unsub());
+  //     });
+
+  //   return () => unsubscribeNotifications();
+  // };
+
+  // useEffect(() => {
+  //   fetchNotifications();
+  // }, [userId]);
 
   const fetchNotifications = useCallback(async () => {
-    if (user && user.uid) {
+    if (userId) {
       setLoading(true);
-      const res = await getNotificationsByCustomerId(user.uid);
+      const res = await getNotificationsByCustomerId(userId);
+      console.log('NEW NOTIFICAITONS---------------', res ? res : 'no res');
       setLoading(false);
       setNotifications(res || []);
     }
-  }, []);
+  }, [userId]);
 
   useEffect(() => {
     fetchNotifications();
@@ -48,10 +113,7 @@ const AllNotificationScreen = ({ navigation }) => {
     await fetchNotifications();
     setRefreshing(false);
   }, [fetchNotifications]);
-  console.log(
-    'notifications----------------',
-    notifications ? notifications : 'no notifications',
-  );
+
   const handleNotificationPress = async notification => {
     const updatedNotifications = notifications.map(item =>
       item.id === notification.id ? { ...item, isRead: true } : item,

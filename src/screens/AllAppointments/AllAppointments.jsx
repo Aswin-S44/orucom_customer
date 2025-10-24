@@ -20,6 +20,7 @@ import {
 import AllAppointmentsScreenSkeleton from '../AllAppointmentsScreenSkeleton/AllAppointmentsScreenSkeleton';
 import { primaryColor } from '../../constants/colors';
 import { useFocusEffect } from '@react-navigation/native';
+import firestore from '@react-native-firebase/firestore';
 
 const getStatusStyles = status => {
   switch (status) {
@@ -88,15 +89,73 @@ const AllAppointments = ({ route }) => {
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
-  const fetchAppointmentHistory = useCallback(async () => {
-    if (!user?.uid) {
-      return;
-    }
+  const fetchAppointmentHistory = useCallback(() => {
+    if (!user?.uid) return;
     setLoading(true);
-    const res = await getAppointmentsByCustomerId(user.uid);
-    setLoading(false);
-    setAppointments(res || []);
+
+    const unsubscribe = firestore()
+      .collection('appointments')
+      .where('customerId', '==', user.uid)
+      .onSnapshot(async appointmentsSnap => {
+        if (appointmentsSnap.empty) {
+          setAppointments([]);
+          setLoading(false);
+          return;
+        }
+
+        const appointmentsData = appointmentsSnap.docs.map(d => ({
+          id: d.id,
+          ...d.data(),
+        }));
+
+        const expertIds = [
+          ...new Set(
+            appointmentsData
+              .map(a => a.expertId)
+              .filter(id => id && id.trim() !== ''),
+          ),
+        ];
+
+        let expertsMap = {};
+        if (expertIds.length > 0) {
+          const expertChunks = [];
+          for (let i = 0; i < expertIds.length; i += 10)
+            expertChunks.push(expertIds.slice(i, i + 10));
+
+          const expertSnapshots = await Promise.all(
+            expertChunks.map(chunk =>
+              firestore()
+                .collection('beauty_experts')
+                .where(firestore.FieldPath.documentId(), 'in', chunk)
+                .get(),
+            ),
+          );
+
+          expertSnapshots.forEach(snap =>
+            snap.docs.forEach(doc => {
+              expertsMap[doc.id] = { id: doc.id, ...doc.data() };
+            }),
+          );
+        }
+
+        const finalAppointments = appointmentsData.map(a => ({
+          ...a,
+          expert: expertsMap[a.expertId] || null,
+        }));
+
+        setAppointments(finalAppointments);
+        setLoading(false);
+      });
+
+    return () => unsubscribe();
   }, [user?.uid]);
+
+  useFocusEffect(
+    useCallback(() => {
+      const unsub = fetchAppointmentHistory();
+      return () => unsub && unsub();
+    }, [fetchAppointmentHistory]),
+  );
 
   useFocusEffect(
     useCallback(() => {

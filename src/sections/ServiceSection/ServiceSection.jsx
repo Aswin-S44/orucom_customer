@@ -8,14 +8,13 @@ import {
   FlatList,
 } from 'react-native';
 import { GREY } from '../../constants/colors';
-import { getOffersByShop, getServicesByShop } from '../../apis/services';
 import { NO_IMAGE } from '../../constants/images';
 import { useNavigation } from '@react-navigation/native';
 import ServiceCardSkeleton from '../../components/ServiceCardSkeleton/ServiceCardSkeleton';
 import EmptyComponent from '../../components/EmptyComponent/EmptyComponent';
 import OfferText from '../../components/OfferText/OfferText';
 
-const ServiceItem = ({ item, shopId }) => {
+const ServiceItem = ({ item, shopId, experts, offers }) => {
   const navigation = useNavigation();
 
   return (
@@ -35,11 +34,16 @@ const ServiceItem = ({ item, shopId }) => {
           styles.bookButton,
           item.active ? styles.activeButton : styles.inactiveButton,
         ]}
-        onPress={() =>
-          navigation.navigate('BookingScreen', {
-            shopId: shopId,
-            serviceId: item.id,
-          })
+        onPress={
+          () =>
+            navigation.navigate('BookingScreen', {
+              shopId: shopId,
+              serviceId: item.id,
+              experts,
+              service: item,
+              offers,
+            })
+        
         }
       >
         <Text
@@ -55,25 +59,26 @@ const ServiceItem = ({ item, shopId }) => {
   );
 };
 
-const OfferItem = ({ item, shopId }) => {
+const OfferItem = ({ item, shopId, experts, offers }) => {
   const navigation = useNavigation();
-
+ 
   return (
     <View style={styles.card}>
       <Image
         source={{
           uri:
-            typeof item.service.imageUrl === 'string'
-              ? item.service.imageUrl
+            item.imageUrl && item.imageUrl.trim() !== ''
+              ? item.imageUrl
               : NO_IMAGE,
         }}
         style={styles.cardImage}
       />
+
       <View style={styles.cardTextContainer}>
         <Text style={styles.cardTitle}>{item.serviceName}</Text>
-
+       
         <OfferText
-          regularPrice={item?.service?.servicePrice ?? 0}
+          regularPrice={item?.regularPrice ?? 0}
           offerPrice={item?.offerPrice ?? 0}
         />
       </View>
@@ -86,6 +91,9 @@ const OfferItem = ({ item, shopId }) => {
           navigation.navigate('BookingScreen', {
             shopId: shopId,
             serviceId: item.serviceId,
+            experts,
+            service: item,
+            offers,
           })
         }
       >
@@ -102,60 +110,15 @@ const OfferItem = ({ item, shopId }) => {
   );
 };
 
-const ServiceSection = ({ shopId, navigation }) => {
+const ServiceSection = ({
+  shopId,
+  initialServices,
+  initialOffers,
+  loadingServices,
+  loadingOffers,
+  experts,
+}) => {
   const [activeTab, setActiveTab] = useState('Services');
-  const [services, setServices] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [offers, setOffers] = useState([]);
-  const [offersLoading, setOffersLoading] = useState(false);
-  console.log('SHOPD ID------------------', shopId ? shopId : 'no shopID');
-  useEffect(() => {
-    if (shopId) {
-      const fetchServices = async () => {
-        try {
-          console.log('11111111111111111111111111');
-          setLoading(true);
-
-          const res = await getServicesByShop(shopId);
-          console.log('22222222222222222222222');
-
-          setLoading(false);
-
-          if (res && res.length > 0) {
-            setServices(res);
-          }
-        } catch (err) {
-          console.error('Error fetching services:', err);
-        } finally {
-          setLoading(false);
-        }
-      };
-
-      fetchServices();
-    }
-  }, [shopId]);
-
-  useEffect(() => {
-    if (shopId) {
-      const fetchOffers = async () => {
-        try {
-          setOffersLoading(true);
-          const res = await getOffersByShop(shopId);
-          setOffersLoading(false);
-
-          if (res && res.length > 0) {
-            setOffers(res);
-          }
-        } catch (err) {
-          console.error('Error fetching offers:', err);
-        } finally {
-          setOffersLoading(false);
-        }
-      };
-
-      fetchOffers();
-    }
-  }, [shopId]);
 
   return (
     <View style={styles.container}>
@@ -186,19 +149,24 @@ const ServiceSection = ({ shopId, navigation }) => {
 
       {activeTab === 'Services' ? (
         <>
-          {loading ? (
+          {loadingServices ? (
             <>
               <ServiceCardSkeleton />
             </>
-          ) : !loading && services.length == 0 ? (
+          ) : initialServices.length === 0 ? (
             <>
               <EmptyComponent />
             </>
           ) : (
             <FlatList
-              data={services}
+              data={initialServices}
               renderItem={({ item }) => (
-                <ServiceItem item={item} shopId={shopId} />
+                <ServiceItem
+                  item={item}
+                  shopId={shopId}
+                  experts={experts}
+                  offers={initialOffers}
+                />
               )}
               keyExtractor={item => item.id}
               contentContainerStyle={styles.listContainer}
@@ -207,19 +175,24 @@ const ServiceSection = ({ shopId, navigation }) => {
         </>
       ) : (
         <>
-          {offersLoading ? (
+          {loadingOffers ? (
             <>
               <ServiceCardSkeleton />
             </>
-          ) : !offersLoading && offers.length == 0 ? (
+          ) : initialOffers.length === 0 ? (
             <>
               <EmptyComponent />
             </>
           ) : (
             <FlatList
-              data={offers}
+              data={initialOffers}
               renderItem={({ item }) => (
-                <OfferItem item={item} shopId={shopId} />
+                <OfferItem
+                  item={item}
+                  shopId={shopId}
+                  experts={experts}
+                  offers={initialOffers}
+                />
               )}
               keyExtractor={item => item.id}
               contentContainerStyle={styles.listContainer}
@@ -264,7 +237,6 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   listContainer: {
-    // paddingHorizontal: 16,
     paddingTop: 16,
   },
   card: {

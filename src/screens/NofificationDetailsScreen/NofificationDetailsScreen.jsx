@@ -109,7 +109,7 @@ const NofificationDetailsScreen = ({ route, navigation }) => {
                 )}
               </Text>
             </View>
-
+{/* 
             {notification.shop && (
               <View style={styles.customerInfo}>
                 <Text style={styles.customerInfoTitle}>Shop Details</Text>
@@ -120,7 +120,7 @@ const NofificationDetailsScreen = ({ route, navigation }) => {
                   </Text>
                 </View>
               </View>
-            )}
+            )} */}
 
             {notification.appointment && (
               <View style={styles.customerInfo}>

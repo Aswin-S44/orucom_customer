@@ -110,11 +110,11 @@ android {
         release {
             // Caution! In production, you need to generate your own keystore file.
             // see https://reactnative.dev/docs/signed-apk-android.
-            signingConfig signingConfigs.debug
-            minifyEnabled enableProguardInReleaseBuilds
-            proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
-            //minifyEnabled false
+            signingConfig signingConfigs.release
             shrinkResources false
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
+           
         }
     }
     
@@ -142,5 +142,10 @@ dependencies {
     // implementation project(':@react-native-google-signin_google-signin')
 
 }
+
+// project.ext.react = [
+//   enableHermes: true,  // should be true for faster JS performance
+// ]
+
 
 apply from: "../../node_modules/react-native-vector-icons/fonts.gradle"

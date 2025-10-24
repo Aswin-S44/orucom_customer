@@ -12,7 +12,6 @@ import {
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { Calendar } from 'react-native-calendars';
 import { lightPurple, primaryColor } from '../../constants/colors';
-import { getExpertsByShopId, getServiceById } from '../../apis/services';
 import BookingScreenSkeleton from '../../components/BookingScreenSkeleton/BookingScreenSkeleton';
 import { NO_IMAGE } from '../../constants/images';
 import firestore from '@react-native-firebase/firestore';
@@ -21,24 +20,25 @@ import { AuthContext } from '../../context/AuthContext';
 
 const BookingScreen = ({ route, navigation }) => {
   const { user, userData } = useContext(AuthContext);
-
+ 
   const [selectedExpert, setSelectedExpert] = useState(
     route?.selectedExpert ?? null,
   );
   const [selectedTime, setSelectedTime] = useState(null);
   const [selectedServices, setSelectedServices] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [experts, setExperts] = useState([]);
   const [slots, setSlots] = useState({});
   const [selectedDate, setSelectedDate] = useState(
     moment().format('YYYY-MM-DD'),
   );
   const [expertsLoading, setExpertsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
   const formattedDate = selectedDate;
   const slotsForDate = slots[formattedDate] || [];
 
-  const { shopId, serviceId } = route.params;
+  const { shopId, serviceId, experts, service, offers } = route.params;
+ 
 
   useEffect(() => {
     if (!route.params?.shopId) return;
@@ -77,40 +77,24 @@ const BookingScreen = ({ route, navigation }) => {
   }, [route]);
 
   useEffect(() => {
-    if (shopId) {
-      const fetchShopExperts = async () => {
-        try {
-          setLoading(true);
-          setExpertsLoading(true);
-          const res = await getExpertsByShopId(shopId);
-          setLoading(false);
-
-          setExperts(res);
-        } catch (error) {
-          console.log('Error while fetching experts : ', error);
-        } finally {
-          setExpertsLoading(false);
-        }
-      };
-      fetchShopExperts();
+    if (service) {
+      setSelectedServices([service]);
     }
-  }, [shopId]);
+  }, [route]);
 
   useEffect(() => {
-    if (shopId && serviceId) {
-      const fetchServiceDetails = async () => {
-        try {
-          const res = await getServiceById(shopId, serviceId);
-          if (res) {
-            setSelectedServices([res]);
-          }
-        } catch (error) {
-          console.error('Error fetching service details:', error);
-        }
-      };
-      fetchServiceDetails();
+    if (!selectedExpert) {
+      setErrorMessage('Please select a beauty expert.');
+    } else if (!selectedDate) {
+      setErrorMessage('Please select a date.');
+    } else if (!selectedTime) {
+      setErrorMessage('Please select a time slot.');
+    } else if (!selectedServices || selectedServices.length === 0) {
+      setErrorMessage('Please select a service.');
+    } else {
+      setErrorMessage('');
     }
-  }, [shopId, serviceId]);
+  }, [selectedExpert, selectedDate, selectedTime, selectedServices]);
 
   const onDayPress = day => {
     setSelectedDate(day.dateString);
@@ -124,7 +108,9 @@ const BookingScreen = ({ route, navigation }) => {
       selectedServices: selectedServices,
       selectedExpert: experts.find(expert => expert.id === selectedExpert),
       shopId,
+      offers: route.params.offers,
     });
+   
   };
 
   const markedDates = {
@@ -164,6 +150,9 @@ const BookingScreen = ({ route, navigation }) => {
       <View style={styles.container}>
         <ScrollView showsVerticalScrollIndicator={false}>
           <Text style={styles.mainTitle}>Appointment</Text>
+          {errorMessage ? (
+            <Text style={styles.errorMessage}>{errorMessage}</Text>
+          ) : null}
 
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Choose Your Beauty Expert</Text>
@@ -342,10 +331,6 @@ const BookingScreen = ({ route, navigation }) => {
               ))}
           </View>
         </ScrollView>
-        {console.log('selectedTime-----------', selectedTime)}
-        {console.log('selectedServices----------', selectedServices)}
-        {console.log('selectedDate---------', selectedDate)}
-        {console.log('selectedExpert---------', selectedExpert)}
         <TouchableOpacity
           style={[
             styles.nextButton,
@@ -402,7 +387,13 @@ const styles = StyleSheet.create({
     color: '#333',
     textAlign: 'center',
     marginTop: 25,
-    marginBottom: 25,
+    marginBottom: 10,
+  },
+  errorMessage: {
+    color: 'red',
+    textAlign: 'center',
+    marginBottom: 15,
+    fontSize: 14,
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -430,11 +421,14 @@ const styles = StyleSheet.create({
     height: 70,
     borderRadius: 35,
     marginBottom: 8,
+    backgroundColor: '#e0e0e0',
+    overflow: 'hidden',
   },
   avatar: {
     width: '100%',
     height: '100%',
     borderRadius: 35,
+    backgroundColor: '#d0d0d0',
   },
   avatarOverlay: {
     ...StyleSheet.absoluteFillObject,
@@ -529,27 +523,6 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 18,
     fontWeight: 'bold',
-  },
-  expertScroll: {
-    paddingBottom: 25,
-  },
-  expertCard: {
-    alignItems: 'center',
-    marginRight: 20,
-  },
-  avatarContainer: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    marginBottom: 8,
-    backgroundColor: '#e0e0e0',
-    overflow: 'hidden',
-  },
-  avatar: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 35,
-    backgroundColor: '#d0d0d0',
   },
 });
 

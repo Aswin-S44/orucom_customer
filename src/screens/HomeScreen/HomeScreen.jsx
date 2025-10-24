@@ -58,8 +58,8 @@ const HomeScreen = ({ navigation }) => {
         { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 },
       );
     });
-  };
-
+  }; 
+  
   const fetchShops = async () => {
     try {
       setLoading(true);

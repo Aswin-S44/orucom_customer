@@ -21,6 +21,7 @@ import {
   createNotification,
   getOfferByServiceAndShop,
   sendAppointmentNofification,
+  updateSlotInFirestore,
 } from '../../apis/services';
 import { firestore } from '../../config/firebase';
 
@@ -50,7 +51,7 @@ const AmountRow = ({ service, qty, price, isBold = false }) => (
 );
 
 const BookingSummaryScreen = ({ route, navigation }) => {
-  const { user } = useContext(AuthContext);
+  const { user, userId } = useContext(AuthContext);
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedTime, setSelectedTime] = useState('');
@@ -59,16 +60,25 @@ const BookingSummaryScreen = ({ route, navigation }) => {
   const [confirming, setConfirming] = useState(false);
   const [selectedExpert, setSelectedExpert] = useState('');
   const [selectedSlot, setSelectedSlot] = useState('');
+  const [loadingSummary, setLoadingSummary] = useState(true);
 
   useEffect(() => {
     if (route.params) {
       const fetchData = async () => {
-        const { selectedDate, selectedTime, selectedServices, selectedExpert } =
-          route.params;
+        console.log('222222222222');
+        setLoadingSummary(true);
+        const {
+          selectedDate,
+          selectedTime,
+          selectedServices,
+          selectedExpert,
+          offers,
+        } = route.params;
 
         const [year, month, day] = selectedDate.split('-');
         const formattedDate = `${day}-${month}-${year}`;
         setSelectedDate(formattedDate);
+        console.log('33333333333');
 
         const formatTime = time => {
           const [hours, minutes] = time.split(':');
@@ -81,29 +91,41 @@ const BookingSummaryScreen = ({ route, navigation }) => {
         const formattedStartTime = formatTime(selectedTime.startTime);
         const formattedEndTime = formatTime(selectedTime.endTime);
         setSelectedTime(`${formattedStartTime} - ${formattedEndTime}`);
-
+        console.log('4444444444');
+        console.log(
+          'selectedServices-------------',
+          selectedServices ? selectedServices : 'no selectedServices',
+        );
+        console.log('offers----------', offers ? offers : 'no offers');
         const updatedServices = await Promise.all(
           selectedServices.map(async service => {
-            const offer = await getOfferByServiceAndShop(
-              service.id,
-              service.shopId,
-            );
-            if (offer) {
-              return { ...service, offerPrice: offer.offerPrice };
+            // Check if offers array exists and has at least one element
+            if (
+              offers &&
+              offers.length > 0 &&
+              offers[0].offerPrice !== undefined
+            ) {
+              return { ...service, offerPrice: offers[0].offerPrice };
             }
-            return service;
+            // If no offer or offerPrice is undefined, return the service as is or with a default 0
+            return { ...service, offerPrice: 0 }; // Or simply 'return service;' if you don't want to add offerPrice
           }),
+        );
+        console.log(
+          '11111111111111111',
+          updatedServices ? updatedServices : 'no updatedServices',
         );
         setSelectedServices(updatedServices);
 
         setSelectedExpert(selectedExpert.id);
         setSelectedSlot(selectedTime);
 
-        const calculatedSubtotal = selectedServices.reduce(
-          (sum, service) => sum + service.servicePrice,
+        const calculatedSubtotal = updatedServices.reduce(
+          (sum, service) => sum + (service.offerPrice || service.servicePrice),
           0,
         );
         setSubtotal(calculatedSubtotal);
+        setLoadingSummary(false);
       };
       fetchData();
     }
@@ -111,73 +133,124 @@ const BookingSummaryScreen = ({ route, navigation }) => {
 
   const total = subtotal;
 
-  const updateSlotInFirestore = async (slotId, slotData) => {
+  // const updateSlotInFirestore = async (slotId, slotData) => {
+  //   try {
+  //     await firestore()
+  //       .collection('slots')
+  //       .doc(slotId)
+  //       .update({
+  //         ...slotData,
+  //         updatedAt: new Date(),
+  //       });
+  //     return { success: true };
+  //   } catch (error) {
+  //     console.error('Error updating slot:', error);
+  //     throw error;
+  //   }
+  // };
+
+  // const handleConfirmBooking = async () => {
+  //   setConfirming(true);
+  //   if (userId) {
+  //     const serviceIds = selectedServices.map(service => service.id);
+
+  //     const bookingData = {
+  //       serviceIds,
+  //       selectedDate,
+  //       selectedTime,
+  //       appointmentStatus: APPOINTMENT_STATUSES.PENDING,
+  //       customerId: userId,
+  //       totalAmount: subtotal,
+  //       shopId: route.params.shopId,
+  //       expertId: selectedExpert,
+  //     };
+
+  //     try {
+  //       const res = await createAppointment(userId, bookingData);
+  //       await updateSlotInFirestore(selectedSlot.id, { isAvailable: false });
+  //       await createNotification(
+  //         userId,
+  //         route.params.shopId,
+  //         res?.id ?? null,
+  //       );
+
+  //       if (res && res.success) {
+  //         setModalVisible(true);
+
+  //         sendAppointmentNofification(
+  //           userId,
+  //           route.params.shopId,
+  //           APPOINTMENT_TYPES.BOOKING_REQUEST_SENT,
+  //           res?.id ?? null,
+  //         ).catch(err =>
+  //           console.log('Notification failed (non-blocking):', err),
+  //         );
+  //       }
+  //     } catch (error) {
+  //       console.error('Error creating appointment:', error);
+  //     } finally {
+  //       setConfirming(false);
+  //     }
+  //   } else {
+  //     setConfirming(false);
+  //   }
+  // };
+
+  const handleConfirmBooking = async () => {
+    if (!userId) return;
+
+    setConfirming(true);
+    const serviceIds = selectedServices.map(s => s.id);
+
+    const bookingData = {
+      serviceIds,
+      selectedDate,
+      selectedTime,
+      appointmentStatus: APPOINTMENT_STATUSES.PENDING,
+      customerId: userId,
+      totalAmount: subtotal,
+      shopId: route.params.shopId,
+      expertId: selectedExpert,
+    };
+
     try {
-      await firestore()
-        .collection('slots')
-        .doc(slotId)
-        .update({
-          ...slotData,
-          updatedAt: new Date(),
-        });
-      return { success: true };
+      const appointmentPromise = createAppointment(userId, bookingData);
+      const slotPromise = updateSlotInFirestore(selectedSlot.id, {
+        isAvailable: false,
+      });
+
+      const [appointmentRes] = await Promise.all([
+        appointmentPromise,
+        slotPromise,
+      ]);
+      if (!appointmentRes?.success)
+        throw new Error('Failed to create appointment');
+
+      const notificationPromise = createNotification(
+        userId,
+        route.params.shopId,
+        appointmentRes.id ?? null,
+      );
+
+      const sendNotificationPromise = sendAppointmentNofification(
+        userId,
+        route.params.shopId,
+        APPOINTMENT_TYPES.BOOKING_REQUEST_SENT,
+        appointmentRes.id ?? null,
+      );
+
+     await Promise.allSettled([notificationPromise]);
+      setModalVisible(true);
     } catch (error) {
-      console.error('Error updating slot:', error);
-      throw error;
+      console.error('Error creating appointment:', error);
+    } finally {
+      setConfirming(false);
     }
   };
 
-  const handleConfirmBooking = async () => {
-    setConfirming(true);
-
-    if (user && user.uid) {
-      const serviceIds = selectedServices.map(service => service.id);
-
-      const bookingData = {
-        serviceIds,
-        selectedDate,
-        selectedTime,
-        appointmentStatus: APPOINTMENT_STATUSES.PENDING,
-        customerId: user.uid,
-        totalAmount: subtotal,
-        shopId: route.params.shopId,
-        expertId: selectedExpert,
-      };
-
-      try {
-        const res = await createAppointment(bookingData);
-        console.log(
-          'APPOINTMENT**************8',
-          res ? res : 'no appoitnemtne',
-        );
-        await updateSlotInFirestore(selectedSlot.id, { isAvailable: false });
-
-        if (res && res.success) {
-          setModalVisible(true);
-          await sendAppointmentNofification(
-            user.uid,
-            route.params.shopId,
-            APPOINTMENT_TYPES.BOOKING_REQUEST_SENT,
-            res?.id ?? null,
-          );
-          //setConfirming(false);
-          navigation.navigate('Appointment', { newAppointment: true });
-          await sendAppointmentNofification(
-            user.uid,
-            route.params.shopId,
-            APPOINTMENT_TYPES.BOOKING_REQUEST_SENT,
-            res?.id ?? null,
-          );
-        }
-      } catch (error) {
-        console.error('Error creating appointment:', error);
-      } finally {
-        setConfirming(false);
-      }
-    } else {
-      setConfirming(false);
-      console.warn('User not logged in or user ID not available.');
-    }
+  const handleModalClose = () => {
+    setModalVisible(false);
+    //navigation.navigate('Appointment', { newAppointment: true });
   };
 
   return (
@@ -188,7 +261,7 @@ const BookingSummaryScreen = ({ route, navigation }) => {
         transparent={true}
         visible={modalVisible}
         animationType="fade"
-        onRequestClose={() => setModalVisible(false)}
+        onRequestClose={handleModalClose}
       >
         <View style={styles.modalBackdrop}>
           <View style={styles.modalContainer}>
@@ -200,20 +273,11 @@ const BookingSummaryScreen = ({ route, navigation }) => {
             </Text>
             <TouchableOpacity
               style={styles.okButton}
-              onPress={() => {
-                setModalVisible(false);
-              }}
+              onPress={handleModalClose}
             >
               <Text style={styles.okButtonText}>OK</Text>
             </TouchableOpacity>
           </View>
-        </View>
-      </Modal>
-
-      <Modal transparent={true} visible={confirming} animationType="fade">
-        <View style={styles.loadingOverlay}>
-          <ActivityIndicator size="large" color="#fff" />
-          <Text style={styles.loadingText}>Sending Booking request ...</Text>
         </View>
       </Modal>
 
@@ -227,63 +291,73 @@ const BookingSummaryScreen = ({ route, navigation }) => {
       </TouchableOpacity>
 
       <View style={styles.container}>
-        <ScrollView showsVerticalScrollIndicator={false}>
-          <Text style={styles.mainTitle}>Service Summary</Text>
-
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Date & Time</Text>
-            <Row label="Date" value={selectedDate} />
-            <Row label="Time" value={selectedTime} />
+        {loadingSummary ? (
+          <View style={styles.summaryLoadingContainer}>
+            <ActivityIndicator size="large" color={primaryColor} />
+            <Text style={styles.summaryLoadingText}>Loading summary...</Text>
           </View>
+        ) : (
+          <ScrollView showsVerticalScrollIndicator={false}>
+            <Text style={styles.mainTitle}>Service Summary</Text>
 
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Amount</Text>
-            <View>
-              <View style={styles.amountHeader}>
-                <Text style={[styles.amountCell, styles.boldText, { flex: 2 }]}>
-                  Service
-                </Text>
-                <Text style={[styles.amountCell, styles.boldText]}>
-                  Quantity
-                </Text>
-                <Text
-                  style={[
-                    styles.amountCell,
-                    styles.boldText,
-                    { textAlign: 'right' },
-                  ]}
-                >
-                  Price
-                </Text>
-              </View>
-              {selectedServices.map((service, index) => (
-                <AmountRow
-                  key={index}
-                  service={service.serviceName}
-                  qty="01"
-                  price={`${service.servicePrice}`}
-                />
-              ))}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Date & Time</Text>
+              <Row label="Date" value={selectedDate} />
+              <Row label="Time" value={selectedTime} />
             </View>
 
-            <View style={styles.separator} />
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Amount</Text>
+              <View>
+                <View style={styles.amountHeader}>
+                  <Text
+                    style={[styles.amountCell, styles.boldText, { flex: 2 }]}
+                  >
+                    Service
+                  </Text>
+                  <Text style={[styles.amountCell, styles.boldText]}>
+                    Quantity
+                  </Text>
+                  <Text
+                    style={[
+                      styles.amountCell,
+                      styles.boldText,
+                      { textAlign: 'right' },
+                    ]}
+                  >
+                    Price
+                  </Text>
+                </View>
+                {selectedServices.map((service, index) => (
+                  <AmountRow
+                    key={index}
+                    service={service.serviceName}
+                    qty="01"
+                    price={`${service.offerPrice || service.servicePrice}`}
+                  />
+                ))}
+              </View>
 
-            <AmountRow service="Subtotal" qty="" price={`${subtotal}`} />
+              <View style={styles.separator} />
 
-            <View style={styles.separator} />
+              <AmountRow service="Subtotal" qty="" price={`${subtotal}`} />
 
-            <AmountRow
-              service="Total"
-              qty=""
-              price={`${total}`}
-              isBold={true}
-            />
-          </View>
-        </ScrollView>
+              <View style={styles.separator} />
+
+              <AmountRow
+                service="Total"
+                qty=""
+                price={`${total}`}
+                isBold={true}
+              />
+            </View>
+          </ScrollView>
+        )}
         <TouchableOpacity
-          style={[styles.confirmButton, confirming && styles.disabledButton]}
+          // style={[styles.confirmButton, confirming && styles.disabledButton]}
+          style={[styles.confirmButton]}
           onPress={handleConfirmBooking}
-          disabled={confirming}
+          //disabled={confirming || loadingSummary}
         >
           {confirming ? (
             <ActivityIndicator color="#fff" />
@@ -429,16 +503,15 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
   },
-  loadingOverlay: {
+  summaryLoadingContainer: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  loadingText: {
-    color: '#fff',
-    fontSize: 18,
+  summaryLoadingText: {
     marginTop: 10,
+    fontSize: 18,
+    color: '#555',
   },
 });
 

@@ -17,7 +17,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import { TextInput } from 'react-native';
 
 const EditProfileScreen = ({ navigation }) => {
-  const { user, refreshUser } = useContext(AuthContext);
+  const { user, refreshUser, userData } = useContext(AuthContext);
   const [name, setName] = useState('');
   const [imageUri, setImageUri] = useState(null);
   const [profileLoading, setProfileLoading] = useState(true);
@@ -30,30 +30,42 @@ const EditProfileScreen = ({ navigation }) => {
 
   const initialImage = require('../../assets/images/user.png');
 
+
+  // useEffect(() => {
+  //   if (user && user.uid) {
+  //     setProfileLoading(true);
+  //     const fetchUserData = async () => {
+  //       try {
+  //         const res = await getCustomerById(user.uid);
+  //         if (res) {
+  //           setName(res.fullName || '');
+  //           setPhone(res.phone || '');
+  //           setEmail(res.email || '');
+  //           setImageUri(res.profileImage || null);
+  //         }
+  //       } catch (error) {
+  //         console.error('Failed to fetch user data:', error);
+  //         setToastMessage('Failed to load profile data.');
+  //       } finally {
+  //         setProfileLoading(false);
+  //       }
+  //     };
+  //     fetchUserData();
+  //   } else {
+  //     setProfileLoading(false);
+  //   }
+  // }, [user]);
+
   useEffect(() => {
-    if (user && user.uid) {
+    if (userData) {
       setProfileLoading(true);
-      const fetchUserData = async () => {
-        try {
-          const res = await getCustomerById(user.uid);
-          if (res) {
-            setName(res.fullName || '');
-            setPhone(res.phone || '');
-            setEmail(res.email || '');
-            setImageUri(res.profileImage || null);
-          }
-        } catch (error) {
-          console.error('Failed to fetch user data:', error);
-          setToastMessage('Failed to load profile data.');
-        } finally {
-          setProfileLoading(false);
-        }
-      };
-      fetchUserData();
-    } else {
+      setName(userData?.fullName || '');
+      setPhone(userData.phone || '');
+      setEmail(userData.email || '');
+      setImageUri(userData.profileImage || null);
       setProfileLoading(false);
     }
-  }, [user]);
+  }, [user.uid]);
 
   useEffect(() => {
     if (toastMessage) {
