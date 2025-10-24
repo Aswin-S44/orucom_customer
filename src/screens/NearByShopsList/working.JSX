@@ -6,23 +6,13 @@ import {
   PermissionsAndroid,
   Platform,
   ActivityIndicator,
-  StatusBar,
-  TextInput,
-  FlatList,
 } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 import Geolocation from '@react-native-community/geolocation';
 import { getAllParlours } from '../../apis/services';
 import { AuthContext } from '../../context/AuthContext';
-import { primaryColor } from '../../constants/colors';
-import { TouchableOpacity } from 'react-native';
-import Ionicons from 'react-native-vector-icons/Ionicons';
-import CardSkeleton from '../../components/CardSkeleton/CardSkeleton';
-import NoShopsAvailable from '../../components/NoShopsAvailable/NoShopsAvailable';
-import Card from '../../components/Card/Card';
-import { isShopOpen } from '../../utils/utils';
 
-const NearByShopsList = ({ navigation }) => {
+const NearByShopsList = () => {
   const [region, setRegion] = useState(null);
   const [locationEnabled, setLocationEnabled] = useState(true);
   const [permissionGranted, setPermissionGranted] = useState(false);
@@ -43,7 +33,7 @@ const NearByShopsList = ({ navigation }) => {
         Math.sin(dLon / 2) *
         Math.sin(dLon / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return +(R * c).toFixed(1);
+    return R * c;
   };
 
   const checkLocation = () => {
@@ -156,7 +146,6 @@ const NearByShopsList = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      <StatusBar backgroundColor={primaryColor} barStyle="light-content" />
       {console.log('SHOPS----------------', shops ? shops : 'no shops')}
       <MapView
         ref={mapRef}
@@ -181,139 +170,14 @@ const NearByShopsList = ({ navigation }) => {
             ),
         )}
       </MapView>
-      <View style={styles.header}>
-        <View>
-          <TouchableOpacity
-            style={styles.searchBar}
-            onPress={() => navigation.navigate('SearchResultsScreen')}
-          >
-            <TextInput
-              placeholder="Spa, Facial, Makeup"
-              placeholderTextColor="#FFFFFF"
-              style={styles.searchInput}
-              editable={false}
-            />
-            <Ionicons name="search" size={24} color="#fff" />
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      <View style={styles.cardListContainer}>
-        {loadingShops ? (
-          <>
-            <CardSkeleton />
-          </>
-        ) : !loadingShops && shops.length === 0 ? (
-          <NoShopsAvailable />
-        ) : (
-          <FlatList
-            // data={shops}
-            data={[...shops].sort(
-              (a, b) =>
-                parseFloat(a.distance || Infinity) -
-                parseFloat(b.distance || Infinity),
-            )}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            keyExtractor={item => item.id}
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                key={item.id}
-                onPress={() =>
-                  navigation.navigate('ParlourDetails', {
-                    parlourData: item,
-                  })
-                }
-              >
-                <Card
-                  image={item?.profileImage}
-                  title={item?.parlourName}
-                  location={item?.address}
-                  rating={item?.totalRating ?? 0}
-                  status={isShopOpen(item?.openingHours) ? 'open' : 'closed'}
-                  distance={
-                    item?.distance ? `${item?.distance?.toFixed(2)} km` : 'N/A'
-                  }
-                />
-              </TouchableOpacity>
-            )}
-            contentContainerStyle={styles.cardListContent}
-          />
-        )}
-      </View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  map: { flex: 1 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  map: { ...StyleSheet.absoluteFillObject },
-  header: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: primaryColor,
-    paddingTop: 50,
-    paddingBottom: 20,
-    paddingHorizontal: 20,
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
-  },
-  searchBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
-    borderRadius: 12,
-    paddingHorizontal: 15,
-  },
-  searchInput: {
-    flex: 1,
-    height: 50,
-    color: '#fff',
-    fontSize: 16,
-  },
-  markerOuter: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(142, 68, 173, 0.3)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  markerInner: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    backgroundColor: primaryColor,
-    borderWidth: 2,
-    borderColor: '#fff',
-  },
-  cardListContainer: {
-    position: 'absolute',
-    bottom: 20,
-    left: 0,
-    right: 0,
-  },
-  cardListContent: { paddingLeft: 10 },
-  mapTypeContainer: {
-    position: 'absolute',
-    top: 130,
-    right: 20,
-    flexDirection: 'row',
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    borderRadius: 10,
-    padding: 5,
-  },
-  mapTypeButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-  },
-  selectedMapType: { backgroundColor: primaryColor },
-  mapTypeButtonText: { color: '#333', fontWeight: 'bold' },
-  selectedMapText: { color: '#fff' },
 });
 
 export default NearByShopsList;
