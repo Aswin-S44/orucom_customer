@@ -18,6 +18,7 @@ import Loader from '../../components/Loader/Loader';
 import EmptyComponent from '../../components/EmptyComponent/EmptyComponent';
 import { AuthContext } from '../../context/AuthContext';
 import firestore from '@react-native-firebase/firestore';
+import ServiceCardSkeleton from '../../components/ServiceCardSkeleton/ServiceCardSkeleton';
 
 const debounce = (func, wait) => {
   let timeout;
@@ -154,7 +155,7 @@ const SearchItem = ({ item, navigation }) => {
 };
 
 const SearchResultsScreen = ({ navigation }) => {
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [searchResults, setSearchResults] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [searchCount, setSearchCount] = useState(0);
@@ -168,11 +169,11 @@ const SearchResultsScreen = ({ navigation }) => {
   );
 
   useEffect(() => {
+    setLoading(true);
     debouncedSearch(searchTerm);
   }, [searchTerm, debouncedSearch]);
 
   const performSearch = async term => {
-    setLoading(true);
     try {
       const results = await searchAllParloursAndServices(term);
       setSearchResults(results);
@@ -226,7 +227,7 @@ const SearchResultsScreen = ({ navigation }) => {
         </Text>
 
         {loading ? (
-          <Loader />
+          <ServiceCardSkeleton />
         ) : searchResults?.length === 0 ? (
           <EmptyComponent />
         ) : (
