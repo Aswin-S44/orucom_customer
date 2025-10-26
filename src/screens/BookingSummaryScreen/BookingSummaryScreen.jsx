@@ -20,8 +20,10 @@ import {
   createAppointment,
   createNotification,
   sendAppointmentNofification,
+  sendAppointmentNotification,
   updateSlotInFirestore,
 } from '../../apis/services';
+import { DEFAULT_AVATAR } from '../../constants/images';
 
 const Row = ({ icon, label, value }) => (
   <View style={styles.row}>
@@ -60,7 +62,7 @@ const AmountRow = ({ service, qty, price, isBold = false }) => (
 );
 
 const BookingSummaryScreen = ({ route, navigation }) => {
-  const { userId } = useContext(AuthContext);
+  const { userId, userData } = useContext(AuthContext);
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedTime, setSelectedTime] = useState('');
@@ -131,10 +133,9 @@ const BookingSummaryScreen = ({ route, navigation }) => {
 
   const handleConfirmBooking = async () => {
     if (!userId) return;
-
     setConfirming(true);
-    const serviceIds = selectedServices.map(s => s.id);
 
+    const serviceIds = selectedServices.map(s => s.id);
     const bookingData = {
       serviceIds,
       selectedDate,
@@ -147,32 +148,21 @@ const BookingSummaryScreen = ({ route, navigation }) => {
     };
 
     try {
-      const appointmentPromise = createAppointment(userId, bookingData);
-      const slotPromise = updateSlotInFirestore(selectedSlot.id, {
-        isAvailable: false,
-      });
-
-      const [appointmentRes] = await Promise.all([
-        appointmentPromise,
-        slotPromise,
-      ]);
-      if (!appointmentRes?.success)
-        throw new Error('Failed to create appointment');
-
-      const notificationPromise = createNotification(
+      const appointmentRes = await createAppointment(userId, bookingData);
+      updateSlotInFirestore(selectedSlot.id, { isAvailable: false });
+      createNotification(
         userId,
         route.params.shopId,
         appointmentRes.id ?? null,
+        userData?.fullName ?? '',
+        userData?.profileImage ?? DEFAULT_AVATAR,
       );
-
-      const sendNotificationPromise = sendAppointmentNofification(
+      sendAppointmentNotification(
         userId,
         route.params.shopId,
         APPOINTMENT_TYPES.BOOKING_REQUEST_SENT,
         appointmentRes.id ?? null,
       );
-
-      await Promise.allSettled([notificationPromise, sendNotificationPromise]);
       setModalVisible(true);
     } catch (error) {
       console.error('Error creating appointment:', error);

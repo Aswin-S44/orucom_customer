@@ -93,7 +93,7 @@ const ReviewItem = ({ item }) => (
 
 const Reviews = ({ placeId }) => {
   const [reviews, setReviews] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState(null);
   const [avgRating, setAvgRating] = useState(0);
@@ -112,9 +112,10 @@ const Reviews = ({ placeId }) => {
           pageNum === 0 ? res.reviews : [...prev, ...res.reviews],
         );
         setAvgRating(res.rating);
-        setHasMore(res.reviews.length === 5); // assuming API returns 5 reviews per page
+        setHasMore(res.reviews.length === 5);
       } else {
         setHasMore(false);
+        if (pageNum === 0) setReviews([]);
       }
     } catch (err) {
       setError(err);
@@ -127,12 +128,14 @@ const Reviews = ({ placeId }) => {
   useEffect(() => {
     if (placeId) {
       setPage(0);
+      setReviews([]);
+      setHasMore(true);
       fetchReviews(0);
     }
   }, [placeId]);
 
   const handleLoadMore = () => {
-    if (!loadingMore && hasMore) {
+    if (!loadingMore && hasMore && reviews.length > 0) {
       const nextPage = page + 1;
       setPage(nextPage);
       fetchReviews(nextPage);
@@ -143,7 +146,7 @@ const Reviews = ({ placeId }) => {
     <View style={styles.container}>
       {loading ? (
         <ServiceCardSkeleton />
-      ) : !loading && reviews.length === 0 ? (
+      ) : reviews.length === 0 ? (
         <EmptyComponent />
       ) : (
         <>

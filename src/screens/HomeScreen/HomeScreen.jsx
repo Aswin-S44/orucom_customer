@@ -25,10 +25,11 @@ import EmptyComponent from '../../components/EmptyComponent/EmptyComponent';
 import { getLocationPermission } from '../../apis/permissions';
 import Geolocation from '@react-native-community/geolocation';
 import { isShopOpen } from '../../utils/utils';
+import firestore from '@react-native-firebase/firestore';
 
 const HomeScreen = ({ navigation }) => {
-  const [shops, setShops] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [shops, setShops] = useState(null); // Initialize as null to distinguish between 'not loaded' and 'empty'
+  const [loading, setLoading] = useState(true); // Start loading immediately
   const [notificationCount, setNotificationCount] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
   const { user } = useContext(AuthContext);
@@ -58,8 +59,8 @@ const HomeScreen = ({ navigation }) => {
         { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 },
       );
     });
-  }; 
-  
+  };
+
   const fetchShops = async () => {
     try {
       setLoading(true);
@@ -67,11 +68,11 @@ const HomeScreen = ({ navigation }) => {
       if (res && res.length > 0) {
         setShops(res);
       } else {
-        setShops([]);
+        setShops([]); // Explicitly set to empty array if no data
       }
     } catch (err) {
       console.error('Error fetching shops:', err);
-      setShops([]);
+      setShops([]); // Set to empty array on error as well
     } finally {
       setLoading(false);
     }
@@ -88,11 +89,7 @@ const HomeScreen = ({ navigation }) => {
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await Promise.all([
-      // getCurrentLocation(),
-      fetchShops(),
-      fetchNotificationCount(),
-    ]);
+    await Promise.all([fetchShops(), fetchNotificationCount()]);
     setRefreshing(false);
   }, [user]);
 
@@ -102,7 +99,8 @@ const HomeScreen = ({ navigation }) => {
 
   useEffect(() => {
     fetchShops();
-  }, []);
+    fetchNotificationCount(); // Fetch notifications on initial load
+  }, [user.uid]); // Depend on user to refetch if user changes
 
   const services = [
     {
@@ -126,10 +124,6 @@ const HomeScreen = ({ navigation }) => {
       image: require('../../assets/images/category/4.png'),
     },
   ];
-
-  useEffect(() => {
-    fetchNotificationCount();
-  }, [user]);
 
   return (
     <ScrollView
@@ -227,31 +221,29 @@ const HomeScreen = ({ navigation }) => {
         <Text style={styles.sectionTitle}>Popular Beauty Parlour</Text>
         {loading ? (
           <CardSkeleton />
-        ) : !loading && shops.length === 0 ? (
-          <EmptyComponent title="No shops available" />
-        ) : (
+        ) : shops && shops.length > 0 ? (
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            {shops &&
-              shops.length > 0 &&
-              shops.map((shop, index) => (
-                <TouchableOpacity
-                  key={index}
-                  onPress={() =>
-                    navigation.navigate('ParlourDetails', {
-                      parlourData: shop,
-                    })
-                  }
-                >
-                  <Card
-                    image={shop.profileImage}
-                    title={shop.parlourName}
-                    location={shop.address}
-                    rating={shop.totalRating ?? 0}
-                    status={isShopOpen(shop.openingHours) ? 'open' : 'closed'}
-                  />
-                </TouchableOpacity>
-              ))}
+            {shops.map((shop, index) => (
+              <TouchableOpacity
+                key={index}
+                onPress={() =>
+                  navigation.navigate('ParlourDetails', {
+                    parlourData: shop,
+                  })
+                }
+              >
+                <Card
+                  image={shop.profileImage}
+                  title={shop.parlourName}
+                  location={shop.address}
+                  rating={shop.totalRating ?? 0}
+                  status={isShopOpen(shop.openingHours) ? 'open' : 'closed'}
+                />
+              </TouchableOpacity>
+            ))}
           </ScrollView>
+        ) : (
+          <EmptyComponent title="No shops available" />
         )}
       </View>
     </ScrollView>

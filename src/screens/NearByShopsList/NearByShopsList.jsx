@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 import Geolocation from '@react-native-community/geolocation';
-import { getAllParlours } from '../../apis/services';
+import { getAllNearbyParlors, getAllParlours } from '../../apis/services';
 import { AuthContext } from '../../context/AuthContext';
 import { primaryColor } from '../../constants/colors';
 import { TouchableOpacity } from 'react-native';
@@ -57,7 +57,7 @@ const NearByShopsList = ({ navigation }) => {
         };
         setRegion(userRegion);
         setLocationEnabled(true);
-        if (shops.length > 0) {
+        if (shops && shops?.length > 0) {
           const updatedShops = shops.map(shop => {
             if (shop.geolocation) {
               return {
@@ -123,6 +123,7 @@ const NearByShopsList = ({ navigation }) => {
     const fetchShops = async () => {
       try {
         const res = await getAllParlours();
+        console.log('RES-----------', res ? res : 'no res');
         setShops(res || []);
       } catch (err) {}
     };
@@ -157,7 +158,7 @@ const NearByShopsList = ({ navigation }) => {
   return (
     <View style={styles.container}>
       <StatusBar backgroundColor={primaryColor} barStyle="light-content" />
-      {console.log('SHOPS----------------', shops ? shops : 'no shops')}
+
       <MapView
         ref={mapRef}
         style={styles.map}

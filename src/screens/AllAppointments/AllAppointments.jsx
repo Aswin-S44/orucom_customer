@@ -178,7 +178,7 @@ const AllAppointments = ({ route }) => {
   if (loading && !refreshing) {
     return <AllAppointmentsScreenSkeleton />;
   }
-
+ 
   return (
     <View style={styles.outerContainer}>
       <StatusBar backgroundColor={primaryColor} barStyle="light-content" />

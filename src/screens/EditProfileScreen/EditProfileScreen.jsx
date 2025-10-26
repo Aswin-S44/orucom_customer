@@ -115,8 +115,8 @@ const EditProfileScreen = ({ navigation }) => {
     }
 
     return isValid;
-  };
-
+  }; 
+ 
   const handleEditProfile = async () => {
     if (!user) {
       setToastMessage('User not logged in.');
@@ -134,7 +134,7 @@ const EditProfileScreen = ({ navigation }) => {
       email,
       profileImage: imageUri,
       phone,
-    };
+    }; 
     try {
       await updateUserData(user.uid, updatedData);
       await refreshUser();

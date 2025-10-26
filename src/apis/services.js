@@ -18,7 +18,7 @@ import { DEFAULT_AVATAR } from '../constants/images';
 const CLOUDINARY_URL = `https://api.cloudinary.com/v1_1/${CLOUDINARY_DOC}/image/upload`;
 const CLOUDINARY_UPLOAD_PRESET = 'cloudinary_react';
 
-// export const getAllParlours = async () => {
+// export const getAllNearbyParlors = async () => {
 //   const querySnapshot = await firestore()
 //     .collection('shop-owners')
 //     .where('isOnboarded', '==', true)
@@ -30,6 +30,20 @@ const CLOUDINARY_UPLOAD_PRESET = 'cloudinary_react';
 //     ...doc.data(),
 //   }));
 // };
+
+export const getAllNearbyParlors = async onUpdate => {
+  return firestore()
+    .collection('shop-owners')
+    .where('isOnboarded', '==', true)
+    .where('profileCompleted', '==', true)
+    .onSnapshot(snapshot => {
+      const parlors = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      onUpdate(parlors);
+    });
+};
 
 export const getAllParlours = async () => {
   const shopSnapshot = await firestore()
@@ -339,7 +353,7 @@ export const searchShopsByService = async searchTerm => {
         };
       }
       return null;
-    });
+    }); 
 
     const shops = await Promise.all(shopsPromises);
     return shops.filter(shop => shop !== null);
@@ -460,8 +474,6 @@ export const getCustomerById = async id => {
 
 export const updateUserData = async (uid, updateData) => {
   try {
-    const customer = await getCustomerById(uid);
-
     if (
       updateData.profileImage &&
       typeof updateData.profileImage === 'string' &&
@@ -744,21 +756,36 @@ export const getGalleryImages = async (placeId, page = 0) => {
   }
 };
 
-export const createAppointment = async (userId, appointmentData) => {
-  try {
-    const docRef = await firestore()
-      .collection('appointments')
-      .add({
-        ...appointmentData,
-        userId,
-        createdAt: firestore.FieldValue.serverTimestamp(),
-      });
-    return { success: true, id: docRef.id };
-  } catch (error) {
-    console.error('Error creating appointment:', error);
-    return { success: false };
-  }
-};
+// export const createAppointment = async (userId, appointmentData) => {
+//   try {
+//     const docRef = await firestore()
+//       .collection('appointments')
+//       .add({
+//         ...appointmentData,
+//         userId,
+//         createdAt: firestore.FieldValue.serverTimestamp(),
+//       });
+//     return { success: true, id: docRef.id };
+//   } catch (error) {
+//     console.error('Error creating appointment:', error);
+//     return { success: false };
+//   }
+// };
+
+// export const createAppointment = async (userId, appointmentData) => {
+//   try {
+//     const docRef = firestore().collection('appointments').doc();
+//     docRef.set({
+//       ...appointmentData,
+//       userId,
+//       createdAt: firestore.FieldValue.serverTimestamp(),
+//     });
+//     return { success: true, id: docRef.id }; // immediately return ID without waiting for network
+//   } catch (error) {
+//     console.error('Error creating appointment:', error);
+//     return { success: false };
+//   }
+// };
 
 // await firestore()
 // .collection(COLLECTIONS.BEAUTY_EXPERTS)
@@ -769,54 +796,166 @@ export const createAppointment = async (userId, appointmentData) => {
 //   createdAt: new Date(),
 // });
 
-export const updateSlotInFirestore = async (slotId, slotData) => {
-  try {
-    await firestore()
-      .collection('slots')
-      .doc(slotId)
-      .update({
-        ...slotData,
-        updatedAt: new Date(),
-      });
-    return { success: true };
-  } catch (error) {
-    console.error('Error updating slot:', error);
-    return { success: false };
-  }
-};
+// export const updateSlotInFirestore = async (slotId, slotData) => {
+//   try {
+//     await firestore()
+//       .collection('slots')
+//       .doc(slotId)
+//       .update({
+//         ...slotData,
+//         updatedAt: new Date(),
+//       });
+//     return { success: true };
+//   } catch (error) {
+//     console.error('Error updating slot:', error);
+//     return { success: false };
+//   }
+// };
 
-export const createNotification = async (fromId, toId, appointmentId) => {
+// export const updateSlotInFirestore = (slotId, slotData) => {
+//   try {
+//     firestore()
+//       .collection('slots')
+//       .doc(slotId)
+//       .update({
+//         ...slotData,
+//         updatedAt: firestore.FieldValue.serverTimestamp(),
+//       });
+//     return { success: true }; // return immediately without waiting for network
+//   } catch (error) {
+//     console.error('Error updating slot:', error);
+//     return { success: false };
+//   }
+// };
+
+// export const createNotification = async (fromId, toId, appointmentId) => {
+//   try {
+//     const docRef = await firestore().collection('notifications').add({
+//       fromId,
+//       toId,
+//       notificationType: NOTIFICATION_TYPES.APPOINTMENT_REQUEST,
+//       createdAt: new Date(),
+//       isRead: false,
+//       message: 'Sent an appointment request',
+//       appointmentId,
+//     });
+//     return { success: true, id: docRef.id };
+//   } catch (error) {
+//     console.error('Error creating notification:', error);
+//     return { success: false };
+//   }
+// };
+
+// export const createNotification = (fromId, toId, appointmentId) => {
+//   firestore().collection('notifications').add({
+//     fromId,
+//     toId,
+//     notificationType: NOTIFICATION_TYPES.APPOINTMENT_REQUEST,
+//     createdAt: new Date(),
+//     isRead: false,
+//     message: 'Sent an appointment request',
+//     appointmentId,
+//   });
+//   // Return immediately without waiting
+//   return { success: true };
+// };
+
+// export const sendAppointmentNofification = async (
+//   customerId,
+//   shopId,
+//   appointmentType,
+//   appointmentId = null,
+// ) => {
+//   try {
+//     await axios.post(`${BACKEND_URL}/api/v1/user/appointment`, {
+//       customerId,
+//       shopId,
+//       appointmentType,
+//       appointmentId,
+//     });
+//   } catch (error) {
+//     console.log('Error sending notification:', error);
+//   }
+// };
+
+// export const sendAppointmentNotification = (
+//   customerId,
+//   shopId,
+//   appointmentType,
+//   appointmentId = null,
+// ) => {
+//   axios
+//     .post(`${BACKEND_URL}/api/v1/user/appointment`, {
+//       customerId,
+//       shopId,
+//       appointmentType,
+//       appointmentId,
+//     })
+//     .catch(error => {
+//       console.log('Error sending notification:', error);
+//     });
+// };
+export const createAppointment = async (userId, appointmentData) => {
   try {
-    const docRef = await firestore().collection('notifications').add({
-      fromId,
-      toId,
-      notificationType: NOTIFICATION_TYPES.APPOINTMENT_REQUEST,
-      createdAt: new Date(),
-      isRead: false,
-      message: 'Sent an appointment request',
-      appointmentId,
+    const docRef = firestore().collection('appointments').doc();
+    await docRef.set({
+      ...appointmentData,
+      userId,
+      createdAt: firestore.FieldValue.serverTimestamp(),
     });
     return { success: true, id: docRef.id };
   } catch (error) {
-    console.error('Error creating notification:', error);
-    return { success: false };
+    console.error('Error creating appointment:', error);
+    return { success: false, error };
   }
 };
 
-export const sendAppointmentNofification = async (
+
+export const updateSlotInFirestore = (slotId, slotData) => {
+  firestore()
+    .collection('slots')
+    .doc(slotId)
+    .update({
+      ...slotData,
+      updatedAt: firestore.FieldValue.serverTimestamp(),
+    });
+  return { success: true };
+};
+
+export const createNotification = (
+  fromId,
+  toId,
+  appointmentId,
+  customerName,
+  profileImage,
+) => {
+  firestore()
+    .collection('notifications')
+    .add({
+      fromId,
+      toId,
+      notificationType: NOTIFICATION_TYPES.APPOINTMENT_REQUEST,
+      createdAt: firestore.FieldValue.serverTimestamp(),
+      isRead: false,
+      message: ` ${customerName} Sent an appointment request`,
+      appointmentId,
+      profileImage,
+    });
+  return { success: true };
+};
+
+export const sendAppointmentNotification = (
   customerId,
   shopId,
   appointmentType,
   appointmentId = null,
 ) => {
-  try {
-    await axios.post(`${BACKEND_URL}/api/v1/user/appointment`, {
+  axios
+    .post(`${BACKEND_URL}/api/v1/user/appointment`, {
       customerId,
       shopId,
       appointmentType,
       appointmentId,
-    });
-  } catch (error) {
-    console.log('Error sending notification:', error);
-  }
+    })
+    .catch(error => console.log('Error sending notification:', error));
 };

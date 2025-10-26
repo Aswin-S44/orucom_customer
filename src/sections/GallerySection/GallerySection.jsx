@@ -15,6 +15,7 @@ import { getGalleryImages } from '../../apis/services';
 import EmptyComponent from '../../components/EmptyComponent/EmptyComponent';
 import { primaryColor } from '../../constants/colors';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import ServiceCardSkeleton from '../../components/ServiceCardSkeleton/ServiceCardSkeleton';
 
 const { width } = Dimensions.get('window');
 const cardSize = (width - 24 * 2 - 16) / 2;
@@ -28,7 +29,7 @@ const GalleryItem = ({ item, onPress }) => {
 };
 
 const GallerySection = ({ placeId }) => {
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [images, setImages] = useState([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
@@ -107,8 +108,8 @@ const GallerySection = ({ placeId }) => {
   return (
     <>
       {loading ? (
-        <ActivityIndicator size="large" color={primaryColor} />
-      ) : !loading && images.length === 0 ? (
+        <ServiceCardSkeleton />
+      ) : images.length === 0 ? (
         <EmptyComponent />
       ) : (
         <FlatList

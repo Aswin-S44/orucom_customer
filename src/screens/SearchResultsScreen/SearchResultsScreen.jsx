@@ -16,8 +16,8 @@ import { primaryColor } from '../../constants/colors';
 import { NO_IMAGE } from '../../constants/images';
 import Loader from '../../components/Loader/Loader';
 import EmptyComponent from '../../components/EmptyComponent/EmptyComponent';
-import { searchShops, searchShopsByService } from '../../apis/services';
 import { AuthContext } from '../../context/AuthContext';
+import firestore from '@react-native-firebase/firestore';
 
 const debounce = (func, wait) => {
   let timeout;
@@ -31,6 +31,79 @@ const debounce = (func, wait) => {
   };
 };
 
+const searchAllParloursAndServices = async searchTerm => {
+  try {
+    const shopsSnapshot = await firestore()
+      .collection('shop-owners')
+      .where('isOnboarded', '==', true)
+      .where('profileCompleted', '==', true)
+      .get();
+
+    const allShops = shopsSnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+
+    const shopUids = allShops.map(shop => shop.uid);
+
+    const [servicesSnapshot, offersSnapshot, expertsSnapshot] =
+      await Promise.all([
+        firestore()
+          .collection('services')
+          .where('shopId', 'in', shopUids)
+          .get(),
+        firestore().collection('offers').where('shopId', 'in', shopUids).get(),
+        firestore()
+          .collection('beauty_experts')
+          .where('shopId', 'in', shopUids)
+          .get(),
+      ]);
+
+    const allServices = servicesSnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+    const allOffers = offersSnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+    const allExperts = expertsSnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+
+    const enrichedShops = allShops.map(shop => ({
+      ...shop,
+      services: allServices.filter(s => s.shopId === shop.uid),
+      offers: allOffers.filter(o => o.shopId === shop.uid),
+      experts: allExperts.filter(e => e.shopId === shop.uid),
+    }));
+
+    if (!searchTerm) {
+      return enrichedShops;
+    }
+
+    const lowerCaseSearchTerm = searchTerm.toLowerCase();
+
+    return enrichedShops.filter(shop => {
+      const nameMatch =
+        shop.parlourName &&
+        shop.parlourName.toLowerCase().includes(lowerCaseSearchTerm);
+
+      const serviceMatch = shop.services.some(
+        service =>
+          service.serviceName &&
+          service.serviceName.toLowerCase().includes(lowerCaseSearchTerm),
+      );
+
+      return nameMatch || serviceMatch;
+    });
+  } catch (error) {
+    console.error('Search all parlours and services error:', error);
+    throw error;
+  }
+};
+
 const SearchItem = ({ item, navigation }) => {
   return (
     <View style={styles.card}>
@@ -41,17 +114,13 @@ const SearchItem = ({ item, navigation }) => {
       <View style={styles.detailsContainer}>
         <View style={styles.header}>
           <Text style={styles.shopName}>{item.parlourName ?? ''}</Text>
-          {/* <View style={styles.distanceContainer}>
-            <Icon name="map-marker" size={16} color="#888" />
-            <Text style={styles.totalDistance}>
-              {item.distance
-                ? parseInt(item.distance).toFixed(1)
-                : 'Unavailable'}{' '}
-              km
-            </Text>
-          </View> */}
         </View>
-        <Text style={styles.about}>{item.about}</Text>
+        <Text style={styles.about}>
+          {item.about?.length > 25
+            ? `${item.about.slice(0, 50)}...`
+            : item.about}
+        </Text>
+
         <View style={styles.ratingContainer}>
           {Array.from({ length: 5 }).map((_, i) => (
             <Icon
@@ -67,7 +136,7 @@ const SearchItem = ({ item, navigation }) => {
               color="#FFD700"
             />
           ))}
-          <Text style={styles.totalRating}>({item.totalRating})</Text>
+          <Text style={styles.totalRating}>({item.totalRating ?? 0})</Text>
         </View>
       </View>
       <TouchableOpacity
@@ -90,7 +159,7 @@ const SearchResultsScreen = ({ navigation }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [searchCount, setSearchCount] = useState(0);
   const { userData } = useContext(AuthContext);
- 
+
   const debouncedSearch = useCallback(
     debounce(term => {
       performSearch(term);
@@ -98,76 +167,15 @@ const SearchResultsScreen = ({ navigation }) => {
     [],
   );
 
-  const calculateDistance = useCallback((lat1, lon1, lat2, lon2) => {
-    const R = 6371;
-    const dLat = ((lat2 - lat1) * Math.PI) / 180;
-    const dLon = ((lon2 - lon1) * Math.PI) / 180;
-    const a =
-      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos((lat1 * Math.PI) / 180) *
-        Math.cos((lat2 * Math.PI) / 180) *
-        Math.sin(dLon / 2) *
-        Math.sin(dLon / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    const distance = R * c;
-    return distance.toFixed(2);
-  }, []);
-
   useEffect(() => {
-    if (searchTerm.trim() !== '') {
-      debouncedSearch(searchTerm);
-    } else {
-      performSearch('');
-    }
+    debouncedSearch(searchTerm);
   }, [searchTerm, debouncedSearch]);
 
   const performSearch = async term => {
     setLoading(true);
     try {
-      let results;
-      if (!term.trim()) {
-        results = await searchShops('');
-      } else {
-        results = await searchShopsByService(term);
-        if (results.length === 0) {
-          results = await searchShops(term);
-        }
-      }
-
-      if (results && results.length > 0) {
-        const shopsWithDistance = results.map(parlour => {
-          if (
-            userData?.coordinates &&
-            parlour?.coordinates?._latitude &&
-            parlour?.coordinates?._longitude
-          ) {
-            const origin = {
-              latitude: userData.coordinates.latitude,
-              longitude: userData.coordinates.longitude,
-            };
-            const destination = {
-              latitude: parlour.coordinates._latitude,
-              longitude: parlour.coordinates._longitude,
-            };
-
-          
-            const distance = calculateDistance(
-              origin.latitude,
-              origin.longitude,
-              destination.latitude,
-              destination.longitude,
-            );
-          
-            return { ...parlour, distance: distance };
-          }
-          return { ...parlour, distance: null };
-        });
-        //setShops(shopsWithDistance);
-        setSearchResults(shopsWithDistance);
-      } else {
-        setSearchResults([]);
-      }
-
+      const results = await searchAllParloursAndServices(term);
+      setSearchResults(results);
       setSearchCount(results.length);
     } catch (error) {
       setSearchResults([]);
