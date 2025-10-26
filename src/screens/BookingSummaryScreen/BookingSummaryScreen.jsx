@@ -157,13 +157,14 @@ const BookingSummaryScreen = ({ route, navigation }) => {
         userData?.fullName ?? '',
         userData?.profileImage ?? DEFAULT_AVATAR,
       );
+
+      setModalVisible(true);
       sendAppointmentNotification(
         userId,
         route.params.shopId,
         APPOINTMENT_TYPES.BOOKING_REQUEST_SENT,
         appointmentRes.id ?? null,
       );
-      setModalVisible(true);
     } catch (error) {
       console.error('Error creating appointment:', error);
     } finally {

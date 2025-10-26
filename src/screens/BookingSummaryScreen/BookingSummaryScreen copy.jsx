@@ -239,7 +239,7 @@ const BookingSummaryScreen = ({ route, navigation }) => {
         appointmentRes.id ?? null,
       );
 
-     await Promise.allSettled([notificationPromise]);
+      await Promise.allSettled([notificationPromise]);
       setModalVisible(true);
     } catch (error) {
       console.error('Error creating appointment:', error);
@@ -250,7 +250,7 @@ const BookingSummaryScreen = ({ route, navigation }) => {
 
   const handleModalClose = () => {
     setModalVisible(false);
-    //navigation.navigate('Appointment', { newAppointment: true });
+    navigation.navigate('Appointment', { newAppointment: true });
   };
 
   return (

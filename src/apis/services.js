@@ -353,7 +353,7 @@ export const searchShopsByService = async searchTerm => {
         };
       }
       return null;
-    }); 
+    });
 
     const shops = await Promise.all(shopsPromises);
     return shops.filter(shop => shop !== null);
@@ -895,6 +895,21 @@ export const getGalleryImages = async (placeId, page = 0) => {
 //       console.log('Error sending notification:', error);
 //     });
 // };
+// export const createAppointment = async (userId, appointmentData) => {
+//   try {
+//     const docRef = firestore().collection('appointments').doc();
+//     await docRef.set({
+//       ...appointmentData,
+//       userId,
+//       createdAt: firestore.FieldValue.serverTimestamp(),
+//     });
+//     return { success: true, id: docRef.id };
+//   } catch (error) {
+//     console.error('Error creating appointment:', error);
+//     return { success: false, error };
+//   }
+// };
+
 export const createAppointment = async (userId, appointmentData) => {
   try {
     const docRef = firestore().collection('appointments').doc();
@@ -910,6 +925,16 @@ export const createAppointment = async (userId, appointmentData) => {
   }
 };
 
+// export const updateSlotInFirestore = (slotId, slotData) => {
+//   firestore()
+//     .collection('slots')
+//     .doc(slotId)
+//     .update({
+//       ...slotData,
+//       updatedAt: firestore.FieldValue.serverTimestamp(),
+//     });
+//   return { success: true };
+// };
 
 export const updateSlotInFirestore = (slotId, slotData) => {
   firestore()
@@ -921,6 +946,28 @@ export const updateSlotInFirestore = (slotId, slotData) => {
     });
   return { success: true };
 };
+
+// export const createNotification = (
+//   fromId,
+//   toId,
+//   appointmentId,
+//   customerName,
+//   profileImage,
+// ) => {
+//   firestore()
+//     .collection('notifications')
+//     .add({
+//       fromId,
+//       toId,
+//       notificationType: NOTIFICATION_TYPES.APPOINTMENT_REQUEST,
+//       createdAt: firestore.FieldValue.serverTimestamp(),
+//       isRead: false,
+//       message: ` ${customerName} Sent an appointment request`,
+//       appointmentId,
+//       profileImage,
+//     });
+//   return { success: true };
+// };
 
 export const createNotification = (
   fromId,
@@ -937,12 +984,28 @@ export const createNotification = (
       notificationType: NOTIFICATION_TYPES.APPOINTMENT_REQUEST,
       createdAt: firestore.FieldValue.serverTimestamp(),
       isRead: false,
-      message: ` ${customerName} Sent an appointment request`,
+      message: `${customerName} sent an appointment request`,
       appointmentId,
       profileImage,
     });
   return { success: true };
 };
+
+// export const sendAppointmentNotification = async (
+//   customerId,
+//   shopId,
+//   appointmentType,
+//   appointmentId = null,
+// ) => {
+//   await axios
+//     .post(`${BACKEND_URL}/api/v1/user/appointment`, {
+//       customerId,
+//       shopId,
+//       appointmentType,
+//       appointmentId,
+//     })
+//     .catch(error => console.log('Error sending notification:', error));
+// };
 
 export const sendAppointmentNotification = (
   customerId,

@@ -54,7 +54,7 @@ class FirebaseNotificationService {
       return null;
     }
   }
-
+ 
   // Store FCM token in Firestore
   static async storeFCMToken(token) {
     try {
@@ -125,6 +125,13 @@ class FirebaseNotificationService {
     } catch (error) {
       console.error('Error unsubscribing from topic:', error);
     }
+  }
+
+  static listenForTokenRefresh() {
+    messaging().onTokenRefresh(async newToken => {
+      console.log('🔄 FCM token refreshed:', newToken);
+      await this.storeFCMToken(newToken);
+    });
   }
 }
 

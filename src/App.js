@@ -159,10 +159,20 @@ function MainAppStack() {
       />
       <Stack.Screen name="HelpSupportScreen" component={HelpSupportScreen} />
       <Stack.Screen name="EditProfileScreen" component={EditProfileScreen} />
+      <Stack.Screen name="Appointment" component={AllAppointments} />
       <Stack.Screen name="ParlourDetails" component={ParlourDetails} />
       <Stack.Screen
         name="SearchResultsScreen"
         component={SearchResultsScreen}
+      />
+      <Stack.Screen name="BookingScreen" component={BookingScreen} />
+      <Stack.Screen
+        name="BookingSummaryScreen"
+        component={BookingSummaryScreen}
+      />
+      <Stack.Screen
+        name="BeautyExpertDetailsScreen"
+        component={BeautyExpertDetailsScreen}
       />
     </Stack.Navigator>
   );
@@ -178,6 +188,7 @@ export default function App() {
       if (!notificationSetupComplete) {
         try {
           FirebaseNotificationService.setupNotificationHandlers();
+          // FirebaseNotificationService.listenForTokenRefresh();
           const hasPermission =
             await FirebaseNotificationService.requestNotificationPermission();
           if (hasPermission && user && !userData.fcmToken) {

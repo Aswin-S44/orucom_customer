@@ -34,17 +34,22 @@ const ServiceItem = ({ item, shopId, experts, offers }) => {
           styles.bookButton,
           item.active ? styles.activeButton : styles.inactiveButton,
         ]}
-        onPress={
-          () =>
-            navigation.navigate('BookingScreen', {
-              shopId: shopId,
-              serviceId: item.id,
-              experts,
-              service: item,
-              offers,
-            })
-        
-        }
+        onPress={() => {
+          console.log('=========================', {
+            shopId: shopId,
+            serviceId: item.id,
+            experts,
+            service: item,
+            offers,
+          });
+          navigation.navigate('BookingScreen', {
+            shopId: shopId,
+            serviceId: item.id,
+            experts,
+            service: item,
+            offers,
+          });
+        }}
       >
         <Text
           style={[
@@ -61,7 +66,7 @@ const ServiceItem = ({ item, shopId, experts, offers }) => {
 
 const OfferItem = ({ item, shopId, experts, offers }) => {
   const navigation = useNavigation();
- 
+
   return (
     <View style={styles.card}>
       <Image
@@ -76,7 +81,7 @@ const OfferItem = ({ item, shopId, experts, offers }) => {
 
       <View style={styles.cardTextContainer}>
         <Text style={styles.cardTitle}>{item.serviceName}</Text>
-       
+
         <OfferText
           regularPrice={item?.regularPrice ?? 0}
           offerPrice={item?.offerPrice ?? 0}
