@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import React, { useContext, useEffect, useState } from 'react';
 import { AuthContext } from '../../context/AuthContext';
-import { getCustomerById, updateUserData } from '../../apis/services';
+import { updateUserData } from '../../apis/services';
 import { launchImageLibrary } from 'react-native-image-picker';
 import { primaryColor } from '../../constants/colors';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -29,32 +29,6 @@ const EditProfileScreen = ({ navigation }) => {
   const [phoneError, setPhoneError] = useState('');
 
   const initialImage = require('../../assets/images/user.png');
-
-
-  // useEffect(() => {
-  //   if (user && user.uid) {
-  //     setProfileLoading(true);
-  //     const fetchUserData = async () => {
-  //       try {
-  //         const res = await getCustomerById(user.uid);
-  //         if (res) {
-  //           setName(res.fullName || '');
-  //           setPhone(res.phone || '');
-  //           setEmail(res.email || '');
-  //           setImageUri(res.profileImage || null);
-  //         }
-  //       } catch (error) {
-  //         console.error('Failed to fetch user data:', error);
-  //         setToastMessage('Failed to load profile data.');
-  //       } finally {
-  //         setProfileLoading(false);
-  //       }
-  //     };
-  //     fetchUserData();
-  //   } else {
-  //     setProfileLoading(false);
-  //   }
-  // }, [user]);
 
   useEffect(() => {
     if (userData) {
@@ -78,7 +52,7 @@ const EditProfileScreen = ({ navigation }) => {
 
   const selectImage = () => {
     launchImageLibrary(
-      { mediaType: 'photo', includeBase64: true, quality: 0.7 }, // Added quality
+      { mediaType: 'photo', includeBase64: true, quality: 0.7 },
       response => {
         if (response.didCancel) {
           return;
@@ -115,8 +89,8 @@ const EditProfileScreen = ({ navigation }) => {
     }
 
     return isValid;
-  }; 
- 
+  };
+
   const handleEditProfile = async () => {
     if (!user) {
       setToastMessage('User not logged in.');
@@ -134,7 +108,7 @@ const EditProfileScreen = ({ navigation }) => {
       email,
       profileImage: imageUri,
       phone,
-    }; 
+    };
     try {
       await updateUserData(user.uid, updatedData);
       await refreshUser();
@@ -198,7 +172,7 @@ const EditProfileScreen = ({ navigation }) => {
             placeholder="Enter your email address"
             placeholderTextColor="#999"
             keyboardType="email-address"
-            editable={false} // Email typically not editable
+            editable={false}
           />
         </View>
 
@@ -214,7 +188,7 @@ const EditProfileScreen = ({ navigation }) => {
             placeholder="Enter your phone number"
             placeholderTextColor="#999"
             keyboardType="phone-pad"
-            maxLength={10} // Ensure phone number is max 10 digits
+            maxLength={10}
           />
           {phoneError ? (
             <Text style={styles.errorText}>{phoneError}</Text>

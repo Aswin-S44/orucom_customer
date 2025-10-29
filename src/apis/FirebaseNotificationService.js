@@ -3,11 +3,9 @@ import messaging from '@react-native-firebase/messaging';
 import { auth, firestore } from '../config/firebase';
 
 class FirebaseNotificationService {
-  // Request notification permissions
   static async requestNotificationPermission() {
     try {
       if (Platform.OS === 'android') {
-        // For Android 13+ (API level 33+)
         if (Platform.Version >= 33) {
           const granted = await PermissionsAndroid.request(
             PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS,
@@ -20,7 +18,7 @@ class FirebaseNotificationService {
           );
           return granted === PermissionsAndroid.RESULTS.GRANTED;
         }
-        // For older Android versions, permission is granted by default
+
         return true;
       } else {
         // iOS
@@ -59,10 +57,7 @@ class FirebaseNotificationService {
   static async storeFCMToken(token) {
     try {
       const currentUser = auth().currentUser;
-      console.log(
-        'currentUser---------------',
-        currentUser ? currentUser : 'no curetnte user',
-      );
+
       if (currentUser) {
         const userDoc = await firestore()
           .collection('customers')
@@ -92,7 +87,6 @@ class FirebaseNotificationService {
 
   // Setup notification handlers
   static setupNotificationHandlers() {
-    // Foreground messages
     const unsubscribe = messaging().onMessage(async remoteMessage => {
       Alert.alert(
         remoteMessage.notification?.title || 'Notification',
@@ -146,7 +140,6 @@ class FirebaseNotificationService {
 
   static listenForTokenRefresh() {
     messaging().onTokenRefresh(async newToken => {
-      console.log('🔄 FCM token refreshed:', newToken);
       await this.storeFCMToken(newToken);
     });
   }

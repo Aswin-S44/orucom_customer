@@ -14,7 +14,7 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import Feather from 'react-native-vector-icons/Feather';
 import { primaryColor } from '../../constants/colors';
 import { signup } from '../../apis/auth';
-import auth from '@react-native-firebase/auth'; // Import Firebase auth
+import auth from '@react-native-firebase/auth';
 
 const SignUpScreen = ({ navigation }) => {
   const [isLoading, setIsLoading] = useState(false);
@@ -39,7 +39,6 @@ const SignUpScreen = ({ navigation }) => {
       password === '' &&
       confirmPassword === ''
     ) {
-      // Don't validate on initial render if not submitted
       setIsFormValid(false);
       return;
     }
@@ -75,9 +74,8 @@ const SignUpScreen = ({ navigation }) => {
     setIsLoading(true);
     setSignupError('');
     try {
-      const user = await signup(email, password); // Your custom signup function
+      const user = await signup(email, password);
       if (user) {
-        // Send email verification right after signup
         await auth().currentUser.sendEmailVerification();
         navigation.navigate('OTPVerificationScreen', { userEmail: email });
       }

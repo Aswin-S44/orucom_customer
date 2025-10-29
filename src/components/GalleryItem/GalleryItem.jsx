@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 
 const { width } = Dimensions.get('window');
-const cardSize = (width - 24 * 2 - 16) / 2; // Assuming 24 horizontal padding and 16 spacing between cards
+const cardSize = (width - 24 * 2 - 16) / 2;
 
 const GalleryItem = ({ item }) => {
   if (item.type === 'add') {

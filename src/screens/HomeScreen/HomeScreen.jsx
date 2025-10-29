@@ -25,11 +25,10 @@ import EmptyComponent from '../../components/EmptyComponent/EmptyComponent';
 import { getLocationPermission } from '../../apis/permissions';
 import Geolocation from '@react-native-community/geolocation';
 import { isShopOpen } from '../../utils/utils';
-import firestore from '@react-native-firebase/firestore';
 
 const HomeScreen = ({ navigation }) => {
-  const [shops, setShops] = useState(null); // Initialize as null to distinguish between 'not loaded' and 'empty'
-  const [loading, setLoading] = useState(true); // Start loading immediately
+  const [shops, setShops] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [notificationCount, setNotificationCount] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
   const { user } = useContext(AuthContext);
@@ -68,11 +67,11 @@ const HomeScreen = ({ navigation }) => {
       if (res && res.length > 0) {
         setShops(res);
       } else {
-        setShops([]); // Explicitly set to empty array if no data
+        setShops([]);
       }
     } catch (err) {
       console.error('Error fetching shops:', err);
-      setShops([]); // Set to empty array on error as well
+      setShops([]);
     } finally {
       setLoading(false);
     }
@@ -99,8 +98,8 @@ const HomeScreen = ({ navigation }) => {
 
   useEffect(() => {
     fetchShops();
-    fetchNotificationCount(); // Fetch notifications on initial load
-  }, [user?.uid]); // Depend on user to refetch if user changes
+    fetchNotificationCount();
+  }, [user?.uid]);
 
   const services = [
     {

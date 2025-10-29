@@ -16,11 +16,6 @@ import GallerySection from '../../sections/GallerySection/GallerySection';
 import { NO_IMAGE } from '../../constants/images';
 import StarRating from '../../components/StarRating/StarRating';
 import AboutSection from '../../sections/AboutSection/AboutSection';
-import {
-  getGalleryImages,
-  getOffersByShop,
-  getServicesByShop,
-} from '../../apis/services';
 
 const ParlourDetails = ({ route, navigation }) => {
   const { parlourData } = route.params;

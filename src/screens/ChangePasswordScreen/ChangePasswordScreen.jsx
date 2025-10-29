@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { primaryColor } from '../../constants/colors';
-import auth from '@react-native-firebase/auth'; // ✅ use only react-native-firebase
+import auth from '@react-native-firebase/auth';
 import { AuthContext } from '../../context/AuthContext';
 
 const PasswordInput = ({
@@ -87,14 +87,12 @@ const ChangePasswordScreen = ({ navigation }) => {
 
     try {
       if (user && user.email) {
-        // ✅ Re-authenticate with @react-native-firebase/auth
         const credential = auth.EmailAuthProvider.credential(
           user.email,
           oldPassword,
         );
         await user.reauthenticateWithCredential(credential);
 
-        // ✅ Update password
         await user.updatePassword(newPassword);
 
         Alert.alert('Success', 'Password changed successfully');

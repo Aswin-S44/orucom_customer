@@ -1,7 +1,7 @@
 import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
 import { DEFAULT_AVATAR } from '../constants/images';
-import { BACKEND_URL, USER_TYPES } from '../constants/variables';
+import { USER_TYPES } from '../constants/variables';
 import axios from 'axios';
 import { generateRandomName } from '../utils/utils';
 

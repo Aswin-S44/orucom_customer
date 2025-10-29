@@ -22,24 +22,18 @@ import { primaryColor } from '../../constants/colors';
 import EmptyComponent from '../../components/EmptyComponent/EmptyComponent';
 import { Swipeable } from 'react-native-gesture-handler';
 import AllNotificationsScreenSkeleton from '../AllNotificationsScreenSkeleton/AllNotificationsScreenSkeleton';
-import { getNotificationTitle } from '../../constants/variables';
-import firestore from '@react-native-firebase/firestore';
 
 const AllNotificationScreen = ({ navigation }) => {
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [notifications, setNotifications] = useState([]);
-  const { user, userId } = useContext(AuthContext);
+  const { userId } = useContext(AuthContext);
 
   const fetchNotifications = useCallback(async () => {
     if (userId) {
-      const start = performance.now();
       setLoading(true);
 
       const res = await getNotificationsByCustomerId(userId);
-
-      const end = performance.now();
-      //console.log(`⏱️ Fetch time: ${(end - start).toFixed(2)} ms`);
 
       setLoading(false);
       setNotifications(res || []);

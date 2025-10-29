@@ -7,14 +7,13 @@ import {
   StatusBar,
   ScrollView,
   Image,
-  ActivityIndicator,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { primaryColor, starColor } from '../../constants/colors';
 import { formatText } from '../../utils/utils';
 import { getExpertsWithShopDetailsByShopId } from '../../apis/services';
 import { DEFAULT_AVATAR } from '../../constants/images';
-import Loader from '../../components/Loader/Loader';
+
 import ProfileScreenSkeleton from '../../components/ProfileScreenSkeleton/ProfileScreenSkeleton';
 
 const StarRating = ({ rating, count }) => {
@@ -140,13 +139,6 @@ const BeautyExpertDetailsScreen = ({ navigation, route }) => {
                 <Text style={styles.descriptionText}>
                   {expert?.expert?.about ?? ''}
                 </Text>
-                {/* <View style={styles.bulletPoint}>
-                  <View style={styles.bulletIcon} />
-                  <Text style={styles.bulletText}>
-                    Distracted by the readable content of a page when looking at
-                    its layout.
-                  </Text>
-                </View> */}
               </View>
 
               <View style={styles.section}>
@@ -169,12 +161,6 @@ const BeautyExpertDetailsScreen = ({ navigation, route }) => {
                   <Text style={styles.addressText}>
                     {expert?.shopDetails?.address ?? '-'}
                   </Text>
-                  {/* <Ionicons
-                    name="locate-outline"
-                    size={24}
-                    color={primaryColor}
-                  />
-                  <Text style={styles.distanceText}>5 km</Text> */}
                 </View>
               </View>
             </ScrollView>

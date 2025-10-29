@@ -9,7 +9,6 @@ import {
   RefreshControl,
 } from 'react-native';
 import { AuthContext } from '../../context/AuthContext';
-import { getAppointmentsByCustomerId } from '../../apis/services';
 import EmptyComponent from '../../components/EmptyComponent/EmptyComponent';
 import { NO_IMAGE } from '../../constants/images';
 import {
