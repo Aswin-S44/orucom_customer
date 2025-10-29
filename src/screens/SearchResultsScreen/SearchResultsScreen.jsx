@@ -19,6 +19,8 @@ import EmptyComponent from '../../components/EmptyComponent/EmptyComponent';
 import { AuthContext } from '../../context/AuthContext';
 import firestore from '@react-native-firebase/firestore';
 import ServiceCardSkeleton from '../../components/ServiceCardSkeleton/ServiceCardSkeleton';
+import LocationPrompt from '../../components/LocationPrompt/LocationPrompt';
+import SearchPrompt from '../../components/SearchPrompt/SearchPrompt';
 
 const debounce = (func, wait) => {
   let timeout;
@@ -216,7 +218,7 @@ const SearchResultsScreen = ({ navigation }) => {
             <EvilIcons
               name="search"
               size={32}
-              color="#888"
+              color={primaryColor}
               style={styles.searchIcon}
             />
           </View>
@@ -227,7 +229,7 @@ const SearchResultsScreen = ({ navigation }) => {
         </Text>
 
         {loading ? (
-          <ServiceCardSkeleton />
+          <SearchPrompt title="Searching shops" fileName="Searching.json" />
         ) : searchResults?.length === 0 ? (
           <EmptyComponent />
         ) : (

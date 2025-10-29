@@ -35,13 +35,6 @@ const ServiceItem = ({ item, shopId, experts, offers }) => {
           item.active ? styles.activeButton : styles.inactiveButton,
         ]}
         onPress={() => {
-          console.log('=========================', {
-            shopId: shopId,
-            serviceId: item.id,
-            experts,
-            service: item,
-            offers,
-          });
           navigation.navigate('BookingScreen', {
             shopId: shopId,
             serviceId: item.id,

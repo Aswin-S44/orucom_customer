@@ -42,6 +42,14 @@ if (!firebase.apps.length) {
 }
 */
 
+firestore().settings({
+  persistence: true, // enable local cache
+});
+
+if (__DEV__) {
+  firestore().setLogLevel('debug');
+}
+
 // Export the Firebase services
 export { auth, firestore, storage, messaging, firebase };
 

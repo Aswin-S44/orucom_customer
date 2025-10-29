@@ -30,6 +30,7 @@ import EditProfileScreen from './screens/EditProfileScreen/EditProfileScreen';
 import AllNotificationScreen from './screens/AllNotificationScreen/AllNotificationScreen';
 import NofificationDetailsScreen from './screens/NofificationDetailsScreen/NofificationDetailsScreen';
 import SigninWithGoogleScreen from './screens/SigninWithGoogleScreen/SigninWithGoogleScreen';
+import firestore from '@react-native-firebase/firestore';
 
 const Tab = createMaterialBottomTabNavigator();
 const Drawer = createDrawerNavigator();
@@ -185,20 +186,21 @@ export default function App() {
 
   useEffect(() => {
     const initializeNotifications = async () => {
-      if (!notificationSetupComplete) {
-        try {
-          FirebaseNotificationService.setupNotificationHandlers();
-          // FirebaseNotificationService.listenForTokenRefresh();
-          const hasPermission =
-            await FirebaseNotificationService.requestNotificationPermission();
-          if (hasPermission && user && !userData.fcmToken) {
-            await FirebaseNotificationService.getFCMToken();
-          }
-          setNotificationSetupComplete(true);
-        } catch (error) {
-          console.error('App initialization error:', error);
-        }
+      // if (!notificationSetupComplete) {
+      try {
+        FirebaseNotificationService.setupNotificationHandlers();
+        // FirebaseNotificationService.listenForTokenRefresh();
+        const hasPermission =
+          await FirebaseNotificationService.requestNotificationPermission();
+
+        // if (hasPermission && user) {
+        //   await FirebaseNotificationService.getFCMToken();
+        // }
+        // setNotificationSetupComplete(true);
+      } catch (error) {
+        console.error('App initialization error:', error);
       }
+      // }
     };
     if (!loading) {
       initializeNotifications();
@@ -215,6 +217,22 @@ export default function App() {
   };
 
   const initialRouteName = getInitialRoute();
+
+  // useEffect(() => {
+  //   firestore()
+  //     .settings({ persistence: false })
+  //     .then(() => console.log('Firestore ready'));
+  // }, []);
+
+  useEffect(() => {
+    const checkHealth = async () => {
+      await firestore()
+        .collection('ping')
+        .limit(1)
+        .get()
+        .catch(() => {});
+    };
+  }, []);
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>

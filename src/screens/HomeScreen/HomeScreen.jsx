@@ -100,7 +100,7 @@ const HomeScreen = ({ navigation }) => {
   useEffect(() => {
     fetchShops();
     fetchNotificationCount(); // Fetch notifications on initial load
-  }, [user.uid]); // Depend on user to refetch if user changes
+  }, [user?.uid]); // Depend on user to refetch if user changes
 
   const services = [
     {

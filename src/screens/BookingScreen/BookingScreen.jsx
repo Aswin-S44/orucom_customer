@@ -121,11 +121,18 @@ const BookingScreen = ({ route, navigation }) => {
   };
 
   Object.keys(slots).forEach(date => {
-    if (slots[date].length > 0) {
+    const hasAvailableSlots = slots[date].some(slot => slot.isAvailable);
+    if (hasAvailableSlots) {
       markedDates[date] = {
         ...(markedDates[date] || {}),
         marked: true,
         dotColor: primaryColor,
+      };
+    } else {
+      markedDates[date] = {
+        ...(markedDates[date] || {}),
+        marked: true,
+        dotColor: lightPurple,
       };
     }
   });
@@ -168,7 +175,10 @@ const BookingScreen = ({ route, navigation }) => {
         >
           <Text style={styles.mainTitle}>Book Your Appointment</Text>
           {errorMessage ? (
-            <Text style={styles.errorMessage}>{errorMessage}</Text>
+            <View style={styles.errorMessageContainer}>
+              <Ionicons name="alert-circle-outline" size={20} color="red" />
+              <Text style={styles.errorMessageText}>{errorMessage}</Text>
+            </View>
           ) : null}
 
           <View style={styles.section}>
@@ -318,6 +328,7 @@ const BookingScreen = ({ route, navigation }) => {
                         styles.timeSlot,
                         isSelected && styles.timeSlotSelected,
                         (isDisabled || isPastTime) && styles.timeSlotDisabled,
+                        isDisabled && !isPastTime && styles.timeSlotUnavailable,
                       ]}
                     >
                       <Text
@@ -326,6 +337,9 @@ const BookingScreen = ({ route, navigation }) => {
                           isSelected && styles.timeSlotTextSelected,
                           (isDisabled || isPastTime) &&
                             styles.timeSlotTextDisabled,
+                          isDisabled &&
+                            !isPastTime &&
+                            styles.timeSlotTextUnavailable,
                         ]}
                       >
                         {slotLabel}
@@ -351,7 +365,7 @@ const BookingScreen = ({ route, navigation }) => {
                   Service
                 </Text>
                 <Text style={[styles.tableCell, styles.tableHeaderText]}>
-                  Quantity
+                  Qty
                 </Text>
                 <Text
                   style={[
@@ -418,77 +432,89 @@ const styles = StyleSheet.create({
   },
   backButtonText: {
     color: '#fff',
-    fontSize: 18,
+    fontSize: 16,
     marginLeft: 5,
   },
   container: {
     flex: 1,
-    marginTop: 100,
+    marginTop: 90,
     backgroundColor: '#fff',
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,
-    paddingHorizontal: 20,
+    paddingHorizontal: 15,
     paddingVertical: 10,
   },
   scrollViewContent: {
-    paddingBottom: 20,
+    paddingBottom: 10,
   },
   mainTitle: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: '600',
     color: '#333',
     textAlign: 'center',
-    marginTop: 20,
-    marginBottom: 15,
+    marginTop: 15,
+    marginBottom: 10,
   },
-  errorMessage: {
+  errorMessageContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#ffe0e0',
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+    marginBottom: 15,
+    borderWidth: 1,
+    borderColor: 'red',
+  },
+  errorMessageText: {
     color: 'red',
-    textAlign: 'center',
-    marginBottom: 20,
-    fontSize: 14,
+    fontSize: 13,
+    marginLeft: 6,
+    fontWeight: '500',
   },
   section: {
-    marginBottom: 25,
+    marginBottom: 20,
   },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 15,
+    marginBottom: 10,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: '600',
     color: '#333',
   },
   loadingText: {
     textAlign: 'center',
     color: '#888',
-    marginTop: 10,
+    marginTop: 8,
   },
   expertScroll: {
-    paddingVertical: 10,
+    paddingVertical: 8,
   },
   expertItem: {
-    marginRight: 15,
+    marginRight: 10,
     alignItems: 'center',
   },
   expertCard: {
     alignItems: 'center',
     padding: 5,
-    borderRadius: 15,
+    borderRadius: 12,
     backgroundColor: '#f9f9f9',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 1.41,
+    shadowOpacity: 0.15,
+    shadowRadius: 1,
     elevation: 2,
   },
   avatarContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    marginBottom: 8,
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    marginBottom: 6,
     backgroundColor: '#e0e0e0',
     overflow: 'hidden',
     borderWidth: 2,
@@ -497,56 +523,56 @@ const styles = StyleSheet.create({
   avatar: {
     width: '100%',
     height: '100%',
-    borderRadius: 40,
+    borderRadius: 35,
   },
   avatarOverlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(142, 68, 173, 0.7)',
-    borderRadius: 40,
+    borderRadius: 35,
     justifyContent: 'center',
     alignItems: 'center',
   },
   checkIcon: {
     position: 'absolute',
-    bottom: 0,
-    right: 0,
+    bottom: -2,
+    right: -2,
     backgroundColor: primaryColor,
     borderRadius: 14,
   },
   expertName: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '500',
     color: '#333',
-    marginTop: 5,
+    marginTop: 4,
   },
   expertNameSkeleton: {
-    width: 60,
-    height: 14,
-    borderRadius: 4,
+    width: 50,
+    height: 12,
+    borderRadius: 3,
     backgroundColor: '#d0d0d0',
   },
   noExpertsText: {
     color: '#888',
     textAlign: 'center',
-    marginTop: 10,
+    marginTop: 8,
     width: '100%',
   },
   viewDetailsButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 8,
-    paddingVertical: 5,
-    paddingHorizontal: 10,
+    marginTop: 6,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
     backgroundColor: '#f0f0f0',
-    borderRadius: 8,
+    borderRadius: 6,
   },
   viewDetailsText: {
-    fontSize: 12,
+    fontSize: 11,
     color: primaryColor,
-    marginLeft: 5,
+    marginLeft: 4,
   },
   calendar: {
-    borderRadius: 15,
+    borderRadius: 12,
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: '#e0e0e0',
@@ -557,14 +583,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   legendDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    marginRight: 6,
-    marginLeft: 10,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    marginRight: 5,
+    marginLeft: 8,
   },
   legendText: {
-    fontSize: 13,
+    fontSize: 12,
     color: '#888',
   },
   timeSlotsContainer: {
@@ -574,10 +600,10 @@ const styles = StyleSheet.create({
   },
   timeSlot: {
     backgroundColor: '#f0f0f0',
-    borderRadius: 10,
-    paddingVertical: 12,
-    paddingHorizontal: 15,
-    marginBottom: 10,
+    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    marginBottom: 8,
     width: '48%',
     alignItems: 'center',
     justifyContent: 'center',
@@ -593,10 +619,14 @@ const styles = StyleSheet.create({
     borderColor: '#d0d0d0',
     opacity: 0.7,
   },
+  timeSlotUnavailable: {
+    backgroundColor: lightPurple,
+    borderColor: lightPurple,
+  },
   timeSlotText: {
     color: '#555',
     fontWeight: '500',
-    fontSize: 13,
+    fontSize: 12,
   },
   timeSlotTextSelected: {
     color: '#fff',
@@ -604,21 +634,24 @@ const styles = StyleSheet.create({
   timeSlotTextDisabled: {
     color: '#a0a0a0',
   },
+  timeSlotTextUnavailable: {
+    color: '#fff',
+  },
   noSlotsText: {
     color: '#888',
     textAlign: 'center',
-    marginTop: 10,
+    marginTop: 8,
     width: '100%',
   },
   table: {
     borderWidth: 1,
     borderColor: '#e0e0e0',
-    borderRadius: 15,
+    borderRadius: 12,
     overflow: 'hidden',
   },
   tableRow: {
     flexDirection: 'row',
-    paddingVertical: 15,
+    paddingVertical: 12,
     paddingHorizontal: 10,
     borderBottomWidth: 1,
     borderBottomColor: '#f5f5f5',
@@ -629,7 +662,7 @@ const styles = StyleSheet.create({
   },
   tableCell: {
     flex: 1,
-    fontSize: 14,
+    fontSize: 13,
     color: '#555',
   },
   tableHeaderText: {
@@ -638,17 +671,17 @@ const styles = StyleSheet.create({
   },
   nextButton: {
     backgroundColor: primaryColor,
-    padding: 16,
-    borderRadius: 15,
+    padding: 14,
+    borderRadius: 12,
     alignItems: 'center',
-    marginVertical: 15,
+    marginVertical: 10,
   },
   disabledButton: {
     backgroundColor: '#ccc',
   },
   nextButtonText: {
     color: '#fff',
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
   },
 });

@@ -39,7 +39,7 @@ const AllNotificationScreen = ({ navigation }) => {
       const res = await getNotificationsByCustomerId(userId);
 
       const end = performance.now();
-      console.log(`⏱️ Fetch time: ${(end - start).toFixed(2)} ms`);
+      //console.log(`⏱️ Fetch time: ${(end - start).toFixed(2)} ms`);
 
       setLoading(false);
       setNotifications(res || []);

@@ -149,6 +149,9 @@ const BookingSummaryScreen = ({ route, navigation }) => {
 
     try {
       const appointmentRes = await createAppointment(userId, bookingData);
+
+      setModalVisible(true);
+
       updateSlotInFirestore(selectedSlot.id, { isAvailable: false });
       createNotification(
         userId,
@@ -157,8 +160,6 @@ const BookingSummaryScreen = ({ route, navigation }) => {
         userData?.fullName ?? '',
         userData?.profileImage ?? DEFAULT_AVATAR,
       );
-
-      setModalVisible(true);
       sendAppointmentNotification(
         userId,
         route.params.shopId,

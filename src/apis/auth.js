@@ -5,7 +5,7 @@ import { BACKEND_URL, USER_TYPES } from '../constants/variables';
 import axios from 'axios';
 import { generateRandomName } from '../utils/utils';
 
-export const googleSignUp = async(data)=>{
+export const googleSignUp = async data => {
   await firestore().collection('customers').doc(user.uid).set({
     uid: user.uid,
     fullName: generateRandomName(),
@@ -17,7 +17,7 @@ export const googleSignUp = async(data)=>{
     emailVerified: false,
     otp: '123456',
   });
-}
+};
 
 export const signup = async (email, password) => {
   try {
@@ -37,27 +37,6 @@ export const signup = async (email, password) => {
       emailVerified: false,
       otp: '123456',
     });
-
-    // Promise.allSettled([
-    //   axios.post(
-    //     `https://beauty-parlor-app-backend.onrender.com/api/v1/user/send-otp`,
-    //     {
-    //       email,
-    //       userType: USER_TYPES.CUSTOMER,
-    //     },
-    //   ),
-    // ]).then(results => {
-    //   results.forEach(r => {
-    //     if (r.status === 'rejected') {
-    //       console.log(
-    //         'OTP API ERROR:',
-    //         r.reason.response?.data || r.reason.message,
-    //       );
-    //     } else {
-    //       console.log('OTP API SUCCESS:', r.value.data);
-    //     }
-    //   });
-    // });
 
     return user;
   } catch (error) {

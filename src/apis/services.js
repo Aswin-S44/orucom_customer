@@ -1,5 +1,7 @@
 import auth from '@react-native-firebase/auth';
 import firestore, {
+  addDoc,
+  collection,
   doc,
   getDoc,
   getFirestore,
@@ -129,29 +131,29 @@ export const getServiceById = async (shopId, serviceId) => {
   return null;
 };
 
-// export const createAppointment = async (userId, appointmentData) => {
-//   try {
-//     const docRef = await firestore()
-//       .collection('appointments')
-//       .add({
-//         ...appointmentData,
-//         userId,
-//         createdAt: firestore.FieldValue.serverTimestamp(),
-//       });
+export const createAppointment = async (userId, appointmentData) => {
+  try {
+    const docRef = await firestore()
+      .collection('appointments')
+      .add({
+        ...appointmentData,
+        userId,
+        createdAt: firestore.FieldValue.serverTimestamp(),
+      });
 
-//     return {
-//       success: true,
-//       id: docRef.id,
-//       message: 'Appointment created successfully',
-//     };
-//   } catch (error) {
-//     console.error('Error creating appointment:', error);
-//     return {
-//       success: false,
-//       message: error.message,
-//     };
-//   }
-// };
+    return {
+      success: true,
+      id: docRef.id,
+      message: 'Appointment created successfully',
+    };
+  } catch (error) {
+    console.error('Error creating appointment:', error);
+    return {
+      success: false,
+      message: error.message,
+    };
+  }
+};
 
 export const getOffersByShop = async shopId => {
   const querySnapshot = await firestore()
@@ -731,9 +733,9 @@ export const getOfferByServiceAndShop = async (serviceId, shopId) => {
 };
 
 export const getGalleryImages = async (placeId, page = 0) => {
-  console.log('###############');
+  //console.log('###############');
   const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=photos&key=${GOOGLE_MAPS_API_KEY}`;
-  console.log('URL----------------', url);
+
   try {
     const res = await fetch(url);
     const data = await res.json();
@@ -910,20 +912,54 @@ export const getGalleryImages = async (placeId, page = 0) => {
 //   }
 // };
 
-export const createAppointment = async (userId, appointmentData) => {
-  try {
-    const docRef = firestore().collection('appointments').doc();
-    await docRef.set({
-      ...appointmentData,
-      userId,
-      createdAt: firestore.FieldValue.serverTimestamp(),
-    });
-    return { success: true, id: docRef.id };
-  } catch (error) {
-    console.error('Error creating appointment:', error);
-    return { success: false, error };
-  }
-};
+// export const createAppointment = async (userId, appointmentData) => {
+//   try {
+//     const docRef = firestore().collection('appointments').doc();
+
+//     await docRef.set({
+//       ...appointmentData,
+//       userId,
+//       createdAt: firestore.FieldValue.serverTimestamp(),
+//     });
+//     return { success: true, id: docRef.id };
+//   } catch (error) {
+//     console.error('Error creating appointment:', error);
+//     return { success: false, error };
+//   }
+// };
+
+// export const createAppointment = async (userId, appointmentData) => {
+//   try {
+//     console.log('USER ID-------------', userId);
+//     console.log('APpointment daa : ---------------', appointmentData);
+//     // const docRef = firestore().collection('appointments').doc();
+
+//     console.log('TEST------------------', {
+//       ...appointmentData,
+//       userId,
+//       createdAt: firestore.FieldValue.serverTimestamp(),
+//     });
+
+//     // await docRef.set({
+//     //   ...appointmentData,
+//     //   userId,
+//     //   createdAt: firestore.FieldValue.serverTimestamp(),
+//     // });
+
+//     await firestore()
+//       .collection('appointments')
+//       .add({
+//         ...appointmentData,
+//         userId,
+//         createdAt: firestore.FieldValue.serverTimestamp(),
+//       });
+
+//     return { success: true };
+//   } catch (error) {
+//     console.error('Error creating appointment:', error);
+//     return { success: false, error };
+//   }
+// };
 
 // export const updateSlotInFirestore = (slotId, slotData) => {
 //   firestore()
@@ -1007,13 +1043,13 @@ export const createNotification = (
 //     .catch(error => console.log('Error sending notification:', error));
 // };
 
-export const sendAppointmentNotification = (
+export const sendAppointmentNotification = async (
   customerId,
   shopId,
   appointmentType,
   appointmentId = null,
 ) => {
-  axios
+  await axios
     .post(`${BACKEND_URL}/api/v1/user/appointment`, {
       customerId,
       shopId,
@@ -1022,3 +1058,64 @@ export const sendAppointmentNotification = (
     })
     .catch(error => console.log('Error sending notification:', error));
 };
+
+// export const createAppointment = async (
+//   userId,
+//   appointmentData,
+//   profileImage,
+//   slotData,
+//   customerName,
+// ) => {
+//   try {
+//     const data = {
+//       ...appointmentData,
+//       userId,
+//       createdAt: firestore.FieldValue.serverTimestamp(),
+//     };
+
+//     //   firestore()
+//     //   .collection('notifications')
+//     //   .add({
+//     //     fromId,
+//     //     toId,
+//     //     notificationType: NOTIFICATION_TYPES.APPOINTMENT_REQUEST,
+//     //     createdAt: firestore.FieldValue.serverTimestamp(),
+//     //     isRead: false,
+//     //     message: `${customerName} sent an appointment request`,
+//     //     appointmentId,
+//     //     profileImage,
+//     //   });
+//     // return { success: true };
+
+//     let notificationData = {
+//       fromId: userId,
+//       toId: appointmentData.shopId,
+//       notificationType: NOTIFICATION_TYPES.APPOINTMENT_REQUEST,
+//       createdAt: firestore.FieldValue.serverTimestamp(),
+//       isRead: false,
+//       message: `${customerName} sent an appointment request`,
+//       profileImage,
+//     };
+
+//     let body = {
+//       appointment: data,
+//       notificationData,
+//       slotData,
+//     };
+
+//     const res = await axios.post(`${BACKEND_URL}/create-appointment`, body);
+
+//     if (res && res.data) {
+//       return {
+//         success: true,
+//         id: res.data?.id,
+//         message: 'Appointment created successfully',
+//       };
+//     } else {
+//       return null;
+//     }
+//   } catch (error) {
+//     console.error('Error creating appointment:', error);
+//     return { success: false, error };
+//   }
+// };

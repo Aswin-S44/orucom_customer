@@ -146,7 +146,6 @@ const NearByShopsList = () => {
 
   return (
     <View style={styles.container}>
-      {console.log('SHOPS----------------', shops ? shops : 'no shops')}
       <MapView
         ref={mapRef}
         style={styles.map}

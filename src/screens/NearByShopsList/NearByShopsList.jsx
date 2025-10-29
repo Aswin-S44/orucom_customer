@@ -21,6 +21,7 @@ import CardSkeleton from '../../components/CardSkeleton/CardSkeleton';
 import NoShopsAvailable from '../../components/NoShopsAvailable/NoShopsAvailable';
 import Card from '../../components/Card/Card';
 import { isShopOpen } from '../../utils/utils';
+import LocationPrompt from '../../components/LocationPrompt/LocationPrompt';
 
 const NearByShopsList = ({ navigation }) => {
   const [region, setRegion] = useState(null);
@@ -123,7 +124,7 @@ const NearByShopsList = ({ navigation }) => {
     const fetchShops = async () => {
       try {
         const res = await getAllParlours();
-        console.log('RES-----------', res ? res : 'no res');
+        // console.log('RES-----------', res ? res : 'no res');
         setShops(res || []);
       } catch (err) {}
     };
@@ -140,8 +141,15 @@ const NearByShopsList = ({ navigation }) => {
 
   if (!locationEnabled) {
     return (
-      <View style={styles.center}>
-        <Text>Turn on your device location</Text>
+      <View style={styles.container}>
+        <StatusBar backgroundColor={primaryColor} barStyle="light-content" />
+        <View style={styles.header}></View>
+        <View style={styles.center}>
+          <LocationPrompt
+            title="Turn on your device location"
+            fileName="Location_animation.json"
+          />
+        </View>
       </View>
     );
   }

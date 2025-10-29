@@ -15,7 +15,7 @@ const Root = () => (
   </AuthProvider>
 );
 
-firestore().settings({ persistence: true });
+// firestore().settings({ persistence: true });
 
 
 AppRegistry.registerComponent(appName, () => Root);

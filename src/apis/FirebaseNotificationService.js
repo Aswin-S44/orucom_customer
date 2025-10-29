@@ -54,19 +54,36 @@ class FirebaseNotificationService {
       return null;
     }
   }
- 
+
   // Store FCM token in Firestore
   static async storeFCMToken(token) {
     try {
       const currentUser = auth().currentUser;
+      console.log(
+        'currentUser---------------',
+        currentUser ? currentUser : 'no curetnte user',
+      );
       if (currentUser) {
-        await firestore().collection('customers').doc(currentUser.uid).set(
-          {
-            fcmToken: token,
-            updatedAt: firestore.FieldValue.serverTimestamp(),
-          },
-          { merge: true },
-        );
+        const userDoc = await firestore()
+          .collection('customers')
+          .doc(currentUser.uid)
+          .get();
+
+        if (userDoc.exists) {
+          const userData = userDoc.data();
+
+          const fcmToken = userData?.fcmToken;
+
+          if (!fcmToken || fcmToken == null || fcmToken !== token) {
+            await firestore().collection('customers').doc(currentUser.uid).set(
+              {
+                fcmToken: token,
+                updatedAt: firestore.FieldValue.serverTimestamp(),
+              },
+              { merge: true },
+            );
+          }
+        }
       }
     } catch (error) {
       console.error('Error storing FCM token:', error);

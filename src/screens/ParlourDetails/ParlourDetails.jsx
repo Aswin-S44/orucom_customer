@@ -25,8 +25,6 @@ import {
 const ParlourDetails = ({ route, navigation }) => {
   const { parlourData } = route.params;
 
-  console.log('parlourData---------------', parlourData);
-
   const [activeTab, setActiveTab] = React.useState('Service');
   const [services, setServices] = React.useState([]);
   const [offers, setOffers] = React.useState([]);
