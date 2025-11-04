@@ -1,4 +1,4 @@
-import { format } from 'date-fns';
+import { format, isValid } from 'date-fns';
 
 export const formatText = text =>
   text
@@ -68,3 +68,17 @@ export function generateRandomUid() {
   }
   return uid;
 }
+
+export const formatDate = dateString => {
+  if (!dateString) return '-';
+
+  const parts = dateString.split('-');
+  if (parts.length !== 3) return '-';
+
+  const [day, month, year] = parts.map(Number);
+  const date = new Date(year, month - 1, day);
+
+  if (!isValid(date)) return '-';
+
+  return format(date, 'dd MMM yyyy');
+};

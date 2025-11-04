@@ -31,6 +31,7 @@ import AllNotificationScreen from './screens/AllNotificationScreen/AllNotificati
 import NofificationDetailsScreen from './screens/NofificationDetailsScreen/NofificationDetailsScreen';
 import SigninWithGoogleScreen from './screens/SigninWithGoogleScreen/SigninWithGoogleScreen';
 import firestore from '@react-native-firebase/firestore';
+import AppointmentSummaryScreen from './screens/AppointmentSummaryScreen/AppointmentSummaryScreen';
 
 const Tab = createMaterialBottomTabNavigator();
 const Drawer = createDrawerNavigator();
@@ -62,6 +63,10 @@ function HomeStack() {
       <Stack.Screen
         name="NotificationDetailsScreen"
         component={NofificationDetailsScreen}
+      />
+      <Stack.Screen
+        name="AppointmentSummaryScreen"
+        component={AppointmentSummaryScreen}
       />
     </Stack.Navigator>
   );
@@ -174,6 +179,10 @@ function MainAppStack() {
       <Stack.Screen
         name="BeautyExpertDetailsScreen"
         component={BeautyExpertDetailsScreen}
+      />
+      <Stack.Screen
+        name="AppointmentSummaryScreen"
+        component={AppointmentSummaryScreen}
       />
     </Stack.Navigator>
   );

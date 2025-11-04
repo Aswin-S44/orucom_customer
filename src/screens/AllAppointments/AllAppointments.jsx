@@ -7,6 +7,7 @@ import {
   FlatList,
   Image,
   RefreshControl,
+  TouchableOpacity,
 } from 'react-native';
 import { AuthContext } from '../../context/AuthContext';
 import EmptyComponent from '../../components/EmptyComponent/EmptyComponent';
@@ -20,7 +21,7 @@ import AllAppointmentsScreenSkeleton from '../AllAppointmentsScreenSkeleton/AllA
 import { primaryColor } from '../../constants/colors';
 import { useFocusEffect } from '@react-navigation/native';
 import firestore from '@react-native-firebase/firestore';
-
+ 
 const getStatusStyles = status => {
   switch (status) {
     case 'pending':
@@ -48,13 +49,18 @@ const getStatusStyles = status => {
   }
 };
 
-const HistoryItem = ({ item }) => {
+const HistoryItem = ({ item, navigation }) => {
   const statusStyles = getStatusStyles(item.appointmentStatus);
   const expertImageUrl =
     typeof item.expert?.imageUrl === 'string' ? item.expert.imageUrl : NO_IMAGE;
 
   return (
-    <View style={styles.itemContainer}>
+    <TouchableOpacity
+      style={styles.itemContainer}
+      onPress={() => {
+        navigation.navigate('AppointmentSummaryScreen', { item });
+      }}
+    >
       <View style={styles.expertColumn}>
         <Image source={{ uri: expertImageUrl }} style={styles.avatar} />
         <View>
@@ -78,11 +84,11 @@ const HistoryItem = ({ item }) => {
           </Text>
         </View>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 };
 
-const AllAppointments = ({ route }) => {
+const AllAppointments = ({ route, navigation }) => {
   const { user, userId } = useContext(AuthContext);
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -147,7 +153,7 @@ const AllAppointments = ({ route }) => {
       });
 
     return () => unsubscribe();
-  }, [user?.uid,userId]);
+  }, [user?.uid, userId]);
 
   useFocusEffect(
     useCallback(() => {
@@ -212,7 +218,9 @@ const AllAppointments = ({ route }) => {
             </View>
             <FlatList
               data={appointments}
-              renderItem={({ item }) => <HistoryItem item={item} />}
+              renderItem={({ item }) => (
+                <HistoryItem item={item} navigation={navigation} />
+              )}
               keyExtractor={item => item.id}
               showsVerticalScrollIndicator={false}
               ItemSeparatorComponent={() => <View style={styles.separator} />}
