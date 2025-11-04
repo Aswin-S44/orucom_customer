@@ -61,14 +61,14 @@ const AccordionMenuItem = ({ iconName, label, children }) => {
 };
 
 const ProfileScreen = ({ navigation }) => {
-  const { user, userData, loading, refreshUser, logout } =
+  const { user, userData, loading, refreshUser, logout ,userId} =
     useContext(AuthContext);
   const [refreshing, setRefreshing] = useState(false);
   const [isImageViewerVisible, setIsImageViewerVisible] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
-      if (user?.uid) {
+      if (user?.uid && userId) {
         refreshUser();
       }
     }, [user?.uid, refreshUser]),
@@ -76,11 +76,11 @@ const ProfileScreen = ({ navigation }) => {
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    if (user?.uid) {
+    if (user?.uid && userId) {
       await refreshUser();
     }
     setRefreshing(false);
-  }, [user?.uid, refreshUser]);
+  }, [user?.uid, refreshUser, userId]);
 
   const profileImageUri =
     typeof userData?.profileImage === 'string' && userData.profileImage

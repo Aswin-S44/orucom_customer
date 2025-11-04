@@ -1,4 +1,4 @@
-import React, { useCallback, useContext, useState } from 'react';
+import React, { useCallback, useContext, useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
 import { DrawerContentScrollView } from '@react-navigation/drawer';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -17,24 +17,22 @@ const DrawerItem = ({ icon, label, onPress }) => (
 );
 
 const CustomDrawerContent = props => {
-  const { user, userData, refreshUser, logout } = useContext(AuthContext);
-  const [refreshing, setRefreshing] = useState(false);
+  const { user, userData, refreshUser, logout,userId } = useContext(AuthContext);
+  const [randomName, setRandomName] = useState('');
+
+  useEffect(() => {
+    if (!userData?.fullName) {
+      setRandomName(generateRandomName());
+    }
+  }, [userData?.fullName]);
 
   useFocusEffect(
     useCallback(() => {
       if (user?.uid) {
         refreshUser();
       }
-    }, [user?.uid, refreshUser]),
+    }, [user?.uid, refreshUser,userId]),
   );
-
-  const onRefresh = useCallback(async () => {
-    setRefreshing(true);
-    if (user?.uid) {
-      await refreshUser();
-    }
-    setRefreshing(false);
-  }, [user?.uid, refreshUser]);
 
   return (
     <View style={styles.container}>
@@ -46,7 +44,7 @@ const CustomDrawerContent = props => {
           />
           <View>
             <Text style={styles.userName}>
-              {userData?.fullName ?? generateRandomName()}
+              {userData?.fullName ?? randomName}
             </Text>
             <Text style={styles.userPhone}>{userData?.email ?? '_'}</Text>
           </View>

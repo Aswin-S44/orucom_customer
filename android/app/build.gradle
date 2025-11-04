@@ -81,7 +81,7 @@ android {
 
     namespace "com.app"
     defaultConfig {
-        applicationId "saloon.customer.app"
+        applicationId "com.customer.app2"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

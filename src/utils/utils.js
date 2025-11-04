@@ -58,3 +58,13 @@ export const isShopOpen = openingHours => {
   }
   return false;
 };
+
+export function generateRandomUid() {
+  const chars =
+    'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let uid = '';
+  for (let i = 0; i < 28; i++) {
+    uid += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return uid;
+}

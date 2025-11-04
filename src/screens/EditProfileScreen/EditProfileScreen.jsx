@@ -17,7 +17,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import { TextInput } from 'react-native';
 
 const EditProfileScreen = ({ navigation }) => {
-  const { user, refreshUser, userData } = useContext(AuthContext);
+  const { user, refreshUser, userData,userId } = useContext(AuthContext);
   const [name, setName] = useState('');
   const [imageUri, setImageUri] = useState(null);
   const [profileLoading, setProfileLoading] = useState(true);
@@ -110,7 +110,7 @@ const EditProfileScreen = ({ navigation }) => {
       phone,
     };
     try {
-      await updateUserData(user.uid, updatedData);
+      await updateUserData(userId, updatedData);
       await refreshUser();
       setToastMessage('Profile updated successfully!');
       navigation.goBack();

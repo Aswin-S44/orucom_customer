@@ -53,10 +53,55 @@ class FirebaseNotificationService {
     }
   }
 
+  static async updateFCMToken(userId) {
+    try {
+      if (Platform.OS === 'ios') {
+        await messaging().registerDeviceForRemoteMessages();
+      }
+
+      const token = await messaging().getToken();
+      console.log('TOKEN------------', token ? token : 'no token');
+      console.log('userId---------------', userId);
+
+      const userDoc = await firestore()
+        .collection('customers')
+        .doc(userId)
+        .get();
+
+      if (userDoc.exists) {
+        const userData = userDoc.data();
+
+        const fcmToken = userData?.fcmToken;
+
+        if (!fcmToken || fcmToken == null || fcmToken !== token) {
+          await firestore().collection('customers').doc(userId).set(
+            {
+              fcmToken: token,
+              updatedAt: firestore.FieldValue.serverTimestamp(),
+            },
+            { merge: true },
+          );
+        }
+      }
+
+      // Store token in Firestore for the current user
+      //await this.storeFCMToken(token);
+
+      // return token;
+    } catch (error) {
+      console.error('Error getting FCM token:', error);
+      return null;
+    }
+  }
+
   // Store FCM token in Firestore
   static async storeFCMToken(token) {
     try {
       const currentUser = auth().currentUser;
+      // console.log(
+      //   'currentUser=============',
+      //   currentUser ? currentUser : 'no currentUser',
+      // );
 
       if (currentUser) {
         const userDoc = await firestore()

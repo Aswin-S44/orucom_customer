@@ -115,7 +115,8 @@ export const createAppointment = async (userId, appointmentData) => {
       .add({
         ...appointmentData,
         userId,
-        createdAt: firestore.FieldValue.serverTimestamp(),
+        // createdAt: firestore.FieldValue.serverTimestamp(),
+        createdAt: new Date(),
       });
 
     return {
@@ -495,6 +496,7 @@ export const deleteNotificationById = async id => {
 
 export const getNotificationsCountByCustomerId = async customerId => {
   try {
+    console.log('customerId---------------', customerId);
     const querySnapshot = await firestore()
       .collection('notifications')
       .where('toId', '==', customerId)
@@ -596,14 +598,14 @@ export const updateSlotInFirestore = (slotId, slotData) => {
   return { success: true };
 };
 
-export const createNotification = (
+export const createNotification = async (
   fromId,
   toId,
   appointmentId,
   customerName,
   profileImage,
 ) => {
-  firestore()
+  await firestore()
     .collection('notifications')
     .add({
       fromId,
@@ -632,4 +634,33 @@ export const sendAppointmentNotification = async (
       appointmentId,
     })
     .catch(error => console.log('Error sending notification:', error));
+};
+export const updateShopViewers = async shopId => {
+  try {
+    const shopRef = firestore().collection('shopViewers').doc(shopId);
+    const shopSnap = await shopRef.get();
+
+    if (!shopSnap.exists) {
+      // Create new shop document
+      await shopRef.set({
+        shopId,
+        totalViewers: 1,
+        createdAt: firestore.FieldValue.serverTimestamp(),
+        updatedAt: firestore.FieldValue.serverTimestamp(),
+      });
+      console.log(`✅ New shop viewer record created for ${shopId}`);
+    } else {
+      // Increment safely with merge fallback
+      await shopRef.set(
+        {
+          totalViewers: firestore.FieldValue.increment(1),
+          updatedAt: firestore.FieldValue.serverTimestamp(),
+        },
+        { merge: true }, // 👈 ensures creation if not present
+      );
+      console.log(`👀 Viewer count incremented for ${shopId}`);
+    }
+  } catch (error) {
+    console.error('❌ Error updating shop viewers:', error);
+  }
 };

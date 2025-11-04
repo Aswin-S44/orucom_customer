@@ -599,7 +599,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   timeSlot: {
-    backgroundColor: '#f0f0f0',
+    backgroundColor: primaryColor,
     borderRadius: 8,
     paddingVertical: 10,
     paddingHorizontal: 12,
@@ -608,14 +608,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: '#f0f0f0',
+    // borderColor: primaryColor,
   },
   timeSlotSelected: {
-    backgroundColor: primaryColor,
+    backgroundColor: '#CF0C98',
     borderColor: primaryColor,
   },
   timeSlotDisabled: {
-    backgroundColor: '#e0e0e0',
+    backgroundColor: lightPurple,
     borderColor: '#d0d0d0',
     opacity: 0.7,
   },
@@ -624,7 +624,7 @@ const styles = StyleSheet.create({
     borderColor: lightPurple,
   },
   timeSlotText: {
-    color: '#555',
+    color: '#fff',
     fontWeight: '500',
     fontSize: 12,
   },

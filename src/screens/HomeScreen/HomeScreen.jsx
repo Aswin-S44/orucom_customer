@@ -25,13 +25,14 @@ import EmptyComponent from '../../components/EmptyComponent/EmptyComponent';
 import { getLocationPermission } from '../../apis/permissions';
 import Geolocation from '@react-native-community/geolocation';
 import { isShopOpen } from '../../utils/utils';
+import FirebaseNotificationService from '../../apis/FirebaseNotificationService';
 
 const HomeScreen = ({ navigation }) => {
   const [shops, setShops] = useState(null);
   const [loading, setLoading] = useState(true);
   const [notificationCount, setNotificationCount] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
-  const { user } = useContext(AuthContext);
+  const { user, userData, userId } = useContext(AuthContext);
 
   const getCurrentLocation = async () => {
     getLocationPermission().then(granted => {
@@ -43,8 +44,8 @@ const HomeScreen = ({ navigation }) => {
         async position => {
           const { latitude, longitude } = position.coords;
 
-          if (user && user.uid) {
-            await updateCustomer(user.uid, {
+          if (user && user.uid && userId) {
+            await updateCustomer(userId, {
               coordinates: {
                 latitude,
                 longitude,
@@ -78,8 +79,11 @@ const HomeScreen = ({ navigation }) => {
   };
 
   const fetchNotificationCount = async () => {
-    if (user && user.uid) {
-      const res = await getNotificationsCountByCustomerId(user.uid);
+    console.log('USER ID--------------', userId);
+    if (user && user.uid && userId) {
+      console.log('userData-------------', userData);
+      // const res = await getNotificationsCountByCustomerId(user.uid);
+      const res = await getNotificationsCountByCustomerId(userId);
       if (res) {
         setNotificationCount(res);
       }
@@ -99,7 +103,7 @@ const HomeScreen = ({ navigation }) => {
   useEffect(() => {
     fetchShops();
     fetchNotificationCount();
-  }, [user?.uid]);
+  }, [user?.uid, userId]);
 
   const services = [
     {
@@ -123,6 +127,29 @@ const HomeScreen = ({ navigation }) => {
       image: require('../../assets/images/category/4.png'),
     },
   ];
+
+  useEffect(() => {
+    const initializeNotifications = async () => {
+      if (userData) {
+        try {
+          FirebaseNotificationService.setupNotificationHandlers();
+          // FirebaseNotificationService.listenForTokenRefresh();
+          const hasPermission =
+            await FirebaseNotificationService.requestNotificationPermission();
+
+          if (hasPermission && userData.uid) {
+            await FirebaseNotificationService.updateFCMToken(userData?.uid);
+          }
+          // setNotificationSetupComplete(true);
+        } catch (error) {
+          console.error('App initialization error:', error);
+        }
+      }
+    };
+    if (!loading) {
+      initializeNotifications();
+    }
+  }, [loading, user, userData]);
 
   return (
     <ScrollView

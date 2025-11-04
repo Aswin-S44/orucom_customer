@@ -12,32 +12,58 @@ export const AuthProvider = ({ children }) => {
   const [isEmailVerified, setIsEmailVerified] = useState(false);
   const [userId, setUserId] = useState(null);
 
+  const getUserId = async () => {
+    try {
+      const customerId = await AsyncStorage.getItem('user_uid');
+      if (customerId !== null) {
+        return customerId;
+      } else {
+        return null;
+      }
+    } catch (error) {
+      console.error('Error getting user UID from AsyncStorage:', error);
+      return null;
+    }
+  };
+
   useEffect(() => {
     const unsubscribe = auth().onAuthStateChanged(async firebaseUser => {
       if (firebaseUser) {
         setUser(firebaseUser);
         setIsEmailVerified(firebaseUser.emailVerified);
-        setUserId(firebaseUser.uid);
-        await AsyncStorage.setItem('user_uid', firebaseUser.uid);
-        try {
-          const docSnap = await firestore()
-            .collection('customers')
-            .doc(firebaseUser.uid)
-            .get();
-          if (docSnap.exists) {
-            setUserData(docSnap.data());
-          } else {
+
+        const customerId = await getUserId(); // Get ID from AsyncStorage
+        setUserId(customerId); // Set userId state with the AsyncStorage ID
+
+        if (customerId) {
+          // Only attempt to fetch if customerId is available
+          try {
+            const docSnap = await firestore()
+              .collection('customers')
+              .doc(customerId) // Use customerId from AsyncStorage for Firestore
+              .get();
+
+            if (docSnap.exists) {
+              setUserData(docSnap.data());
+            } else {
+              setUserData(null);
+            }
+          } catch (error) {
+            console.error(
+              'Error fetching user data in onAuthStateChanged:',
+              error,
+            );
             setUserData(null);
           }
-        } catch {
-          setUserData(null);
+        } else {
+          setUserData(null); // No customerId in AsyncStorage, so no userData
         }
       } else {
         setUser(null);
         setUserData(null);
         setIsEmailVerified(false);
         setUserId(null);
-        await AsyncStorage.removeItem('user_uid');
+        await AsyncStorage.removeItem('user_uid'); // Clear UID on logout
       }
       setLoading(false);
     });
@@ -50,23 +76,45 @@ export const AuthProvider = ({ children }) => {
     setUserData(null);
     setIsEmailVerified(false);
     setUserId(null);
-    await AsyncStorage.removeItem('user_uid');
+    await AsyncStorage.removeItem('user_uid'); // Clear UID on logout
   };
 
   const refreshUser = async () => {
     const firebaseUser = auth().currentUser;
     if (firebaseUser) {
       await firebaseUser.reload();
-      setUser(auth().currentUser);
+      setUser(auth().currentUser); // Update user state with reloaded user
       setIsEmailVerified(auth().currentUser.emailVerified);
-      setUserId(auth().currentUser.uid);
-      try {
-        const docSnap = await firestore()
-          .collection('customers')
-          .doc(firebaseUser.uid)
-          .get();
-        if (docSnap.exists) setUserData(docSnap.data());
-      } catch {}
+
+      const customerId = await getUserId(); // Get ID from AsyncStorage
+      setUserId(customerId); // Set userId state with the AsyncStorage ID
+
+      if (customerId) {
+        // Only attempt to fetch if customerId is available
+        try {
+          const docSnap = await firestore()
+            .collection('customers')
+            .doc(customerId) // Use customerId from AsyncStorage for Firestore
+            .get();
+          if (docSnap.exists) {
+            setUserData(docSnap.data());
+          } else {
+            setUserData(null); // Clear userData if document no longer exists
+          }
+        } catch (error) {
+          console.error('Error fetching user data in refreshUser:', error);
+          setUserData(null);
+        }
+      } else {
+        setUserData(null); // No customerId in AsyncStorage, so no userData
+      }
+    } else {
+      // If no user after reload, clear relevant states
+      setUser(null);
+      setUserData(null);
+      setIsEmailVerified(false);
+      setUserId(null);
+      await AsyncStorage.removeItem('user_uid');
     }
   };
 

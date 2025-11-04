@@ -14,7 +14,7 @@ import {
   statusCodes,
   GoogleSigninButton,
 } from '@react-native-google-signin/google-signin';
-import { WEB_CLIENT_ID } from '@env';
+// import { WEB_CLIENT_ID } from '@env';
 import {
   GoogleAuthProvider,
   getAuth,
@@ -27,11 +27,11 @@ import { GOOGLE_ICON } from '../../constants/images';
 import { lightPurple, primaryColor } from '../../constants/colors';
 import LinearGradient from 'react-native-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { generateRandomUid } from '../../utils/utils';
 
 const SigninWithGoogleScreen = () => {
   const { user, refreshUser, userData } = useContext(AuthContext);
-
+  let WEB_CLIENT_ID =
+    '297588641134-hi002t6fubg9iilqa4r2bjp9sdnasg3i.apps.googleusercontent.com';
   useEffect(() => {
     GoogleSignin.configure({
       webClientId: WEB_CLIENT_ID,
@@ -39,130 +39,39 @@ const SigninWithGoogleScreen = () => {
     });
   }, []);
 
-  // async function onGoogleButtonPress() {
-  //   try {
-  //     const test = await GoogleSignin.hasPlayServices({
-  //       showPlayServicesUpdateDialog: true,
-  //     });
-
-  //     // Sign in
-  //     const signInResult = await GoogleSignin.signIn();
-
-  //     let idToken = signInResult.data?.idToken || signInResult.idToken;
-  //     console.log('idToken--------------', idToken ? idToken : 'no idToken');
-  //     const user = signInResult.data?.user;
-
-  //     if (!idToken) throw new Error('No ID token found');
-
-  //     if (!idToken) {
-  //       Alert.alert('Error', 'Error while signin');
-  //       return;
-  //     }
-
-  //     const googleCredential = GoogleAuthProvider.credential(idToken);
-  //     const userCredential = await auth().signInWithCredential(
-  //       googleCredential,
-  //     );
-  //     const firebaseUser = userCredential.user;
-
-  //     const customerRef = firestore()
-  //       .collection('customers')
-  //       .doc(firebaseUser.uid);
-  //     const docSnap = await customerRef.get();
-
-  //     let updateData = {
-  //       uid: firebaseUser.uid,
-  //       fullName: firebaseUser.displayName || generateRandomName(),
-  //       phone: '',
-  //       email: firebaseUser.email,
-  //       createdAt: firestore.FieldValue.serverTimestamp(),
-  //       profileImage: firebaseUser.photoURL || DEFAULT_AVATAR,
-  //       fcmToken: null,
-  //       emailVerified: firebaseUser.emailVerified,
-  //       otp: null, // OTP not applicable for Google Sign-In
-  //     };
-
-  //     if (!docSnap.exists) {
-  //       let updateData = {
-  //         uid: firebaseUser.uid,
-  //         fullName: firebaseUser.displayName || generateRandomName(),
-  //         phone: '',
-  //         email: firebaseUser.email,
-  //         createdAt: firestore.FieldValue.serverTimestamp(),
-  //         profileImage: firebaseUser.photoURL || DEFAULT_AVATAR,
-  //         fcmToken: null,
-  //         emailVerified: firebaseUser.emailVerified,
-  //         otp: null, // OTP not applicable for Google Sign-In
-  //       };
-
-  //       await customerRef.set(updateData);
-  //     } else {
-  //       await firestore()
-  //         .collection('customers')
-  //         .doc(firebaseUser.uid)
-  //         .set(updateData);
-  //     }
-  //     let res = await signInWithCredential(getAuth(), googleCredential);
-  //     refreshUser();
-  //     await AsyncStorage.setItem('user_uid', firebaseUser?.uid);
-  //     //return await signInWithCredential(getAuth(), googleCredential);
-  //     return firebaseUser;
-  //   } catch (error) {
-  //     console.log('GOOGLE SIGN-IN ERROR =====>', error);
-  //   }
-  // }
-
   async function onGoogleButtonPress() {
     try {
       const test = await GoogleSignin.hasPlayServices({
         showPlayServicesUpdateDialog: true,
       });
- 
+
+      // Sign in
       const signInResult = await GoogleSignin.signIn();
+
       let idToken = signInResult.data?.idToken || signInResult.idToken;
+      console.log('idToken--------------', idToken ? idToken : 'no idToken');
+      const user = signInResult.data?.user;
+
       if (!idToken) throw new Error('No ID token found');
+
+      if (!idToken) {
+        Alert.alert('Error', 'Error while signin');
+        return;
+      }
+
       const googleCredential = GoogleAuthProvider.credential(idToken);
       const userCredential = await auth().signInWithCredential(
         googleCredential,
       );
       const firebaseUser = userCredential.user;
-      console.log('firebaseUser--------------', firebaseUser?.email);
- 
-      const shopOwnerSnap = await firestore()
-        .collection('shop-owners')
-        .doc(firebaseUser.uid)
-        .get();
 
-      const [customer] = await Promise.all([
-        firestore()
-          .collection('customers')
-          .where('email', '==', firebaseUser.email)
-          .get()
-          .then(snapshot => (snapshot.empty ? null : snapshot.docs[0].data())),
-      ]);
-
-      console.log('byEmailSnap EXISTS-----------', customer);
-
-      let uid = customer
-        ? customer.uid
-        : shopOwnerSnap.exists
-        ? generateRandomUid()
-        : firebaseUser.uid;
-      // let uid = firebaseUser.uid;
-
-      const customerRef = firestore().collection('customers').doc(uid);
+      const customerRef = firestore()
+        .collection('customers')
+        .doc(firebaseUser.uid);
       const docSnap = await customerRef.get();
 
-      // const [byUidSnap, byEmailSnap] = await Promise.all([
-      //   firestore().collection('customers').where('uid', '==', uid).get(),
-      //   firestore()
-      //     .collection('customers')
-      //     .where('email', '==', firebaseUser.email)
-      //     .get(),
-      // ]);
-
       let updateData = {
-        uid,
+        uid: firebaseUser.uid,
         fullName: firebaseUser.displayName || generateRandomName(),
         phone: '',
         email: firebaseUser.email,
@@ -170,38 +79,33 @@ const SigninWithGoogleScreen = () => {
         profileImage: firebaseUser.photoURL || DEFAULT_AVATAR,
         fcmToken: null,
         emailVerified: firebaseUser.emailVerified,
-        otp: null,
+        otp: null, // OTP not applicable for Google Sign-In
       };
 
-      // if (querySnap.empty) {
-      //   await customerRef.set(updateData);
-      // }
+      if (!docSnap.exists) {
+        let updateData = {
+          uid: firebaseUser.uid,
+          fullName: firebaseUser.displayName || generateRandomName(),
+          phone: '',
+          email: firebaseUser.email,
+          createdAt: firestore.FieldValue.serverTimestamp(),
+          profileImage: firebaseUser.photoURL || DEFAULT_AVATAR,
+          fcmToken: null,
+          emailVerified: firebaseUser.emailVerified,
+          otp: null, // OTP not applicable for Google Sign-In
+        };
 
-      // if (!byEmailSnap.empty) {
-      //   let customerRefs = byEmailSnap.docs[0].ref;
-      //   const customerData = byEmailSnap.docs[0].data();
-      //   console.log('Email:', customerData.uid);
-
-      //   if (customerRefs) {
-      //     await customerRefs.update(updateData);
-      //   }
-      //   // User already exists with this email or uid
-      //   // await customerRef.update(updateData);
-      //   console.log('uid%%%%%%%%%%%%%%%%%%%', uid);
-      // } else {
-      //   await customerRef.set(updateData);
-      // }
-
-      await customerRef.set(updateData);
-
-      // // if (!docSnap.exists) await customerRef.set(updateData);
-      // // else await customerRef.set(updateData);
-
-      await AsyncStorage.setItem('user_uid', uid);
-
-      await signInWithCredential(getAuth(), googleCredential);
+        await customerRef.set(updateData);
+      } else {
+        await firestore()
+          .collection('customers')
+          .doc(firebaseUser.uid)
+          .set(updateData);
+      }
+      let res = await signInWithCredential(getAuth(), googleCredential);
       refreshUser();
-      // // await AsyncStorage.setItem('user_uid', uid);
+      await AsyncStorage.setItem('user_uid', firebaseUser?.uid);
+      //return await signInWithCredential(getAuth(), googleCredential);
       return firebaseUser;
     } catch (error) {
       console.log('GOOGLE SIGN-IN ERROR =====>', error);

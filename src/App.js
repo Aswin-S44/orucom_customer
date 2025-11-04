@@ -184,28 +184,28 @@ export default function App() {
   const [notificationSetupComplete, setNotificationSetupComplete] =
     useState(false);
 
-  useEffect(() => {
-    const initializeNotifications = async () => {
-      // if (!notificationSetupComplete) {
-      try {
-        FirebaseNotificationService.setupNotificationHandlers();
-        // FirebaseNotificationService.listenForTokenRefresh();
-        const hasPermission =
-          await FirebaseNotificationService.requestNotificationPermission();
+  // useEffect(() => {
+  //   const initializeNotifications = async () => {
+  //     // if (!notificationSetupComplete) {
+  //     try {
+  //       FirebaseNotificationService.setupNotificationHandlers();
+  //       // FirebaseNotificationService.listenForTokenRefresh();
+  //       const hasPermission =
+  //         await FirebaseNotificationService.requestNotificationPermission();
 
-        // if (hasPermission && user) {
-        //   await FirebaseNotificationService.getFCMToken();
-        // }
-        // setNotificationSetupComplete(true);
-      } catch (error) {
-        console.error('App initialization error:', error);
-      }
-      // }
-    };
-    if (!loading) {
-      initializeNotifications();
-    }
-  }, [loading, user, notificationSetupComplete, userData]);
+  //       if (hasPermission && user) {
+  //         await FirebaseNotificationService.getFCMToken();
+  //       }
+  //       // setNotificationSetupComplete(true);
+  //     } catch (error) {
+  //       console.error('App initialization error:', error);
+  //     }
+  //     // }
+  //   };
+  //   if (!loading) {
+  //     initializeNotifications();
+  //   }
+  // }, [loading, user, notificationSetupComplete, userData]);
 
   const getInitialRoute = () => {
     if (loading) return 'Splash';

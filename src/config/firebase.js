@@ -8,9 +8,9 @@ firestore().settings({
   persistence: true,
 });
 
-if (__DEV__) {
-  firestore().setLogLevel('debug');
-}
+// if (__DEV__) {
+//   firestore().setLogLevel('debug');
+// }
 
 export { auth, firestore, storage, messaging, firebase };
 

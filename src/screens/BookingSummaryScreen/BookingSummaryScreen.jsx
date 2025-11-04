@@ -24,6 +24,12 @@ import {
   updateSlotInFirestore,
 } from '../../apis/services';
 import { DEFAULT_AVATAR } from '../../constants/images';
+import firestore, {
+  doc,
+  getDoc,
+  getFirestore,
+  updateDoc,
+} from '@react-native-firebase/firestore';
 
 const Row = ({ icon, label, value }) => (
   <View style={styles.row}>
@@ -148,12 +154,22 @@ const BookingSummaryScreen = ({ route, navigation }) => {
     };
 
     try {
-      const appointmentRes = await createAppointment(userId, bookingData);
+      // const appointmentRes = await createAppointment(userId, bookingData);
 
+      const appointmentRes = firestore().collection('appointments').doc();
+      await appointmentRes.set({
+        ...bookingData,
+        userId,
+        createdAt: new Date(),
+      });
+      console.log(
+        'appointmentRes------------',
+        appointmentRes ? appointmentRes.id : 'no appointmentRes',
+      );
       setModalVisible(true);
 
       updateSlotInFirestore(selectedSlot.id, { isAvailable: false });
-      createNotification(
+      await createNotification(
         userId,
         route.params.shopId,
         appointmentRes.id ?? null,
@@ -172,6 +188,48 @@ const BookingSummaryScreen = ({ route, navigation }) => {
       setConfirming(false);
     }
   };
+
+  // const handleConfirmBooking = async () => {
+  //   if (!userId) return;
+  //   setConfirming(true);
+
+  //   const serviceIds = selectedServices.map(s => s.id);
+  //   const bookingData = {
+  //     serviceIds,
+  //     selectedDate,
+  //     selectedTime,
+  //     appointmentStatus: APPOINTMENT_STATUSES.PENDING,
+  //     customerId: userId,
+  //     totalAmount: subtotal,
+  //     shopId: route.params.shopId,
+  //     expertId: selectedExpert,
+  //   };
+
+  //   try {
+  //     const appointmentRes = await createAppointment(userId, bookingData);
+
+  //     setModalVisible(true);
+
+  //     updateSlotInFirestore(selectedSlot.id, { isAvailable: false });
+  //     createNotification(
+  //       userId,
+  //       route.params.shopId,
+  //       appointmentRes.id ?? null,
+  //       userData?.fullName ?? '',
+  //       userData?.profileImage ?? DEFAULT_AVATAR,
+  //     );
+  //     sendAppointmentNotification(
+  //       userId,
+  //       route.params.shopId,
+  //       APPOINTMENT_TYPES.BOOKING_REQUEST_SENT,
+  //       appointmentRes.id ?? null,
+  //     );
+  //   } catch (error) {
+  //     console.error('Error creating appointment:', error);
+  //   } finally {
+  //     setConfirming(false);
+  //   }
+  // };
 
   const handleModalClose = () => {
     setModalVisible(false);

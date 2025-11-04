@@ -83,18 +83,18 @@ const HistoryItem = ({ item }) => {
 };
 
 const AllAppointments = ({ route }) => {
-  const { user } = useContext(AuthContext);
+  const { user, userId } = useContext(AuthContext);
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
   const fetchAppointmentHistory = useCallback(() => {
-    if (!user?.uid) return;
+    if (!userId) return;
     setLoading(true);
 
     const unsubscribe = firestore()
       .collection('appointments')
-      .where('customerId', '==', user.uid)
+      .where('customerId', '==', userId)
       .onSnapshot(async appointmentsSnap => {
         if (appointmentsSnap.empty) {
           setAppointments([]);
@@ -147,7 +147,7 @@ const AllAppointments = ({ route }) => {
       });
 
     return () => unsubscribe();
-  }, [user?.uid]);
+  }, [user?.uid,userId]);
 
   useFocusEffect(
     useCallback(() => {
@@ -177,7 +177,7 @@ const AllAppointments = ({ route }) => {
   if (loading && !refreshing) {
     return <AllAppointmentsScreenSkeleton />;
   }
- 
+
   return (
     <View style={styles.outerContainer}>
       <StatusBar backgroundColor={primaryColor} barStyle="light-content" />

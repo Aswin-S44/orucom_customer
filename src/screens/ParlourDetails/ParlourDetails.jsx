@@ -16,9 +16,11 @@ import GallerySection from '../../sections/GallerySection/GallerySection';
 import { NO_IMAGE } from '../../constants/images';
 import StarRating from '../../components/StarRating/StarRating';
 import AboutSection from '../../sections/AboutSection/AboutSection';
+import { updateShopViewers } from '../../apis/services';
 
 const ParlourDetails = ({ route, navigation }) => {
   const { parlourData } = route.params;
+  console.log('parlor data------------', parlourData);
 
   const [activeTab, setActiveTab] = React.useState('Service');
   const [services, setServices] = React.useState([]);
@@ -38,6 +40,12 @@ const ParlourDetails = ({ route, navigation }) => {
       if (parlourData?.experts?.length > 0) {
         setExperts(parlourData?.experts ?? []);
       }
+    }
+  }, [parlourData]);
+
+  useEffect(() => {
+    if (parlourData) {
+      updateShopViewers(parlourData.id);
     }
   }, [parlourData]);
 
