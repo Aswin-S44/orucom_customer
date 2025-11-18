@@ -20,7 +20,6 @@ import { updateShopViewers } from '../../apis/services';
 
 const ParlourDetails = ({ route, navigation }) => {
   const { parlourData } = route.params;
-  console.log('parlor data------------', parlourData);
 
   const [activeTab, setActiveTab] = React.useState('Service');
   const [services, setServices] = React.useState([]);
@@ -78,7 +77,7 @@ const ParlourDetails = ({ route, navigation }) => {
               {parlourData?.address ?? ''}
             </Text>
             <View style={styles.ratingContainer}>
-              <StarRating rating={parlourData.rating ?? 4.5} />
+              <StarRating rating={parlourData.totalRating ?? 4.5} />
             </View>
           </View>
         </View>
@@ -141,7 +140,14 @@ const ParlourDetails = ({ route, navigation }) => {
       </View>
 
       {activeTab === 'About' && (
-        <AboutSection about={parlourData?.about ?? ''} />
+        <AboutSection
+          about={parlourData?.about ?? ''}
+          experts={experts}
+          phone={parlourData?.phone ?? ''}
+          email={parlourData?.email ?? ''}
+          googleReviewUrl={parlourData?.googleReviewUrl ?? ''}
+          address={parlourData?.address ?? ''}
+        />
       )}
 
       {activeTab === 'Service' && (
@@ -264,6 +270,11 @@ const styles = StyleSheet.create({
   },
   activeTabText: {
     fontWeight: 'bold',
+  },
+  content: {
+    // This style might need adjustment depending on other sections' needs
+    // For AboutSection, it's better handled by the ScrollView and Card styles within it.
+    flex: 1,
   },
 });
 

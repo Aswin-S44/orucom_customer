@@ -1,36 +1,37 @@
-import React, { useContext, useEffect } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
-  Button,
   StyleSheet,
   StatusBar,
+  ActivityIndicator,
+  Modal,
 } from 'react-native';
 import firestore from '@react-native-firebase/firestore';
 import auth from '@react-native-firebase/auth';
-import {
-  GoogleSignin,
-  statusCodes,
-  GoogleSigninButton,
-} from '@react-native-google-signin/google-signin';
+import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { WEB_CLIENT_ID } from '@env';
 import {
   GoogleAuthProvider,
   getAuth,
   signInWithCredential,
 } from '@react-native-firebase/auth';
-import { Alert } from 'react-native';
+
 import { AuthContext } from '../../context/AuthContext';
 import { Image } from 'react-native';
 import { GOOGLE_ICON } from '../../constants/images';
-import { lightPurple, primaryColor } from '../../constants/colors';
+import { lightPurple, primaryColor, white } from '../../constants/colors';
 import LinearGradient from 'react-native-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { generateRandomUid } from '../../utils/utils';
+import { DEFAULT_AVATAR } from '../../constants/images';
+import { generateRandomName } from '../../utils/utils';
 
 const SigninWithGoogleScreen = () => {
-  const { user, refreshUser, userData } = useContext(AuthContext);
+  const { refreshUser } = useContext(AuthContext);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     GoogleSignin.configure({
@@ -39,85 +40,10 @@ const SigninWithGoogleScreen = () => {
     });
   }, []);
 
-  // async function onGoogleButtonPress() {
-  //   try {
-  //     const test = await GoogleSignin.hasPlayServices({
-  //       showPlayServicesUpdateDialog: true,
-  //     });
-
-  //     // Sign in
-  //     const signInResult = await GoogleSignin.signIn();
-
-  //     let idToken = signInResult.data?.idToken || signInResult.idToken;
-  //     console.log('idToken--------------', idToken ? idToken : 'no idToken');
-  //     const user = signInResult.data?.user;
-
-  //     if (!idToken) throw new Error('No ID token found');
-
-  //     if (!idToken) {
-  //       Alert.alert('Error', 'Error while signin');
-  //       return;
-  //     }
-
-  //     const googleCredential = GoogleAuthProvider.credential(idToken);
-  //     const userCredential = await auth().signInWithCredential(
-  //       googleCredential,
-  //     );
-  //     const firebaseUser = userCredential.user;
-
-  //     const customerRef = firestore()
-  //       .collection('customers')
-  //       .doc(firebaseUser.uid);
-  //     const docSnap = await customerRef.get();
-
-  //     let updateData = {
-  //       uid: firebaseUser.uid,
-  //       fullName: firebaseUser.displayName || generateRandomName(),
-  //       phone: '',
-  //       email: firebaseUser.email,
-  //       createdAt: firestore.FieldValue.serverTimestamp(),
-  //       profileImage: firebaseUser.photoURL || DEFAULT_AVATAR,
-  //       fcmToken: null,
-  //       emailVerified: firebaseUser.emailVerified,
-  //       otp: null, // OTP not applicable for Google Sign-In
-  //     };
-
-  //     if (!docSnap.exists) {
-  //       let updateData = {
-  //         uid: firebaseUser.uid,
-  //         fullName: firebaseUser.displayName || generateRandomName(),
-  //         phone: '',
-  //         email: firebaseUser.email,
-  //         createdAt: firestore.FieldValue.serverTimestamp(),
-  //         profileImage: firebaseUser.photoURL || DEFAULT_AVATAR,
-  //         fcmToken: null,
-  //         emailVerified: firebaseUser.emailVerified,
-  //         otp: null, // OTP not applicable for Google Sign-In
-  //       };
-
-  //       await customerRef.set(updateData);
-  //     } else {
-  //       await firestore()
-  //         .collection('customers')
-  //         .doc(firebaseUser.uid)
-  //         .set(updateData);
-  //     }
-  //     let res = await signInWithCredential(getAuth(), googleCredential);
-  //     refreshUser();
-  //     await AsyncStorage.setItem('user_uid', firebaseUser?.uid);
-  //     //return await signInWithCredential(getAuth(), googleCredential);
-  //     return firebaseUser;
-  //   } catch (error) {
-  //     console.log('GOOGLE SIGN-IN ERROR =====>', error);
-  //   }
-  // }
-
   async function onGoogleButtonPress() {
+    setLoading(true);
+    setError(null);
     try {
-      const test = await GoogleSignin.hasPlayServices({
-        showPlayServicesUpdateDialog: true,
-      });
- 
       const signInResult = await GoogleSignin.signIn();
       let idToken = signInResult.data?.idToken || signInResult.idToken;
       if (!idToken) throw new Error('No ID token found');
@@ -126,8 +52,7 @@ const SigninWithGoogleScreen = () => {
         googleCredential,
       );
       const firebaseUser = userCredential.user;
-      console.log('firebaseUser--------------', firebaseUser?.email);
- 
+
       const shopOwnerSnap = await firestore()
         .collection('shop-owners')
         .doc(firebaseUser.uid)
@@ -141,25 +66,13 @@ const SigninWithGoogleScreen = () => {
           .then(snapshot => (snapshot.empty ? null : snapshot.docs[0].data())),
       ]);
 
-      console.log('byEmailSnap EXISTS-----------', customer);
-
       let uid = customer
         ? customer.uid
         : shopOwnerSnap.exists
         ? generateRandomUid()
         : firebaseUser.uid;
-      // let uid = firebaseUser.uid;
 
       const customerRef = firestore().collection('customers').doc(uid);
-      const docSnap = await customerRef.get();
-
-      // const [byUidSnap, byEmailSnap] = await Promise.all([
-      //   firestore().collection('customers').where('uid', '==', uid).get(),
-      //   firestore()
-      //     .collection('customers')
-      //     .where('email', '==', firebaseUser.email)
-      //     .get(),
-      // ]);
 
       let updateData = {
         uid,
@@ -173,56 +86,21 @@ const SigninWithGoogleScreen = () => {
         otp: null,
       };
 
-      // if (querySnap.empty) {
-      //   await customerRef.set(updateData);
-      // }
-
-      // if (!byEmailSnap.empty) {
-      //   let customerRefs = byEmailSnap.docs[0].ref;
-      //   const customerData = byEmailSnap.docs[0].data();
-      //   console.log('Email:', customerData.uid);
-
-      //   if (customerRefs) {
-      //     await customerRefs.update(updateData);
-      //   }
-      //   // User already exists with this email or uid
-      //   // await customerRef.update(updateData);
-      //   console.log('uid%%%%%%%%%%%%%%%%%%%', uid);
-      // } else {
-      //   await customerRef.set(updateData);
-      // }
-
       await customerRef.set(updateData);
-
-      // // if (!docSnap.exists) await customerRef.set(updateData);
-      // // else await customerRef.set(updateData);
 
       await AsyncStorage.setItem('user_uid', uid);
 
       await signInWithCredential(getAuth(), googleCredential);
       refreshUser();
-      // // await AsyncStorage.setItem('user_uid', uid);
+
       return firebaseUser;
     } catch (error) {
-      console.log('GOOGLE SIGN-IN ERROR =====>', error);
+      console.log(error);
+      setError(error.message);
+    } finally {
+      setLoading(false);
     }
   }
-
-  const signIn = async () => {
-    try {
-      await GoogleSignin.hasPlayServices();
-      const userInfo = await GoogleSignin.signIn();
-    } catch (error) {
-      if (error.code === statusCodes.SIGN_IN_CANCELLED) {
-      } else if (error.code === statusCodes.IN_PROGRESS) {
-        console.log('In progress');
-      } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
-        console.log('Play services not available');
-      } else {
-        console.log(error);
-      }
-    }
-  };
 
   return (
     <LinearGradient
@@ -241,16 +119,35 @@ const SigninWithGoogleScreen = () => {
       <View style={styles.buttonContainer}>
         <TouchableOpacity
           style={styles.signInButton}
-          onPress={() =>
-            onGoogleButtonPress().then(() =>
-              console.log('Signed in with Google!'),
-            )
-          }
+          onPress={onGoogleButtonPress}
+          disabled={loading}
         >
-          <Image source={{ uri: GOOGLE_ICON }} style={styles.googleIcon} />
-          <Text style={styles.signInButtonText}>Sign in with Google</Text>
+          <>
+            <Image source={{ uri: GOOGLE_ICON }} style={styles.googleIcon} />
+            <Text style={styles.signInButtonText}>Sign in with Google</Text>
+          </>
         </TouchableOpacity>
       </View>
+
+      <Modal visible={!!error} transparent animationType="fade">
+        <View style={styles.errorOverlay}>
+          <View style={styles.errorBox}>
+            <Text style={styles.errorText}>Error: {error}</Text>
+            <TouchableOpacity
+              style={styles.errorButton}
+              onPress={() => setError(null)}
+            >
+              <Text style={styles.errorButtonText}>OK</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal visible={loading} transparent animationType="fade">
+        <View style={styles.loadingOverlay}>
+          <ActivityIndicator size="large" color={white} />
+        </View>
+      </Modal>
     </LinearGradient>
   );
 };
@@ -290,25 +187,12 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   googleIcon: {
+    width: 24,
+    height: 24,
     marginRight: 10,
-    // color: 'darkcyan',
   },
   signInButtonText: {
     color: primaryColor,
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  signUpButton: {
-    backgroundColor: 'transparent',
-    borderWidth: 1.5,
-    borderColor: '#fff',
-    paddingVertical: 15,
-    width: '90%',
-    alignItems: 'center',
-    borderRadius: 12,
-  },
-  signUpButtonText: {
-    color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
   },
@@ -318,10 +202,46 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 12,
     borderTopRightRadius: 12,
   },
-  googleIcon: {
-    width: 24,
-    height: 24,
-    marginRight: 10,
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    color: white,
+    marginTop: 10,
+    fontSize: 16,
+  },
+  errorOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  errorBox: {
+    backgroundColor: white,
+    padding: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+    width: '80%',
+  },
+  errorText: {
+    color: 'red',
+    fontSize: 16,
+    marginBottom: 15,
+    textAlign: 'center',
+  },
+  errorButton: {
+    backgroundColor: primaryColor,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+  },
+  errorButtonText: {
+    color: white,
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });
 

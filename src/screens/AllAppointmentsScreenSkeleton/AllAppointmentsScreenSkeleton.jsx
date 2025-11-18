@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
+import { primaryColor } from '../../constants/colors';
 
 const AllAppointmentsScreenSkeleton = () => {
   return (
@@ -40,7 +41,7 @@ const AllAppointmentsScreenSkeleton = () => {
 const styles = StyleSheet.create({
   outerContainer: {
     flex: 1,
-    backgroundColor: '#9C27B0',
+    backgroundColor: primaryColor,
   },
   container: {
     flex: 1,

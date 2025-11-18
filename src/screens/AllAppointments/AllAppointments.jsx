@@ -21,13 +21,13 @@ import AllAppointmentsScreenSkeleton from '../AllAppointmentsScreenSkeleton/AllA
 import { primaryColor } from '../../constants/colors';
 import { useFocusEffect } from '@react-navigation/native';
 import firestore from '@react-native-firebase/firestore';
- 
+
 const getStatusStyles = status => {
   switch (status) {
     case 'pending':
       return {
-        container: { backgroundColor: '#F3E5F5' },
-        text: { color: '#8E44AD' },
+        container: { backgroundColor: '#FAC3D7' },
+        text: { color: '#111' },
       };
     case 'completed':
       return {
