@@ -36,7 +36,7 @@ const getStatusStyles = status => {
       };
     case 'confirmed':
       return {
-        container: { backgroundColor: '#9C27B0' },
+        container: { backgroundColor: primaryColor },
         text: { color: '#FFFFFF' },
       };
     case 'canceled':

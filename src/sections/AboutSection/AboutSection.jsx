@@ -160,7 +160,7 @@ const styles = StyleSheet.create({
   },
   contactText: {
     fontSize: 16,
-    color: '#555',
+    color: '#555', 
     marginLeft: 10,
   },
   visitUsButton: {

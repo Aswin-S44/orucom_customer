@@ -324,6 +324,7 @@ const HomeScreen = ({ navigation }) => {
                       ?.map(service => service.serviceName)
                       .join(', ')}
                     offers={item.offers}
+                    placeId={item?.placeId}
                   />
                 </TouchableOpacity>
               )}

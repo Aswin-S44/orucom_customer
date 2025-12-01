@@ -564,6 +564,7 @@ export const getOfferByServiceAndShop = async (serviceId, shopId) => {
 
 export const getGalleryImages = async (placeId, page = 0) => {
   const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=photos&key=${GOOGLE_MAPS_API_KEY}`;
+  console.log('URL-------------', url);
 
   try {
     const res = await fetch(url);
@@ -584,6 +585,28 @@ export const getGalleryImages = async (placeId, page = 0) => {
     return galleryImages;
   } catch (error) {
     return { rating: 0, reviews: [] };
+  }
+};
+
+export const getShopStatus = async placeId => {
+  const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=opening_hours&key=${GOOGLE_MAPS_API_KEY}`;
+
+  try {
+    const res = await fetch(url);
+    const data = await res.json();
+
+    console.log('DATA---------', data || 'no data');
+
+    const isOpen = data?.result?.opening_hours?.open_now;
+
+    if (isOpen === true) return 'Open';
+    if (isOpen === false) return 'Closed';
+
+    // If Google does not provide status
+    return 'Unavailable';
+  } catch (error) {
+    console.log('Error fetching shop status : ', error);
+    return 'Unknown';
   }
 };
 
@@ -662,5 +685,16 @@ export const updateShopViewers = async shopId => {
     }
   } catch (error) {
     console.error('❌ Error updating shop viewers:', error);
+  }
+};
+
+export const getDocumentFieldById = async (collectionName, id, field) => {
+  try {
+    const docSnap = await firestore().collection(collectionName).doc(id).get();
+    if (!docSnap.exists) throw new Error('Document not found');
+    const data = docSnap.data();
+    return { id: docSnap.id, [field]: data[field] };
+  } catch (err) {
+    throw err;
   }
 };

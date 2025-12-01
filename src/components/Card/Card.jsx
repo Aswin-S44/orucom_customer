@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, Image, StyleSheet, Dimensions } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { NO_IMAGE } from '../../constants/images';
 import { primaryColor, secondaryColor } from '../../constants/colors';
+import { getShopStatus } from '../../apis/services';
 
 const { width } = Dimensions.get('window');
 
@@ -12,15 +13,28 @@ const Card = ({
   title,
   location,
   rating,
-  status,
   distance,
   servicesOffered,
   offers,
+  placeId,
 }) => {
+  const [shopStatus, setShopStatus] = useState(null);
+
+  useEffect(() => {
+    const fetchStatus = async () => {
+      if (placeId) {
+        const status = await getShopStatus(placeId);
+        setShopStatus(status);
+      }
+    };
+    fetchStatus();
+  }, [placeId]);
+
   const displayServices = servicesOffered
     ? servicesOffered.split(', ').slice(0, 2).join(', ')
     : '';
-  const isShopOpen = status === 'Open';
+
+  const isShopOpen = shopStatus === 'Open';
   const hasOffers = offers && offers.length > 0;
 
   return (
@@ -38,27 +52,32 @@ const Card = ({
             <Icon name="star" size={12} color="#fff" />
             <Text style={styles.ratingBadgeText}>{rating.toFixed(1)}</Text>
           </View>
-          <View
-            style={[
-              styles.statusBadge,
-              isShopOpen ? styles.statusOpen : styles.statusClosed,
-            ]}
-          >
-            <Text
+
+          {shopStatus && (
+            <View
               style={[
-                styles.statusBadgeText,
-                isShopOpen ? styles.statusTextOpen : styles.statusTextClosed,
+                styles.statusBadge,
+                isShopOpen ? styles.statusOpen : styles.statusClosed,
               ]}
             >
-              {status}
-            </Text>
-          </View>
+              <Text
+                style={[
+                  styles.statusBadgeText,
+                  isShopOpen ? styles.statusTextOpen : styles.statusTextClosed,
+                ]}
+              >
+                {shopStatus}
+              </Text>
+            </View>
+          )}
+
           {distance && (
             <View style={styles.distanceBadge}>
               <Text style={styles.distanceBadgeText}>{distance}</Text>
             </View>
           )}
         </View>
+
         {hasOffers && (
           <View style={styles.offerTag}>
             <Text style={styles.offerTagText}>Offer Available!</Text>
@@ -70,12 +89,14 @@ const Card = ({
         <Text style={styles.cardTitle} numberOfLines={1}>
           {title}
         </Text>
+
         <View style={styles.locationContainer}>
           <MaterialCommunityIcons name="map-marker" size={16} color="#777" />
           <Text style={styles.cardLocation} numberOfLines={1}>
             {location}
           </Text>
         </View>
+
         {servicesOffered && (
           <View style={styles.servicesContainer}>
             <MaterialCommunityIcons

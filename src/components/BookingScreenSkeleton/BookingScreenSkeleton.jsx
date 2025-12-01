@@ -1,10 +1,11 @@
 import React from 'react';
 import { View, ScrollView, StyleSheet, StatusBar } from 'react-native';
+import { primaryColor } from '../../constants/colors';
 
 const BookingScreenSkeleton = () => {
   return (
     <View style={styles.outerContainer}>
-      <StatusBar backgroundColor="#8E44AD" barStyle="light-content" />
+      <StatusBar backgroundColor={primaryColor} barStyle="light-content" />
 
       <View style={styles.backButton} />
 
@@ -88,7 +89,7 @@ const BookingScreenSkeleton = () => {
 const styles = StyleSheet.create({
   outerContainer: {
     flex: 1,
-    backgroundColor: '#8E44AD',
+    backgroundColor: primaryColor,
   },
   backButton: {
     position: 'absolute',
@@ -96,7 +97,7 @@ const styles = StyleSheet.create({
     left: 20,
     width: 80,
     height: 24,
-    backgroundColor: '#9B59B6',
+    backgroundColor: primaryColor,
     borderRadius: 4,
     zIndex: 10,
   },

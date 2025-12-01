@@ -68,9 +68,8 @@ const AmountRow = ({ service, qty, price, isBold = false }) => (
 );
 
 const BookingSummaryScreen = ({ route, navigation }) => {
-  const { userId, userData, user } = useContext(AuthContext);
+  const { userId, userData } = useContext(AuthContext);
   const [modalVisible, setModalVisible] = useState(false);
-  const [showWarningModal, setShowWarningModal] = useState(false);
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedTime, setSelectedTime] = useState('');
   const [selectedServices, setSelectedServices] = useState([]);
@@ -156,38 +155,34 @@ const BookingSummaryScreen = ({ route, navigation }) => {
 
     try {
       // const appointmentRes = await createAppointment(userId, bookingData);
+      console.log('USER DATA-------', userData);
 
-      if (!userData?.phone || userData?.phone?.trim() == '') {
-        setShowWarningModal(true);
-        return;
-      }
+      // const appointmentRes = firestore().collection('appointments').doc();
+      // await appointmentRes.set({
+      //   ...bookingData,
+      //   userId,
+      //   createdAt: new Date(),
+      // });
+      // console.log(
+      //   'appointmentRes------------',
+      //   appointmentRes ? appointmentRes.id : 'no appointmentRes',
+      // );
+      // setModalVisible(true);
 
-      const appointmentRes = firestore().collection('appointments').doc();
-      await appointmentRes.set({
-        ...bookingData,
-        userId,
-        createdAt: new Date(),
-      });
-      console.log(
-        'appointmentRes------------',
-        appointmentRes ? appointmentRes.id : 'no appointmentRes',
-      );
-      setModalVisible(true);
-
-      updateSlotInFirestore(selectedSlot.id, { isAvailable: false });
-      await createNotification(
-        userId,
-        route.params.shopId,
-        appointmentRes.id ?? null,
-        userData?.fullName ?? '',
-        userData?.profileImage ?? DEFAULT_AVATAR,
-      );
-      sendAppointmentNotification(
-        userId,
-        route.params.shopId,
-        APPOINTMENT_TYPES.BOOKING_REQUEST_SENT,
-        appointmentRes.id ?? null,
-      );
+      // updateSlotInFirestore(selectedSlot.id, { isAvailable: false });
+      // await createNotification(
+      //   userId,
+      //   route.params.shopId,
+      //   appointmentRes.id ?? null,
+      //   userData?.fullName ?? '',
+      //   userData?.profileImage ?? DEFAULT_AVATAR,
+      // );
+      // sendAppointmentNotification(
+      //   userId,
+      //   route.params.shopId,
+      //   APPOINTMENT_TYPES.BOOKING_REQUEST_SENT,
+      //   appointmentRes.id ?? null,
+      // );
     } catch (error) {
       console.error('Error creating appointment:', error);
     } finally {
@@ -242,10 +237,6 @@ const BookingSummaryScreen = ({ route, navigation }) => {
     navigation.navigate('Appointment', { newAppointment: true });
   };
 
-  const handleClosWarningModalClose = () => {
-    setShowWarningModal(false);
-  };
-
   return (
     <View style={styles.outerContainer}>
       <StatusBar backgroundColor={primaryColor} barStyle="light-content" />
@@ -270,41 +261,6 @@ const BookingSummaryScreen = ({ route, navigation }) => {
             >
               <Text style={styles.okButtonText}>OK</Text>
             </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
-
-      <Modal
-        transparent={true}
-        visible={showWarningModal}
-        animationType="fade"
-        onRequestClose={handleClosWarningModalClose}
-      >
-        <View style={styles.modalBackdrop}>
-          <View style={styles.modalContainer}>
-            <View style={styles.warningIconContainer}>
-              <Ionicons name="warning-outline" size={36} color="#fff" />
-            </View>
-            <Text style={styles.modalText}>
-              Please add your mobile number to continue with the booking.
-            </Text>
-            <View style={styles.spaceBetween}>
-              <TouchableOpacity
-                style={styles.button}
-                onPress={handleClosWarningModalClose}
-              >
-                <Text style={styles.cancelText}>Cancel</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.button, { backgroundColor: primaryColor }]}
-                onPress={() => {
-                  navigation.navigate('EditProfileScreen');
-                }}
-              >
-                <Text style={styles.okText}>Go to profile</Text>
-              </TouchableOpacity>
-            </View>
           </View>
         </View>
       </Modal>
@@ -557,16 +513,6 @@ const styles = StyleSheet.create({
     marginTop: 35,
     marginBottom: 15,
   },
-  warningIconContainer: {
-    backgroundColor: primaryColor,
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 35,
-    marginBottom: 15,
-  },
   modalText: {
     fontSize: 19,
     fontWeight: '500',
@@ -577,7 +523,7 @@ const styles = StyleSheet.create({
     lineHeight: 28,
   },
   okButton: {
-    backgroundColor: primaryColor,
+    backgroundColor: '#333',
     width: '100%',
     padding: 20,
     alignItems: 'center',
@@ -597,33 +543,6 @@ const styles = StyleSheet.create({
     fontSize: 19,
     color: '#555',
     fontWeight: '500',
-  },
-  spaceBetween: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    width: '100%',
-    paddingHorizontal: 20,
-    marginTop: 20,
-  },
-  button: {
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    backgroundColor: '#eee',
-    marginBottom: 20,
-    // width: '40%',
-    alignContent: 'center',
-  },
-  cancelText: {
-    fontSize: 16,
-    color: 'red',
-    fontWeight: 'bold',
-  },
-  okText: {
-    fontSize: 16,
-    color: '#fff',
-    fontWeight: 'bold',
   },
 });
 

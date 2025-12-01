@@ -18,7 +18,7 @@ import { useRoute } from '@react-navigation/native';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import Geolocation from '@react-native-community/geolocation';
 
-import { getParlourById } from '../../apis/services';
+import { getDocumentFieldById, getParlourById } from '../../apis/services';
 import { DEFAULT_AVATAR } from '../../constants/images';
 import { formatDate } from '../../utils/utils';
 import ProfileScreenSkeleton from '../../components/ProfileScreenSkeleton/ProfileScreenSkeleton';
@@ -36,6 +36,7 @@ const AppointmentSummaryScreen = ({ navigation }) => {
   const route = useRoute();
   const appointmentDetails = route?.params?.item;
   const shopId = route.params.item?.shopId;
+  console.log('appointmentDetails----------', appointmentDetails);
 
   const [shop, setShop] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -61,51 +62,12 @@ const AppointmentSummaryScreen = ({ navigation }) => {
     return +(R * c).toFixed(1);
   };
 
-  const getUserLocation = () => {
-    Geolocation.getCurrentPosition(
-      pos => {
-        const userRegion = {
-          latitude: pos.coords.latitude,
-          longitude: pos.coords.longitude,
-          latitudeDelta: 0.05,
-          longitudeDelta: 0.05,
-        };
-        setUserLocation(userRegion);
-        setLocationServicesEnabled(true);
-
-        if (shop?.geolocation) {
-          const calculatedDistance = calculateDistance(
-            pos.coords.latitude,
-            pos.coords.longitude,
-            shop.geolocation.latitude,
-            shop.geolocation.longitude,
-          );
-          setDistance(calculatedDistance);
-
-          if (mapRef.current) {
-            const markers = [
-              {
-                latitude: shop.geolocation.latitude,
-                longitude: shop.geolocation.longitude,
-              },
-              {
-                latitude: pos.coords.latitude,
-                longitude: pos.coords.longitude,
-              },
-            ];
-            mapRef.current.fitToCoordinates(markers, {
-              edgePadding: { top: 100, right: 100, bottom: 100, left: 100 },
-              animated: true,
-            });
-          }
-        }
-      },
-      () => {
-        setUserLocation(null);
-        setLocationServicesEnabled(false);
-      },
-      { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 },
-    );
+  const handleOpenGoogleMaps = googleReviewUrl => {
+    if (googleReviewUrl) {
+      Linking.openURL(googleReviewUrl).catch(err =>
+        console.error("Couldn't load page", err),
+      );
+    }
   };
 
   useEffect(() => {
@@ -123,14 +85,6 @@ const AppointmentSummaryScreen = ({ navigation }) => {
     };
     requestLocationPermission();
   }, []);
-
-  useEffect(() => {
-    if (locationPermissionGranted) {
-      getUserLocation();
-      const interval = setInterval(getUserLocation, 5000);
-      return () => clearInterval(interval);
-    }
-  }, [locationPermissionGranted, shop]);
 
   useEffect(() => {
     if (shopId) {
@@ -237,7 +191,7 @@ const AppointmentSummaryScreen = ({ navigation }) => {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Shop Details</Text>
             <Row label="Address" value={shop?.address ?? 'N/A'} />
-
+            {console.log('SHOP------------', shop ? shop : 'no shop')}
             <View style={styles.row}>
               <Text style={styles.text}>Phone</Text>
               {shop?.phone?.trim() === '' || !shop?.phone ? (
@@ -263,65 +217,14 @@ const AppointmentSummaryScreen = ({ navigation }) => {
             />
           </View>
 
-          {shop?.geolocation && (
-            <View style={styles.locationSection}>
-              <Text style={styles.locationSectionTitle}>Shop Location</Text>
-
-              {!locationPermissionGranted && (
-                <Text style={styles.locationMessage}>
-                  Note: Enable location permissions to see the distance and your
-                  location on the map.
-                </Text>
-              )}
-
-              {locationPermissionGranted &&
-                locationServicesEnabled &&
-                distance !== null && (
-                  <Text style={styles.distanceText}>
-                    Distance: {distance} km from your current location
-                  </Text>
-                )}
-
-              <View style={styles.mapContainer}>
-                <MapView
-                  ref={mapRef}
-                  provider={PROVIDER_GOOGLE}
-                  style={styles.map}
-                  initialRegion={
-                    userLocation &&
-                    locationPermissionGranted &&
-                    locationServicesEnabled
-                      ? {
-                          latitude: shop.geolocation.latitude,
-                          longitude: shop.geolocation.longitude,
-                          latitudeDelta: 0.05,
-                          longitudeDelta: 0.05,
-                        }
-                      : {
-                          latitude: shop.geolocation.latitude,
-                          longitude: shop.geolocation.longitude,
-                          latitudeDelta: 0.05,
-                          longitudeDelta: 0.05,
-                        }
-                  }
-                  showsUserLocation={
-                    locationPermissionGranted && locationServicesEnabled
-                  }
-                  zoomEnabled
-                  minZoomLevel={0}
-                  maxZoomLevel={20}
-                >
-                  <Marker
-                    coordinate={{
-                      latitude: shop.geolocation.latitude,
-                      longitude: shop.geolocation.longitude,
-                    }}
-                    title={shop.parlourName}
-                    description={shop.address}
-                  />
-                </MapView>
-              </View>
-            </View>
+          {shop?.googleReviewUrl && (
+            <TouchableOpacity
+              style={styles.visitUsButton}
+              onPress={() => handleOpenGoogleMaps(shop.googleReviewUrl)}
+            >
+              <Text style={styles.visitUsButtonText}>View Location</Text>
+              <Ionicons name="chevron-forward-outline" size={20} color="#fff" />
+            </TouchableOpacity>
           )}
         </ScrollView>
       </View>
@@ -511,6 +414,22 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#fff',
+  },
+  visitUsButton: {
+    flexDirection: 'row',
+    backgroundColor: primaryColor,
+    paddingVertical: 12,
+    paddingHorizontal: 15,
+    borderRadius: 8,
+    marginTop: 15,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  visitUsButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+    marginRight: 5,
   },
 });
 
