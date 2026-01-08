@@ -88,7 +88,7 @@ android {
         versionName "1.0"
         buildConfigField "String", "GOOGLE_MAPS_API_KEY", "\"${GOOGLE_MAPS_API_KEY}\""
         resValue "string", "google_maps_api_key", GOOGLE_MAPS_API_KEY
-    }
+    } 
     signingConfigs {
         debug {
             storeFile file('debug.keystore')
@@ -97,10 +97,10 @@ android {
             keyPassword 'android'
         }
         release {
-            storeFile file('my-release-key.keystore')
-            storePassword '444444'
+            storeFile file('your_key_name.keystore')
+            storePassword '111111'
             keyAlias 'your_key_alias'
-            keyPassword '444444'
+            keyPassword '111111'
         }
     }
     buildTypes {

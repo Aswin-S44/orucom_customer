@@ -9,19 +9,19 @@ import {
   StatusBar,
   TextInput,
   FlatList,
+  TouchableOpacity,
 } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 import Geolocation from '@react-native-community/geolocation';
-import { getAllNearbyParlors, getAllParlours } from '../../apis/services';
+import { getAllParlours } from '../../apis/services';
 import { AuthContext } from '../../context/AuthContext';
 import { primaryColor } from '../../constants/colors';
-import { TouchableOpacity } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import CardSkeleton from '../../components/CardSkeleton/CardSkeleton';
 import NoShopsAvailable from '../../components/NoShopsAvailable/NoShopsAvailable';
 import Card from '../../components/Card/Card';
 import { isShopOpen } from '../../utils/utils';
-import LocationPrompt from '../../components/LocationPrompt/LocationPrompt';
+import LocationEnabler from '../../../android/app/src/LocationEnabler';
 
 const NearByShopsList = ({ navigation }) => {
   const [region, setRegion] = useState(null);
@@ -31,6 +31,7 @@ const NearByShopsList = ({ navigation }) => {
   const [loadingShops, setLoadingShops] = useState(true);
   const mapRef = useRef(null);
   const { user, userData } = useContext(AuthContext);
+  const [locationStatus, setLocationStatus] = useState('Checking...');
 
   const calculateDistance = (lat1, lon1, lat2, lon2) => {
     const toRad = val => (val * Math.PI) / 180;
@@ -50,22 +51,26 @@ const NearByShopsList = ({ navigation }) => {
   const checkLocation = () => {
     Geolocation.getCurrentPosition(
       pos => {
+        const { latitude, longitude } = pos.coords;
         const userRegion = {
-          latitude: pos.coords.latitude,
-          longitude: pos.coords.longitude,
+          latitude,
+          longitude,
           latitudeDelta: 0.05,
           longitudeDelta: 0.05,
         };
+
         setRegion(userRegion);
         setLocationEnabled(true);
-        if (shops && shops?.length > 0) {
-          const updatedShops = shops.map(shop => {
+
+        setShops(prevShops => {
+          if (!prevShops || prevShops.length === 0) return prevShops;
+          return prevShops.map(shop => {
             if (shop.geolocation) {
               return {
                 ...shop,
                 distance: calculateDistance(
-                  pos.coords.latitude,
-                  pos.coords.longitude,
+                  latitude,
+                  longitude,
                   shop.geolocation.latitude,
                   shop.geolocation.longitude,
                 ),
@@ -73,9 +78,8 @@ const NearByShopsList = ({ navigation }) => {
             }
             return shop;
           });
-          setShops(updatedShops);
-          setLoadingShops(false);
-        }
+        });
+
         if (mapRef.current) {
           const markers = shops
             .filter(shop => shop.geolocation)
@@ -83,20 +87,51 @@ const NearByShopsList = ({ navigation }) => {
               latitude: shop.geolocation.latitude,
               longitude: shop.geolocation.longitude,
             }));
-          markers.push({
-            latitude: pos.coords.latitude,
-            longitude: pos.coords.longitude,
-          });
-          mapRef.current.fitToCoordinates(markers, {
-            edgePadding: { top: 100, right: 100, bottom: 100, left: 100 },
-            animated: true,
-          });
+          markers.push({ latitude, longitude });
+          if (markers.length > 0) {
+            mapRef.current.fitToCoordinates(markers, {
+              edgePadding: { top: 100, right: 100, bottom: 100, left: 100 },
+              animated: true,
+            });
+          }
         }
       },
-      () => setLocationEnabled(false),
-      { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 },
+      error => {
+        setLocationEnabled(false);
+      },
+      { enableHighAccuracy: false, timeout: 20000, maximumAge: 10000 },
     );
   };
+
+  const checkLocationStatus = async () => {
+    if (Platform.OS === 'android') {
+      try {
+        const isEnabled = await LocationEnabler.isLocationEnabled();
+        setLocationStatus(isEnabled ? 'On' : 'Off');
+        if (isEnabled) setLocationEnabled(true);
+      } catch (e) {
+        setLocationStatus('Error');
+      }
+    }
+  };
+
+  const enableLocation = async () => {
+    if (Platform.OS === 'android') {
+      try {
+        await LocationEnabler.promptForEnableLocation();
+        await checkLocationStatus();
+        checkLocation();
+      } catch (e) {}
+    }
+  };
+
+  useEffect(() => {
+    const init = async () => {
+      await checkLocationStatus();
+      await enableLocation();
+    };
+    init();
+  }, []);
 
   useEffect(() => {
     const requestPermission = async () => {
@@ -113,20 +148,27 @@ const NearByShopsList = ({ navigation }) => {
   }, []);
 
   useEffect(() => {
+    let interval;
     if (permissionGranted) {
       checkLocation();
-      const interval = setInterval(() => checkLocation(), 3000);
-      return () => clearInterval(interval);
+      interval = setInterval(() => {
+        checkLocation();
+      }, 15000);
     }
-  }, [permissionGranted, shops]);
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [permissionGranted]);
 
   useEffect(() => {
     const fetchShops = async () => {
       try {
         const res = await getAllParlours();
-        // console.log('RES-----------', res ? res : 'no res');
         setShops(res || []);
-      } catch (err) {}
+      } catch (err) {
+      } finally {
+        setLoadingShops(false);
+      }
     };
     fetchShops();
   }, []);
@@ -143,22 +185,15 @@ const NearByShopsList = ({ navigation }) => {
     return (
       <View style={styles.container}>
         <StatusBar backgroundColor={primaryColor} barStyle="light-content" />
-        <View style={styles.header}></View>
         <View style={styles.center}>
-          <LocationPrompt
-            title="Turn on your device location"
-            fileName="Location_animation.json"
-          />
+          <ActivityIndicator size="small" color={primaryColor} />
+          <Text style={{ marginTop: 10, color: '#666' }}>
+            Waiting for location...
+          </Text>
+          {/* <TouchableOpacity onPress={enableLocation} style={styles.retryButton}>
+            <Text style={{ color: '#fff' }}>Enable Location</Text>
+          </TouchableOpacity> */}
         </View>
-      </View>
-    );
-  }
-
-  if (!region || loadingShops) {
-    return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color="#000" />
-        <Text>Loading shops...</Text>
       </View>
     );
   }
@@ -170,11 +205,16 @@ const NearByShopsList = ({ navigation }) => {
       <MapView
         ref={mapRef}
         style={styles.map}
-        initialRegion={region}
+        initialRegion={
+          region || {
+            latitude: 20.5937,
+            longitude: 78.9629,
+            latitudeDelta: 10,
+            longitudeDelta: 10,
+          }
+        }
         showsUserLocation
         zoomEnabled
-        minZoomLevel={0}
-        maxZoomLevel={20}
       >
         {shops.map(
           shop =>
@@ -185,49 +225,42 @@ const NearByShopsList = ({ navigation }) => {
                   latitude: shop.geolocation.latitude,
                   longitude: shop.geolocation.longitude,
                 }}
-                title={`${shop.parlourName} - ${shop.distance?.toFixed(2)} km`}
+                title={`${shop.parlourName}`}
               />
             ),
         )}
       </MapView>
+
       <View style={styles.header}>
-        <View>
-          <TouchableOpacity
-            style={styles.searchBar}
-            onPress={() => navigation.navigate('SearchResultsScreen')}
-          >
-            <TextInput
-              placeholder="Spa, Facial, Makeup"
-              placeholderTextColor="#FFFFFF"
-              style={styles.searchInput}
-              editable={false}
-            />
-            <Ionicons name="search" size={24} color="#fff" />
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity
+          style={styles.searchBar}
+          onPress={() => navigation.navigate('SearchResultsScreen')}
+        >
+          <TextInput
+            placeholder="Spa, Facial, Makeup"
+            placeholderTextColor="#FFFFFF"
+            style={styles.searchInput}
+            editable={false}
+          />
+          <Ionicons name="search" size={24} color="#fff" />
+        </TouchableOpacity>
       </View>
 
       <View style={styles.cardListContainer}>
         {loadingShops ? (
-          <>
-            <CardSkeleton />
-          </>
-        ) : !loadingShops && shops.length === 0 ? (
+          <CardSkeleton />
+        ) : shops.length === 0 ? (
           <NoShopsAvailable />
         ) : (
           <FlatList
-            // data={shops}
             data={[...shops].sort(
-              (a, b) =>
-                parseFloat(a.distance || Infinity) -
-                parseFloat(b.distance || Infinity),
+              (a, b) => (a.distance || Infinity) - (b.distance || Infinity),
             )}
             horizontal
             showsHorizontalScrollIndicator={false}
             keyExtractor={item => item.id}
             renderItem={({ item }) => (
               <TouchableOpacity
-                key={item.id}
                 onPress={() =>
                   navigation.navigate('ParlourDetails', {
                     parlourData: item,
@@ -241,7 +274,9 @@ const NearByShopsList = ({ navigation }) => {
                   rating={item?.totalRating ?? 0}
                   status={isShopOpen(item?.openingHours) ? 'open' : 'closed'}
                   distance={
-                    item?.distance ? `${item?.distance?.toFixed(2)} km` : 'N/A'
+                    item?.distance
+                      ? `${item.distance.toFixed(2)} km`
+                      : 'Calculating...'
                   }
                 />
               </TouchableOpacity>
@@ -256,7 +291,12 @@ const NearByShopsList = ({ navigation }) => {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  center: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+  },
   map: { ...StyleSheet.absoluteFillObject },
   header: {
     position: 'absolute',
@@ -277,52 +317,16 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingHorizontal: 15,
   },
-  searchInput: {
-    flex: 1,
-    height: 50,
-    color: '#fff',
-    fontSize: 16,
-  },
-  markerOuter: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(142, 68, 173, 0.3)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  markerInner: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    backgroundColor: primaryColor,
-    borderWidth: 2,
-    borderColor: '#fff',
-  },
-  cardListContainer: {
-    position: 'absolute',
-    bottom: 20,
-    left: 0,
-    right: 0,
-  },
+  searchInput: { flex: 1, height: 50, color: '#fff', fontSize: 16 },
+  cardListContainer: { position: 'absolute', bottom: 20, left: 0, right: 0 },
   cardListContent: { paddingLeft: 10 },
-  mapTypeContainer: {
-    position: 'absolute',
-    top: 130,
-    right: 20,
-    flexDirection: 'row',
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    borderRadius: 10,
-    padding: 5,
-  },
-  mapTypeButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 12,
+  retryButton: {
+    marginTop: 20,
+    backgroundColor: primaryColor,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
     borderRadius: 8,
   },
-  selectedMapType: { backgroundColor: primaryColor },
-  mapTypeButtonText: { color: '#333', fontWeight: 'bold' },
-  selectedMapText: { color: '#fff' },
 });
 
 export default NearByShopsList;

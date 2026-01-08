@@ -589,8 +589,9 @@ export const getGalleryImages = async (placeId, page = 0) => {
 };
 
 export const getShopStatus = async placeId => {
+  console.log('getShopStatus===================');
   const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=opening_hours&key=${GOOGLE_MAPS_API_KEY}`;
-
+  console.log('url--------------------', url);
   try {
     const res = await fetch(url);
     const data = await res.json();
@@ -598,6 +599,7 @@ export const getShopStatus = async placeId => {
     console.log('DATA---------', data || 'no data');
 
     const isOpen = data?.result?.opening_hours?.open_now;
+    console.log('isOpen**********************', isOpen);
 
     if (isOpen === true) return 'Open';
     if (isOpen === false) return 'Closed';

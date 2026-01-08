@@ -17,7 +17,8 @@ const DrawerItem = ({ icon, label, onPress }) => (
 );
 
 const CustomDrawerContent = props => {
-  const { user, userData, refreshUser, logout,userId } = useContext(AuthContext);
+  const { user, userData, refreshUser, logout, userId } =
+    useContext(AuthContext);
   const [randomName, setRandomName] = useState('');
 
   useEffect(() => {
@@ -31,7 +32,7 @@ const CustomDrawerContent = props => {
       if (user?.uid) {
         refreshUser();
       }
-    }, [user?.uid, refreshUser,userId]),
+    }, [user?.uid, refreshUser, userId]),
   );
 
   return (
@@ -51,7 +52,7 @@ const CustomDrawerContent = props => {
         </View>
 
         <View style={styles.drawerSection}>
-          <DrawerItem
+          {/* <DrawerItem
             label="Help & Support"
             icon={
               <Ionicons
@@ -63,7 +64,7 @@ const CustomDrawerContent = props => {
             onPress={() => {
               props.navigation.navigate('HelpSupportScreen');
             }}
-          />
+          /> */}
           <DrawerItem
             label="Sign Out"
             icon={

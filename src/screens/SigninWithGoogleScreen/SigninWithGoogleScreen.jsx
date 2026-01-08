@@ -7,6 +7,7 @@ import {
   StatusBar,
   ActivityIndicator,
   Modal,
+  Image,
 } from 'react-native';
 import firestore from '@react-native-firebase/firestore';
 import auth from '@react-native-firebase/auth';
@@ -19,7 +20,6 @@ import {
 } from '@react-native-firebase/auth';
 
 import { AuthContext } from '../../context/AuthContext';
-import { Image } from 'react-native';
 import { GOOGLE_ICON } from '../../constants/images';
 import { lightPurple, primaryColor, white } from '../../constants/colors';
 import LinearGradient from 'react-native-linear-gradient';
@@ -32,10 +32,11 @@ const SigninWithGoogleScreen = () => {
   const { refreshUser } = useContext(AuthContext);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-
+  console.log('WEB_CLIENT_ID-------------', WEB_CLIENT_ID);
   useEffect(() => {
     GoogleSignin.configure({
-      webClientId: WEB_CLIENT_ID,
+      webClientId:
+        '297588641134-hi002t6fubg9iilqa4r2bjp9sdnasg3i.apps.googleusercontent.com',
       offlineAccess: false,
     });
   }, []);
@@ -87,15 +88,13 @@ const SigninWithGoogleScreen = () => {
       };
 
       await customerRef.set(updateData);
-
       await AsyncStorage.setItem('user_uid', uid);
-
       await signInWithCredential(getAuth(), googleCredential);
       refreshUser();
 
       return firebaseUser;
     } catch (error) {
-      console.log(error);
+      console.log('Error---------------------,', error);
       setError(error.message);
     } finally {
       setLoading(false);
@@ -110,27 +109,28 @@ const SigninWithGoogleScreen = () => {
       end={{ x: 1, y: 1 }}
     >
       <StatusBar backgroundColor={primaryColor} barStyle="light-content" />
-      <Image
-        source={require('../../assets/images/splash_logo.png')}
-        style={styles.welcomeImage}
-      />
-      <Text style={styles.title}>Beauty Customer App</Text>
 
-      <View style={styles.buttonContainer}>
-        <TouchableOpacity
-          style={styles.signInButton}
-          onPress={onGoogleButtonPress}
-          disabled={loading}
-        >
-          <>
+      <View style={styles.contentContainer}>
+        <Image
+          source={require('../../assets/images/splash_logo.png')}
+          style={styles.welcomeImage}
+        />
+        <Text style={styles.title}>Glamio Customer</Text>
+
+        <View style={styles.buttonWrapper}>
+          <TouchableOpacity
+            style={styles.signInButton}
+            onPress={onGoogleButtonPress}
+            disabled={loading}
+          >
             <Image source={{ uri: GOOGLE_ICON }} style={styles.googleIcon} />
             <Text style={styles.signInButtonText}>Sign in with Google</Text>
-          </>
-        </TouchableOpacity>
+          </TouchableOpacity>
+        </View>
       </View>
 
       <Modal visible={!!error} transparent animationType="fade">
-        <View style={styles.errorOverlay}>
+        <View style={styles.modalOverlay}>
           <View style={styles.errorBox}>
             <Text style={styles.errorText}>Error: {error}</Text>
             <TouchableOpacity
@@ -144,7 +144,7 @@ const SigninWithGoogleScreen = () => {
       </Modal>
 
       <Modal visible={loading} transparent animationType="fade">
-        <View style={styles.loadingOverlay}>
+        <View style={styles.modalOverlay}>
           <ActivityIndicator size="large" color={white} />
         </View>
       </Modal>
@@ -155,9 +155,13 @@ const SigninWithGoogleScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  contentContainer: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
+    width: '100%',
+    paddingHorizontal: 20,
   },
   title: {
     fontSize: 24,
@@ -167,9 +171,10 @@ const styles = StyleSheet.create({
     marginTop: 20,
     marginBottom: 60,
   },
-  buttonContainer: {
+  buttonWrapper: {
     width: '100%',
     alignItems: 'center',
+    justifyContent: 'center',
   },
   signInButton: {
     backgroundColor: '#fff',
@@ -179,7 +184,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 12,
-    marginBottom: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
@@ -199,22 +203,10 @@ const styles = StyleSheet.create({
   welcomeImage: {
     width: 100,
     height: 100,
-    borderTopLeftRadius: 12,
-    borderTopRightRadius: 12,
+    borderRadius: 12,
   },
-  loadingOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    color: white,
-    marginTop: 10,
-    fontSize: 16,
-  },
-  errorOverlay: {
-    ...StyleSheet.absoluteFillObject,
+  modalOverlay: {
+    flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'center',
     alignItems: 'center',

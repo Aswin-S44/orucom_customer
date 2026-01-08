@@ -31,6 +31,7 @@ const BookingScreen = ({ route, navigation }) => {
   const [selectedDate, setSelectedDate] = useState(
     moment().format('YYYY-MM-DD'),
   );
+  const [selectedSlot, setSelectedSlot] = useState(null);
   const [expertsLoading, setExpertsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
@@ -108,6 +109,7 @@ const BookingScreen = ({ route, navigation }) => {
       selectedExpert: experts.find(expert => expert.id === selectedExpert),
       shopId,
       offers: route.params.offers,
+      selectedSlot,
     });
   };
 
@@ -121,7 +123,12 @@ const BookingScreen = ({ route, navigation }) => {
   };
 
   Object.keys(slots).forEach(date => {
-    const hasAvailableSlots = slots[date].some(slot => slot.isAvailable);
+    const hasAvailableSlots = slots[date].some(slot => {
+      const booked = slot.bookedCount || 0;
+      const capacity = slot.maxCapacity || 1;
+      return slot.isAvailable && booked < capacity;
+    });
+
     if (hasAvailableSlots) {
       markedDates[date] = {
         ...(markedDates[date] || {}),
@@ -154,12 +161,12 @@ const BookingScreen = ({ route, navigation }) => {
     }
 
     setSelectedTime(slot);
+    setSelectedSlot(slot);
   };
 
   return (
     <View style={styles.outerContainer}>
       <StatusBar backgroundColor={primaryColor} barStyle="light-content" />
-
       <TouchableOpacity
         style={styles.backButton}
         onPress={() => navigation.goBack()}
@@ -192,22 +199,7 @@ const BookingScreen = ({ route, navigation }) => {
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.expertScroll}
             >
-              {expertsLoading ? (
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={styles.expertScroll}
-                >
-                  {[...Array(4)].map((_, index) => (
-                    <View key={index} style={styles.expertCard}>
-                      <View style={styles.avatarContainer}>
-                        <View style={styles.avatar} />
-                      </View>
-                      <View style={styles.expertNameSkeleton} />
-                    </View>
-                  ))}
-                </ScrollView>
-              ) : !loading && experts.length === 0 ? (
+              {!loading && experts.length === 0 ? (
                 <Text style={styles.noExpertsText}>No experts available</Text>
               ) : (
                 experts.map(expert => (
@@ -299,7 +291,7 @@ const BookingScreen = ({ route, navigation }) => {
                 <View
                   style={[styles.legendDot, { backgroundColor: lightPurple }]}
                 />
-                <Text style={styles.legendText}>Booked</Text>
+                <Text style={styles.legendText}>Full/Booked</Text>
               </View>
             </View>
             <View style={styles.timeSlotsContainer}>
@@ -309,9 +301,21 @@ const BookingScreen = ({ route, navigation }) => {
                 </Text>
               ) : (
                 slotsForDate.map(slot => {
-                  const slotLabel = `${slot.startTime} - ${slot.endTime}`;
+                  const startTimeFormatted = moment(
+                    slot.startTime,
+                    'HH:mm',
+                  ).format('h:mm A');
+                  const endTimeFormatted = moment(slot.endTime, 'HH:mm').format(
+                    'h:mm A',
+                  );
+                  const slotLabel = `${startTimeFormatted} - ${endTimeFormatted}`;
+
+                  const booked = slot.bookedCount || 0;
+                  const capacity = slot.maxCapacity || 1;
+                  const isFull = booked >= capacity;
                   const isSelected = selectedTime?.id === slot.id;
-                  const isDisabled = !slot.isAvailable;
+                  const isDisabled = !slot.isAvailable || isFull;
+
                   const isPastTime =
                     moment(selectedDate).isSame(moment(), 'day') &&
                     moment(
@@ -343,6 +347,15 @@ const BookingScreen = ({ route, navigation }) => {
                         ]}
                       >
                         {slotLabel}
+                      </Text>
+                      <Text
+                        style={[
+                          styles.capacityText,
+                          isSelected && { color: '#fff' },
+                          (isDisabled || isPastTime) && { color: '#999' },
+                        ]}
+                      >
+                        {isFull ? 'Full' : `${capacity - booked} left`}
                       </Text>
                     </TouchableOpacity>
                   );
@@ -545,12 +558,6 @@ const styles = StyleSheet.create({
     color: '#333',
     marginTop: 4,
   },
-  expertNameSkeleton: {
-    width: 50,
-    height: 12,
-    borderRadius: 3,
-    backgroundColor: '#d0d0d0',
-  },
   noExpertsText: {
     color: '#888',
     textAlign: 'center',
@@ -601,14 +608,13 @@ const styles = StyleSheet.create({
   timeSlot: {
     backgroundColor: primaryColor,
     borderRadius: 8,
-    paddingVertical: 10,
+    paddingVertical: 8,
     paddingHorizontal: 12,
     marginBottom: 8,
     width: '48%',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    // borderColor: primaryColor,
   },
   timeSlotSelected: {
     backgroundColor: '#CF0C98',
@@ -625,8 +631,13 @@ const styles = StyleSheet.create({
   },
   timeSlotText: {
     color: '#fff',
-    fontWeight: '500',
+    fontWeight: '700',
     fontSize: 12,
+  },
+  capacityText: {
+    color: 'rgba(255,255,255,0.8)',
+    fontSize: 10,
+    marginTop: 2,
   },
   timeSlotTextSelected: {
     color: '#fff',

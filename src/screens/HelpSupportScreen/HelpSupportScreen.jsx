@@ -86,13 +86,13 @@ const HelpSupportScreen = ({ navigation }) => {
         <ScrollView showsVerticalScrollIndicator={false}>
           <Text style={styles.mainTitle}>Help & Support</Text>
 
-          <Text style={styles.sectionTitle}>How Can We Help You?</Text>
+          {/* <Text style={styles.sectionTitle}>How Can We Help You?</Text>
           {helpTopics.map(topic => (
             <TouchableOpacity key={topic} style={styles.helpItem}>
               <Text style={styles.helpItemText}>{topic}</Text>
               <Ionicons name="chevron-forward" size={22} color="#888" />
             </TouchableOpacity>
-          ))}
+          ))} */}
 
           <Text style={styles.sectionTitle}>FAQ</Text>
           {faqData.map(item => (

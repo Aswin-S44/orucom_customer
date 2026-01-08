@@ -369,7 +369,7 @@ const styles = StyleSheet.create({
     marginLeft: 4,
   },
   bookButton: {
-    backgroundColor: '#9C27B0',
+    backgroundColor: primaryColor,
     paddingVertical: 8,
     paddingHorizontal: 16,
     borderRadius: 20,

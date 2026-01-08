@@ -195,7 +195,7 @@ const AppointmentSummaryScreen = ({ navigation }) => {
             <View style={styles.row}>
               <Text style={styles.text}>Phone</Text>
               {shop?.phone?.trim() === '' || !shop?.phone ? (
-                <Text style={styles.valueText}>N/A</Text>
+                <Text style={styles.valueText}>Unavailable</Text>
               ) : (
                 <TouchableOpacity
                   onPress={() => {
@@ -203,7 +203,7 @@ const AppointmentSummaryScreen = ({ navigation }) => {
                   }}
                   style={styles.phoneButton}
                 >
-                  <Text style={styles.phoneText}>{shop?.phone}</Text>
+                  <Text style={styles.phoneText}>{shop?.phone ?? '-'}</Text>
                   <Icon name="call" size={20} color="green" />
                 </TouchableOpacity>
               )}

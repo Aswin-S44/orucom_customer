@@ -4,3 +4,12 @@ extensions.configure(com.facebook.react.ReactSettingsExtension){ ex -> ex.autoli
 rootProject.name = 'app'
 include ':app'
 includeBuild('../node_modules/@react-native/gradle-plugin')
+dependencyResolutionManagement {
+    // vvv Use PREFER_SETTINGS to avoid build issues vvv
+    repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)
+    repositories {
+        google()
+        mavenCentral()
+        maven { url 'https://www.jitpack.io' }
+    }
+}

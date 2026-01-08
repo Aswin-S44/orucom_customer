@@ -13,7 +13,7 @@ import {
   RefreshControl,
   Modal,
   Animated,
-  Easing,
+  Dimensions,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import Icon from 'react-native-vector-icons/FontAwesome';
@@ -26,6 +26,9 @@ import { DEFAULT_AVATAR } from '../../constants/images';
 import { useFocusEffect } from '@react-navigation/native';
 import PrivacyPolicyScreen from '../PrivacyPolicyScreen/PrivacyPolicyScreen';
 import LinearGradient from 'react-native-linear-gradient';
+import TermsAndConditionScreen from '../TermsAndConditionScreen/TermsAndConditionScreen';
+
+const { width } = Dimensions.get('window');
 
 if (Platform.OS === 'android') {
   if (UIManager.setLayoutAnimationEnabledExperimental) {
@@ -35,20 +38,9 @@ if (Platform.OS === 'android') {
 
 const AccordionMenuItem = ({ iconName, label, children, isLast }) => {
   const [expanded, setExpanded] = useState(false);
-  const animationHeight = useRef(new Animated.Value(0)).current;
 
   const toggleAccordion = () => {
-    LayoutAnimation.configureNext({
-      duration: 300,
-      update: {
-        type: LayoutAnimation.Types.easeInEaseOut,
-        property: LayoutAnimation.Properties.opacity,
-      },
-      delete: {
-        type: LayoutAnimation.Types.easeInEaseOut,
-        property: LayoutAnimation.Properties.opacity,
-      },
-    });
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setExpanded(!expanded);
   };
 
@@ -112,47 +104,7 @@ const ProfileScreen = ({ navigation }) => {
         <ProfileScreenSkeleton />
       ) : (
         <>
-          <StatusBar backgroundColor={primaryColor} barStyle="light-content" />
-
-          <LinearGradient
-            colors={['#FF6B6B', primaryColor]}
-            style={styles.headerBackground}
-          >
-            <View style={styles.header}>
-              <Text style={styles.mainTitle}>Profile</Text>
-              <TouchableOpacity
-                style={styles.editIcon}
-                onPress={() => navigation.navigate('EditProfileScreen')}
-              >
-                <Icon name="pencil" size={18} color={primaryColor} />
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.profileSection}>
-              <TouchableOpacity
-                onPress={() => setIsImageViewerVisible(true)}
-                activeOpacity={0.8}
-                style={styles.avatarWrapper}
-              >
-                <Image
-                  source={{ uri: profileImageUri }}
-                  style={styles.avatar}
-                />
-                <View style={styles.avatarBadge}>
-                  <Ionicons name="camera-outline" size={18} color="#fff" />
-                </View>
-              </TouchableOpacity>
-              <Text style={styles.userName}>
-                {userData?.fullName ?? generateRandomName()}
-              </Text>
-              {userData?.email && (
-                <Text style={styles.userContact}>{userData.email}</Text>
-              )}
-              {userData?.phone && (
-                <Text style={styles.userContact}>{userData.phone}</Text>
-              )}
-            </View>
-          </LinearGradient>
+          <StatusBar backgroundColor="#FF6B6B" barStyle="light-content" />
 
           <ScrollView
             showsVerticalScrollIndicator={false}
@@ -165,6 +117,46 @@ const ProfileScreen = ({ navigation }) => {
               />
             }
           >
+            <LinearGradient
+              colors={['#FF6B6B', primaryColor]}
+              style={styles.headerBackground}
+            >
+              <View style={styles.header}>
+                <Text style={styles.mainTitle}>Profile</Text>
+                <TouchableOpacity
+                  style={styles.editIcon}
+                  onPress={() => navigation.navigate('EditProfileScreen')}
+                >
+                  <Icon name="pencil" size={18} color={primaryColor} />
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.profileSection}>
+                <TouchableOpacity
+                  onPress={() => setIsImageViewerVisible(true)}
+                  activeOpacity={0.8}
+                  style={styles.avatarWrapper}
+                >
+                  <Image
+                    source={{ uri: profileImageUri }}
+                    style={styles.avatar}
+                  />
+                  <View style={styles.avatarBadge}>
+                    <Ionicons name="camera-outline" size={18} color="#fff" />
+                  </View>
+                </TouchableOpacity>
+                <Text style={styles.userName} numberOfLines={1}>
+                  {userData?.fullName ?? generateRandomName()}
+                </Text>
+                {userData?.email && (
+                  <Text style={styles.userContact}>{userData.email}</Text>
+                )}
+                {userData?.phone && (
+                  <Text style={styles.userContact}>{userData.phone}</Text>
+                )}
+              </View>
+            </LinearGradient>
+
             <View style={styles.menuSection}>
               <AccordionMenuItem
                 iconName="help-circle-outline"
@@ -177,7 +169,9 @@ const ProfileScreen = ({ navigation }) => {
                     color="#666"
                     style={styles.contactIcon}
                   />
-                  <Text style={styles.contactText}>support@example.com</Text>
+                  <Text style={styles.contactText}>
+                    Nominoinnovations@gmail.com
+                  </Text>
                 </View>
                 <View style={styles.subMenuItem}>
                   <Ionicons
@@ -186,7 +180,25 @@ const ProfileScreen = ({ navigation }) => {
                     color="#666"
                     style={styles.contactIcon}
                   />
-                  <Text style={styles.contactText}>+91-8181717171</Text>
+                  <Text style={styles.contactText}>+91-8606229268</Text>
+                </View>
+                <View style={styles.subMenuItem}>
+                  <Ionicons
+                    name="call-outline"
+                    size={20}
+                    color="#666"
+                    style={styles.contactIcon}
+                  />
+                  <Text style={styles.contactText}>+91-9048817123</Text>
+                </View>
+              </AccordionMenuItem>
+
+              <AccordionMenuItem
+                iconName="shield-checkmark-outline"
+                label="Privacy Policy"
+              >
+                <View>
+                  <PrivacyPolicyScreen />
                 </View>
               </AccordionMenuItem>
 
@@ -194,8 +206,8 @@ const ProfileScreen = ({ navigation }) => {
                 iconName="document-text-outline"
                 label="Terms & Conditions"
               >
-                <View style={styles.privacyPolicyContainer}>
-                  <PrivacyPolicyScreen />
+                <View>
+                  <TermsAndConditionScreen />
                 </View>
               </AccordionMenuItem>
 
@@ -215,12 +227,21 @@ const ProfileScreen = ({ navigation }) => {
               </TouchableOpacity>
             </View>
           </ScrollView>
+
           <Modal visible={isImageViewerVisible} transparent={true}>
             <ImageViewer
               imageUrls={images}
               enableSwipeDown
               onSwipeDown={() => setIsImageViewerVisible(false)}
               onCancel={() => setIsImageViewerVisible(false)}
+              renderHeader={() => (
+                <TouchableOpacity
+                  style={styles.closeButton}
+                  onPress={() => setIsImageViewerVisible(false)}
+                >
+                  <Ionicons name="close" size={30} color="#fff" />
+                </TouchableOpacity>
+              )}
             />
           </Modal>
         </>
@@ -234,34 +255,36 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
   },
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: 30,
+  },
   headerBackground: {
-    paddingTop: Platform.OS === 'ios' ? 50 : 20,
-    paddingBottom: 120, // Increased for avatar to sit nicely
-    borderBottomLeftRadius: 40,
-    borderBottomRightRadius: 40,
-    overflow: 'hidden',
-    marginBottom: -80, // Overlap with scrollview
+    paddingTop: Platform.OS === 'ios' ? 50 : 30,
+    paddingBottom: 40,
+    borderBottomLeftRadius: 35,
+    borderBottomRightRadius: 35,
+    width: '100%',
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 20,
-    marginBottom: 20,
+    marginBottom: 25,
     position: 'relative',
   },
   mainTitle: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: '700',
     color: '#fff',
   },
   editIcon: {
     position: 'absolute',
     right: 20,
-    top: Platform.OS === 'ios' ? 0 : 4,
     backgroundColor: '#fff',
     borderRadius: 20,
-    padding: 10,
+    padding: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -270,27 +293,28 @@ const styles = StyleSheet.create({
   },
   profileSection: {
     alignItems: 'center',
+    paddingHorizontal: 20,
   },
   avatarWrapper: {
-    width: 130,
-    height: 130,
-    borderRadius: 65,
-    borderWidth: 4,
-    borderColor: 'rgba(255,255,255,0.7)',
+    width: 110,
+    height: 110,
+    borderRadius: 55,
+    borderWidth: 3,
+    borderColor: 'rgba(255,255,255,0.5)',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 15,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.25,
-    shadowRadius: 10,
-    elevation: 15,
+    marginBottom: 12,
     backgroundColor: '#fff',
+    elevation: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
   },
   avatar: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
+    width: 100,
+    height: 100,
+    borderRadius: 50,
     resizeMode: 'cover',
   },
   avatarBadge: {
@@ -299,65 +323,50 @@ const styles = StyleSheet.create({
     right: 0,
     backgroundColor: '#4CAF50',
     borderRadius: 15,
-    padding: 6,
+    padding: 5,
     borderWidth: 2,
     borderColor: '#fff',
   },
   userName: {
-    fontSize: 26,
+    fontSize: 22,
     fontWeight: '700',
     color: '#fff',
-    marginBottom: 5,
-    textShadowColor: 'rgba(0, 0, 0, 0.1)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
+    marginBottom: 4,
+    textAlign: 'center',
   },
   userContact: {
-    fontSize: 15,
-    color: 'rgba(255,255,255,0.8)',
+    fontSize: 14,
+    color: 'rgba(255,255,255,0.9)',
     marginBottom: 2,
-  },
-  scrollContent: {
-    paddingHorizontal: 20,
-    paddingBottom: 30,
-    paddingTop: 0,
+    textAlign: 'center',
   },
   menuSection: {
-    width: '100%',
-    paddingTop: 20,
+    paddingHorizontal: 20,
+    marginTop: 20,
   },
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
     borderRadius: 15,
-    padding: 16,
-    marginBottom: 12,
+    padding: 14,
     shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 5,
+    elevation: 3,
   },
   menuItemIconBackground: {
-    width: 40,
-    height: 40,
+    width: 38,
+    height: 38,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 15,
     borderRadius: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
   },
   menuItemText: {
     flex: 1,
-    fontSize: 17,
+    fontSize: 16,
     color: '#333',
     fontWeight: '500',
   },
@@ -365,54 +374,52 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   accordionContent: {
-    backgroundColor: '#F8F8F8',
+    backgroundColor: '#F9F9F9',
     padding: 15,
-    paddingTop: 10,
     borderBottomLeftRadius: 15,
     borderBottomRightRadius: 15,
-    borderTopWidth: 0,
     borderWidth: 1,
-    borderColor: '#E0E0E0',
-    marginTop: -10, // Overlap with menu item for continuous look
+    borderColor: '#F0F0F0',
+    marginTop: -8,
+    zIndex: -1,
   },
   subMenuItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 5,
+    paddingVertical: 8,
   },
   contactIcon: {
     marginRight: 12,
   },
   contactText: {
-    fontSize: 15,
+    fontSize: 14,
     color: '#555',
-  },
-  privacyPolicyContainer: {
-    maxHeight: 200, // Limit height to avoid excessively long content
-    overflow: 'hidden',
   },
   logoutButton: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
     borderRadius: 15,
-    padding: 16,
-    marginTop: 20,
+    padding: 14,
+    marginTop: 10,
     shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 5,
+    elevation: 3,
   },
   logoutText: {
     flex: 1,
-    fontSize: 17,
+    fontSize: 16,
     color: '#FF4D4D',
     fontWeight: '600',
+  },
+  closeButton: {
+    position: 'absolute',
+    top: Platform.OS === 'ios' ? 50 : 20,
+    right: 20,
+    zIndex: 99,
+    padding: 10,
   },
 });
 

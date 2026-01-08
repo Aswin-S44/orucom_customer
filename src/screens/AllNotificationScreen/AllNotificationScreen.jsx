@@ -32,9 +32,7 @@ const AllNotificationScreen = ({ navigation }) => {
   const fetchNotifications = useCallback(async () => {
     if (userId) {
       setLoading(true);
-
       const res = await getNotificationsByCustomerId(userId);
-
       setLoading(false);
       setNotifications(res || []);
     }
@@ -54,9 +52,7 @@ const AllNotificationScreen = ({ navigation }) => {
     const updatedNotifications = notifications.map(item =>
       item.id === notification.id ? { ...item, isRead: true } : item,
     );
-
     setNotifications(updatedNotifications);
-    //navigation.navigate('NotificationDetailsScreen', { notification });
     await markNotificationAsRead(notification.id);
   };
 
@@ -115,7 +111,7 @@ const AllNotificationScreen = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" />
+      <StatusBar barStyle="light-content" backgroundColor={primaryColor} />
       <View style={styles.header}>
         <Image
           source={require('../../assets/images/home_bg-1.png')}
@@ -169,7 +165,7 @@ const styles = StyleSheet.create({
   },
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(128, 0, 128, 0.6)',
+    backgroundColor: primaryColor,
   },
   backButton: {
     position: 'absolute',

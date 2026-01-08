@@ -137,12 +137,17 @@ const BookingSummaryScreen = ({ route, navigation }) => {
   }, [route.params]);
 
   const total = subtotal;
+  console.log('selected slot----------------', route?.params);
 
   const handleConfirmBooking = async () => {
     if (!userId) return;
     setConfirming(true);
 
     const serviceIds = selectedServices.map(s => s.id);
+    const currentSlot = route?.params?.selectedSlot;
+    const updatedSlotCount = currentSlot?.bookedCount + 1;
+
+    console.log('updatedSlotCount*****************', updatedSlotCount);
     const bookingData = {
       serviceIds,
       selectedDate,
@@ -152,9 +157,11 @@ const BookingSummaryScreen = ({ route, navigation }) => {
       totalAmount: subtotal,
       shopId: route.params.shopId,
       expertId: selectedExpert,
+      bookedCount: updatedSlotCount,
     };
-
+    console.log('bookingData------------', bookingData);
     try {
+      console.log('selectedTime---------------', selectedTime);
       // const appointmentRes = await createAppointment(userId, bookingData);
 
       if (!userData?.phone || userData?.phone?.trim() == '') {
@@ -173,8 +180,12 @@ const BookingSummaryScreen = ({ route, navigation }) => {
         appointmentRes ? appointmentRes.id : 'no appointmentRes',
       );
       setModalVisible(true);
-
-      updateSlotInFirestore(selectedSlot.id, { isAvailable: false });
+      const availabilityStatus =
+        currentSlot?.bookedCount < currentSlot?.maxCapacity ? true : false;
+      updateSlotInFirestore(selectedSlot.id, {
+        bookedCount: updatedSlotCount,
+        isAvailable: availabilityStatus,
+      });
       await createNotification(
         userId,
         route.params.shopId,

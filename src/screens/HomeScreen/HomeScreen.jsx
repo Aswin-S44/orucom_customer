@@ -141,9 +141,9 @@ const HomeScreen = ({ navigation }) => {
     {
       id: 1,
       title: 'Get Special Discount',
-      discount: 'Up to 40%',
+      discount: 'Up to 15%',
       description: 'All salons available | T&C Applied',
-      image: require('../../assets/images/banner1.jpg'),
+      image: require('../../assets/images/banner1-old.jpg'),
     },
     {
       id: 2,
@@ -156,8 +156,8 @@ const HomeScreen = ({ navigation }) => {
 
   const eidOffer = {
     id: 1,
-    discount: '30% Free',
-    dateRange: 'Aug 13 - Dec 30',
+    discount: '33.33% Free',
+    dateRange: 'Jan 01 - Feb 28',
     image: OFFER_CARD_IMAGE,
   };
 
@@ -259,9 +259,9 @@ const HomeScreen = ({ navigation }) => {
                   <Text style={styles.offerDescription}>
                     {item.description}
                   </Text>
-                  <TouchableOpacity style={styles.claimButton}>
+                  {/* <TouchableOpacity style={styles.claimButton}>
                     <Text style={styles.claimButtonText}>Claim</Text>
-                  </TouchableOpacity>
+                  </TouchableOpacity> */}
                 </View>
               </View>
             )}
@@ -269,7 +269,7 @@ const HomeScreen = ({ navigation }) => {
           />
         </View>
 
-        <View style={styles.section}>
+        {/* <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Services</Text>
           </View>
@@ -288,14 +288,14 @@ const HomeScreen = ({ navigation }) => {
             )}
             contentContainerStyle={styles.servicesCarouselContainer}
           />
-        </View>
+        </View> */}
 
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Top Rated Salons</Text>
-            <TouchableOpacity onPress={() => {}}>
+            {/* <TouchableOpacity onPress={() => {}}>
               <Text style={styles.seeAllText}>See All</Text>
-            </TouchableOpacity>
+            </TouchableOpacity> */}
           </View>
           {loading ? (
             <CardSkeleton />
@@ -337,13 +337,13 @@ const HomeScreen = ({ navigation }) => {
         <View style={styles.eidOfferSection}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Special offers</Text>
-            <TouchableOpacity onPress={() => {}}>
+            {/* <TouchableOpacity onPress={() => {}}>
               <Text style={styles.seeAllText}>See all</Text>
-            </TouchableOpacity>
+            </TouchableOpacity> */}
           </View>
           <TouchableOpacity style={styles.eidOfferCard}>
             <View style={styles.eidOfferContent}>
-              <Text style={styles.eidOfferTag}>HAIRCUT</Text>
+              <Text style={styles.eidOfferTag}>WOLF CUT</Text>
               <Text style={styles.eidOfferDiscount}>{eidOffer.discount}</Text>
               <Text style={styles.eidOfferDate}>{eidOffer.dateRange}</Text>
               <TouchableOpacity style={styles.getOfferButton}>
