@@ -335,6 +335,8 @@ export const getCustomerById = async id => {
 
 export const updateUserData = async (uid, updateData) => {
   try {
+    console.log('**************', updateData);
+    console.log('uid----------------', uid);
     if (
       updateData.profileImage &&
       typeof updateData.profileImage === 'string' &&
