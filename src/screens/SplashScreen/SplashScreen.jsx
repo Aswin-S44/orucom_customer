@@ -7,33 +7,42 @@ const SplashScreen = ({ navigation }) => {
   const scaleAnim = useRef(new Animated.Value(0.5)).current;
 
   useEffect(() => {
-    Animated.timing(fadeAnim, {
-      toValue: 1,
-      duration: 1000000,
-      useNativeDriver: true,
-    }).start();
-
-    Animated.timing(scaleAnim, {
-      toValue: 1,
-      duration: 1000000,
-      easing: Easing.elastic(1),
-      useNativeDriver: true,
-    }).start();
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+      Animated.timing(scaleAnim, {
+        toValue: 1.2,
+        duration: 1000,
+        easing: Easing.out(Easing.back(1.5)),
+        useNativeDriver: true,
+      }),
+    ]).start();
   }, [fadeAnim, scaleAnim]);
 
   const onAnimationFinish = () => {
-    console.log('========================');
-    navigation.replace('SignIn');
+    navigation.replace('MainApp');
   };
 
   return (
     <View style={styles.container}>
-      <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
+      <Animated.View
+        style={[
+          styles.zoomWrapper,
+          {
+            opacity: fadeAnim,
+            transform: [{ scale: scaleAnim }],
+          },
+        ]}
+      >
         <LottieView
           source={require('../../assets/animations/brand.json')}
           autoPlay
           loop={false}
           onAnimationFinish={onAnimationFinish}
+          resizeMode="cover"
           style={styles.lottieIcon}
         />
       </Animated.View>
@@ -46,23 +55,18 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
     backgroundColor: '#E84470',
   },
-  lottieIcon: {
+  zoomWrapper: {
     width: 200,
     height: 200,
-    marginBottom: 20,
+    overflow: 'hidden',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  text: {
-    fontSize: 22,
-    fontWeight: '500',
-    color: '#FFF',
-    textAlign: 'center',
-    lineHeight: 30,
-    textShadowColor: 'rgba(0, 0, 0, 0.1)',
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 2,
+  lottieIcon: {
+    width: 80,
+    height: 80,
   },
 });
 

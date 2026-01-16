@@ -98,7 +98,7 @@ function TabNavigator() {
         name="Shops"
         component={NearByShopsList}
         options={{
-          tabBarLabel: 'Shops',
+          tabBarLabel: 'Nearby Shops',
           tabBarIcon: ({ focused, color }) => (
             <Ionicons
               name="location"
