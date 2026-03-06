@@ -159,7 +159,7 @@ const BookingSummaryScreen = ({ route, navigation }) => {
       expertId: selectedExpert,
       bookedCount: updatedSlotCount,
     };
-    console.log('bookingData------------', bookingData);
+
     try {
       console.log('selectedTime---------------', selectedTime);
       // const appointmentRes = await createAppointment(userId, bookingData);

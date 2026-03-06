@@ -27,6 +27,7 @@
     "@react-navigation/native": "^7.1.17",
     "@react-navigation/stack": "^7.4.7",
     "axios": "^1.11.0",
+    "contentful": "^11.10.5",
     "date-fns": "^4.1.0",
     "firebase": "^12.1.0",
     "leaflet-defaulticon-compatibility": "^0.1.2",

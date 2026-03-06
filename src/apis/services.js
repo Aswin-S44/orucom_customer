@@ -598,10 +598,7 @@ export const getShopStatus = async placeId => {
     const res = await fetch(url);
     const data = await res.json();
 
-    console.log('DATA---------', data || 'no data');
-
     const isOpen = data?.result?.opening_hours?.open_now;
-    console.log('isOpen**********************', isOpen);
 
     if (isOpen === true) return 'Open';
     if (isOpen === false) return 'Closed';

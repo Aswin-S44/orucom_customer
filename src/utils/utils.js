@@ -82,3 +82,12 @@ export const formatDate = dateString => {
 
   return format(date, 'dd MMM yyyy');
 };
+
+export const formattedDate = incomingDate => {
+  if (!incomingDate) return '';
+  const date = new Date(incomingDate);
+  return date.toLocaleDateString('en-US', {
+    month: 'short',
+    day: '2-digit',
+  });
+};

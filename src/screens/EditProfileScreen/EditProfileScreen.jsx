@@ -125,7 +125,7 @@ const EditProfileScreen = ({ navigation }) => {
       profileImage: imageUri,
       phone,
     };
-    console.log('updatedData---------', updatedData);
+
     try {
       await updateUserData(userId, updatedData);
       await refreshUser();

@@ -36,7 +36,7 @@ const PrivacyPolicyScreen = ({ navigation }) => {
             Limited
           </Text>
           <Text style={styles.headerText}>
-            <Text style={styles.bold}>Last Updated:</Text> December 25, 2025
+            <Text style={styles.bold}>Last Updated:</Text> March 05, 2026
           </Text>
         </View>
 

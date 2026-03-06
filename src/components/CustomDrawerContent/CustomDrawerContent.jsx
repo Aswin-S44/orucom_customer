@@ -1,5 +1,13 @@
 import React, { useCallback, useContext, useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Image,
+  TouchableOpacity,
+  Linking,
+  Alert,
+} from 'react-native';
 import { DrawerContentScrollView } from '@react-navigation/drawer';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -35,6 +43,19 @@ const CustomDrawerContent = props => {
     }, [user?.uid, refreshUser, userId]),
   );
 
+  const handleDeleteAccount = async () => {
+    const url =
+      'https://www.nominoinnovations.com/p/glamio-account-deletion-request.html';
+    try {
+      await Linking.openURL(url);
+    } catch (error) {
+      Alert.alert(
+        'Error',
+        'Unable to open the link. Please visit the website manually.',
+      );
+    }
+  };
+
   return (
     <View style={styles.container}>
       <DrawerContentScrollView {...props}>
@@ -52,19 +73,6 @@ const CustomDrawerContent = props => {
         </View>
 
         <View style={styles.drawerSection}>
-          {/* <DrawerItem
-            label="Help & Support"
-            icon={
-              <Ionicons
-                name="help-buoy-outline"
-                size={24}
-                color={primaryColor}
-              />
-            }
-            onPress={() => {
-              props.navigation.navigate('HelpSupportScreen');
-            }}
-          /> */}
           <DrawerItem
             label="Sign Out"
             icon={
@@ -75,6 +83,17 @@ const CustomDrawerContent = props => {
               />
             }
             onPress={logout}
+          />
+          <DrawerItem
+            label="Delete Account"
+            icon={
+              <MaterialCommunityIcons
+                name="delete-outline"
+                size={24}
+                color={primaryColor}
+              />
+            }
+            onPress={handleDeleteAccount}
           />
         </View>
       </DrawerContentScrollView>
