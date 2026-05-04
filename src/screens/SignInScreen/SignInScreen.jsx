@@ -13,9 +13,10 @@ import {
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import Feather from 'react-native-vector-icons/Feather';
 import { primaryColor } from '../../constants/colors';
-import { login } from '../../apis/auth';
-import auth from '@react-native-firebase/auth'; // Import Firebase auth
-import { AuthContext } from '../../context/AuthContext'; // Import AuthContext
+import auth from '@react-native-firebase/auth';
+import firestore from '@react-native-firebase/firestore';
+import AsyncStorage from '@react-native-async-storage/async-storage'; // Added this
+import { AuthContext } from '../../context/AuthContext';
 
 const SignInScreen = ({ navigation }) => {
   const [rememberMe, setRememberMe] = useState(false);
@@ -28,8 +29,7 @@ const SignInScreen = ({ navigation }) => {
   const [loginError, setLoginError] = useState('');
   const [isSignInButtonEnabled, setIsSignInButtonEnabled] = useState(false);
 
-  // Get refreshUser from AuthContext
-  const { user, refreshUser, userData } = useContext(AuthContext);
+  const { refreshUser } = useContext(AuthContext);
 
   useEffect(() => {
     let newErrors = {};
@@ -45,6 +45,35 @@ const SignInScreen = ({ navigation }) => {
     );
   }, [email, password]);
 
+  const ensureUserDocument = async firebaseUser => {
+    try {
+      const customerRef = firestore()
+        .collection('customers')
+        .doc(firebaseUser.uid);
+      const customerSnapshot = await customerRef.get();
+
+      if (!customerSnapshot.exists) {
+        await customerRef.set({
+          uid: firebaseUser.uid,
+          fullName: firebaseUser.email?.split('@')[0] || 'User',
+          phone: '',
+          email: firebaseUser.email,
+          createdAt: firestore.FieldValue.serverTimestamp(),
+          profileImage: 'https://via.placeholder.com/150',
+          emailVerified: true,
+        });
+      } else {
+        await customerRef.update({
+          emailVerified: true,
+        });
+      }
+      return firebaseUser.uid;
+    } catch (error) {
+      console.error('Error ensuring user document:', error);
+      throw error;
+    }
+  };
+
   const handleSignIn = async () => {
     setSubmitted(true);
     setLoginError('');
@@ -53,22 +82,24 @@ const SignInScreen = ({ navigation }) => {
 
     setIsLoading(true);
     try {
-      await login(email, password); // Your custom login function
-      const firebaseUser = auth().currentUser;
+      const userCredential = await auth().signInWithEmailAndPassword(
+        email,
+        password,
+      );
+      const firebaseUser = userCredential.user;
 
       if (firebaseUser) {
-        // Reload user to get latest verification status
+        // 1. Update Firestore
+        await ensureUserDocument(firebaseUser);
 
-        await firebaseUser.reload();
-        await refreshUser(); // Update AuthContext with latest user data
+        // 2. IMPORTANT: Save UID to AsyncStorage (Just like Google Sign-in)
+        // This is likely what your AuthContext needs to fetch userData
+        await AsyncStorage.setItem('user_uid', firebaseUser.uid);
 
-        if (!userData.emailVerified) {
-          navigation.navigate('OTPVerificationScreen', { userEmail: email });
-        }
+        // 3. Refresh context state
+        await refreshUser();
 
-        // Navigation is now handled by App.js based on AuthContext's user.emailVerified
-        // or the isEmailVerified state. If the user is not verified, App.js will
-        // redirect them to OTPVerificationScreen.
+        // Navigation will happen automatically via App.js state change
       }
     } catch (error) {
       console.error('Login error:', error);
@@ -223,6 +254,7 @@ const SignInScreen = ({ navigation }) => {
     </View>
   );
 };
+
 const styles = StyleSheet.create({
   outerContainer: { flex: 1, backgroundColor: primaryColor },
   backButton: {
@@ -259,11 +291,7 @@ const styles = StyleSheet.create({
     borderColor: '#ff0000',
     alignItems: 'center',
   },
-  loginErrorText: {
-    color: '#ff0000',
-    fontSize: 14,
-    textAlign: 'center',
-  },
+  loginErrorText: { color: '#ff0000', fontSize: 14, textAlign: 'center' },
   inputGroup: { marginBottom: 20 },
   inputLabel: {
     fontSize: 16,

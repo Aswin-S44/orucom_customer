@@ -21,65 +21,70 @@ const TermsAndConditionScreen = () => {
 
         <View style={styles.headerInfo}>
           <Text style={styles.headerText}>
-            <Text style={styles.bold}>Last Updated:</Text> March 05, 2026
+            <Text style={styles.bold}>Last Updated:</Text> April 11, 2026
           </Text>
         </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>1. Introduction</Text>
           <Text style={styles.paragraph}>
-            Welcome to Glamio, a product owned and operated by Nomino
-            Innovations Private Limited. By accessing or using our mobile
-            application or website, you agree to be bound by these terms. If you
-            do not agree, please do not use our services.
+            Welcome to Orucom, an application owned and operated by Nomino
+            Innovations Private Limited ("Company"). By accessing or using our
+            platform, you agree to be bound by these terms.
           </Text>
         </View>
 
         <View style={styles.section}>
+          <Text style={styles.sectionTitle}>2. Scope of Service</Text>
+          <Text style={styles.paragraph}>
+            Nomino Innovations Private Limited acts strictly as a technology
+            intermediary connecting users with independent beauty parlours and
+            salons ("Service Providers").
+          </Text>
+          <BulletPoint text="We do not own, manage, or control the Service Providers listed on Orucom." />
+          <BulletPoint text="We do not directly provide beauty, grooming, or wellness services." />
+          <BulletPoint text="We are not liable for the quality, safety, or standard of services rendered by the Service Providers." />
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>3. User Accounts & Login</Text>
+          <BulletPoint text="Google Login: Access to the platform requires authentication via your Google Account. You are responsible for maintaining the security of your Google account credentials." />
+          <BulletPoint text="Accuracy: You agree to provide accurate contact information (such as your phone number) to ensure Service Providers can fulfill your bookings." />
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>4. User Guidelines & Bookings</Text>
+          <BulletPoint text="Confirmations: A booking is only valid once confirmed via an in-app notification or message." />
+          <BulletPoint text="Payments: All payments for services are to be settled directly with the Service Provider, unless an in-app payment gateway is explicitly utilized for an advance token." />
+          <BulletPoint text="Cancellations: Users are expected to cancel appointments via the app reasonably in advance. Repeated failure to honor bookings (No-Shows) may result in account suspension." />
+        </View>
+
+        <View style={styles.section}>
           <Text style={styles.sectionTitle}>
-            2. Scope of Service (Intermediary Status)
+            5. Business Partner (Salon) Obligations
           </Text>
           <Text style={styles.paragraph}>
-            Nomino Innovations Private Limited (via the Glamio app) acts solely
-            as a technology platform connecting customers with independent
-            beauty parlours and salons ("Service Providers").
+            Service Fulfillment: Salons registered on Orucom agree to honor all
+            confirmed bookings.
           </Text>
-          <BulletPoint text="We do not own, operate, or control the salons listed on Glamio." />
-          <BulletPoint text="We do not provide beauty or grooming services directly." />
-          <BulletPoint text="We are not responsible for the quality, hygiene, safety, or standard of the services provided by the Service Providers." />
+          <BulletPoint text="Accuracy of Information: Salons are solely responsible for maintaining accurate pricing, availability, and service descriptions." />
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>
-            3. For Customers (Booking Rules)
-          </Text>
-          <BulletPoint text="Booking Confirmation: A booking is confirmed only when you receive a notification via the Glamio app or WhatsApp." />
-          <BulletPoint text="Payments: Unless prepaid via the app, all payments must be made directly to the Salon after the service. Prices displayed on Glamio are estimates provided by the Salon." />
-          <BulletPoint text="Cancellations: You agree to cancel appointments via the app at least 1 hour in advance to respect the Salon's time. Repeated 'No-Shows' without cancellation may result in your Glamio account being suspended." />
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>
-            4. For Salon Owners (Business Partners)
-          </Text>
-          <BulletPoint text="Accuracy: You are responsible for keeping your service menu, pricing, and availability up to date on Glamio. Nomino Innovations Private Limited is not liable for operational issues caused by outdated information." />
-          <BulletPoint text="Service Fulfillment: You agree to honor all bookings confirmed through Glamio. Unjustified refusal of confirmed bookings may lead to delisting from the platform." />
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>5. Limitation of Liability</Text>
+          <Text style={styles.sectionTitle}>6. Limitation of Liability</Text>
           <Text style={styles.paragraph}>
-            To the fullest extent permitted by law:
+            The Orucom platform is provided on an "AS IS" basis. To the maximum
+            extent permitted by law, Nomino Innovations Private Limited shall
+            not be held liable for any direct, indirect, or consequential
+            damages, disputes, or injuries arising between users and Service
+            Providers.
           </Text>
-          <BulletPoint text="Glamio and Nomino Innovations Private Limited are provided on an 'AS IS' basis. We do not guarantee that the app will be uninterrupted or error-free." />
-          <BulletPoint text="The Company is not liable for any disputes, injuries, or damages arising between the Customer and the Salon." />
         </View>
-
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>6. Governing Law</Text>
           <Text style={styles.paragraph}>
             These terms are governed by the laws of India. Any disputes are
-            subject to the exclusive jurisdiction of the courts in Kerala.
+            subject to the exclusive jurisdiction of the courts in Kerala
           </Text>
         </View>
 

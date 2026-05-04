@@ -29,7 +29,7 @@ const PrivacyPolicyScreen = ({ navigation }) => {
 
         <View style={styles.headerInfo}>
           <Text style={styles.headerText}>
-            <Text style={styles.bold}>App Name:</Text> Glamio
+            <Text style={styles.bold}>App Name:</Text> Orucom
           </Text>
           <Text style={styles.headerText}>
             <Text style={styles.bold}>Company:</Text> Nomino Innovations Private
@@ -44,7 +44,7 @@ const PrivacyPolicyScreen = ({ navigation }) => {
           <Text style={styles.sectionTitle}>1. Introduction</Text>
           <Text style={styles.paragraph}>
             Nomino Innovations Private Limited ("we," "our," or "us") operates
-            the Glamio mobile application. We are committed to protecting your
+            the Orucom mobile application. We are committed to protecting your
             personal information and your right to privacy. If you have any
             questions or concerns about this policy, or our practices with
             regards to your personal information, please contact us at
@@ -56,7 +56,7 @@ const PrivacyPolicyScreen = ({ navigation }) => {
           <Text style={styles.sectionTitle}>2. Information We Collect</Text>
           <Text style={styles.paragraph}>
             We collect personal information that you voluntarily provide to us
-            when you register on Glamio.
+            when you register on Orucom.
           </Text>
           <BulletPoint text="Personal Data: Name, Email, Phone Number, and Profile Picture (optional)." />
           <BulletPoint text="Booking Data: Details of appointments you book (Date, Time, Service, Salon Name)." />

@@ -45,7 +45,7 @@ const CustomDrawerContent = props => {
 
   const handleDeleteAccount = async () => {
     const url =
-      'https://www.nominoinnovations.com/p/glamio-account-deletion-request.html';
+      'https://www.nominoinnovations.com/p/orucom-account-deletion-request.html';
     try {
       await Linking.openURL(url);
     } catch (error) {

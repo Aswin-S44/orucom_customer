@@ -8,38 +8,40 @@ import {
   ActivityIndicator,
   Modal,
   Image,
+  Linking,
+  Alert,
 } from 'react-native';
 import firestore from '@react-native-firebase/firestore';
 import auth from '@react-native-firebase/auth';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
-import { WEB_CLIENT_ID } from '@env';
-import {
-  GoogleAuthProvider,
-  getAuth,
-  signInWithCredential,
-} from '@react-native-firebase/auth';
-
+import { GoogleAuthProvider } from '@react-native-firebase/auth';
 import { AuthContext } from '../../context/AuthContext';
-import { GOOGLE_ICON } from '../../constants/images';
+import { GOOGLE_ICON, DEFAULT_AVATAR } from '../../constants/images';
 import { lightPurple, primaryColor, white } from '../../constants/colors';
 import LinearGradient from 'react-native-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { generateRandomUid } from '../../utils/utils';
-import { DEFAULT_AVATAR } from '../../constants/images';
-import { generateRandomName } from '../../utils/utils';
+import { generateRandomUid, generateRandomName } from '../../utils/utils';
 
-const SigninWithGoogleScreen = () => {
+const SigninWithGoogleScreen = ({ navigation }) => {
   const { refreshUser } = useContext(AuthContext);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  console.log('WEB_CLIENT_ID-------------', WEB_CLIENT_ID);
+
   useEffect(() => {
     GoogleSignin.configure({
       webClientId:
-        '297588641134-hi002t6fubg9iilqa4r2bjp9sdnasg3i.apps.googleusercontent.com',
+        '273666754104-8kqhpnril7nlsnvgf7mmddsc1mbf9r91.apps.googleusercontent.com',
       offlineAccess: false,
     });
   }, []);
+
+  const openLink = async url => {
+    try {
+      await Linking.openURL(url);
+    } catch (err) {
+      Alert.alert('Error', 'Unable to open browser.');
+    }
+  };
 
   async function onGoogleButtonPress() {
     setLoading(true);
@@ -47,7 +49,6 @@ const SigninWithGoogleScreen = () => {
     try {
       const signInResult = await GoogleSignin.signIn();
       let idToken = signInResult.data?.idToken || signInResult.idToken;
-      if (!idToken) throw new Error('No ID token found');
       const googleCredential = GoogleAuthProvider.credential(idToken);
       const userCredential = await auth().signInWithCredential(
         googleCredential,
@@ -58,43 +59,34 @@ const SigninWithGoogleScreen = () => {
         .collection('shop-owners')
         .doc(firebaseUser.uid)
         .get();
+      const customerSnap = await firestore()
+        .collection('customers')
+        .where('email', '==', firebaseUser.email)
+        .get();
 
-      const [customer] = await Promise.all([
-        firestore()
-          .collection('customers')
-          .where('email', '==', firebaseUser.email)
-          .get()
-          .then(snapshot => (snapshot.empty ? null : snapshot.docs[0].data())),
-      ]);
-
-      let uid = customer
-        ? customer.uid
+      let uid = !customerSnap.empty
+        ? customerSnap.docs[0].id
         : shopOwnerSnap.exists
         ? generateRandomUid()
         : firebaseUser.uid;
-
       const customerRef = firestore().collection('customers').doc(uid);
 
-      let updateData = {
-        uid,
-        fullName: firebaseUser.displayName || generateRandomName(),
-        phone: '',
-        email: firebaseUser.email,
-        createdAt: firestore.FieldValue.serverTimestamp(),
-        profileImage: firebaseUser.photoURL || DEFAULT_AVATAR,
-        fcmToken: null,
-        emailVerified: firebaseUser.emailVerified,
-        otp: null,
-      };
+      await customerRef.set(
+        {
+          uid,
+          fullName: firebaseUser.displayName || generateRandomName(),
+          phone: '',
+          email: firebaseUser.email,
+          createdAt: firestore.FieldValue.serverTimestamp(),
+          profileImage: firebaseUser.photoURL || DEFAULT_AVATAR,
+          emailVerified: true,
+        },
+        { merge: true },
+      );
 
-      await customerRef.set(updateData);
       await AsyncStorage.setItem('user_uid', uid);
-      await signInWithCredential(getAuth(), googleCredential);
-      refreshUser();
-
-      return firebaseUser;
+      await refreshUser();
     } catch (error) {
-      console.log('Error---------------------,', error);
       setError(error.message);
     } finally {
       setLoading(false);
@@ -105,45 +97,56 @@ const SigninWithGoogleScreen = () => {
     <LinearGradient
       colors={[primaryColor, lightPurple]}
       style={styles.container}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
     >
       <StatusBar backgroundColor={primaryColor} barStyle="light-content" />
-
       <View style={styles.contentContainer}>
         <Image
           source={require('../../assets/images/splash_logo.png')}
           style={styles.welcomeImage}
         />
-        <Text style={styles.title}>Glamio Customer</Text>
-
-        <View style={styles.buttonWrapper}>
-          <TouchableOpacity
-            style={styles.signInButton}
-            onPress={onGoogleButtonPress}
-            disabled={loading}
-          >
-            <Image source={{ uri: GOOGLE_ICON }} style={styles.googleIcon} />
-            <Text style={styles.signInButtonText}>Sign in with Google</Text>
-          </TouchableOpacity>
+        <Text style={styles.title}>Orucom</Text>
+        <TouchableOpacity
+          style={[styles.signInButton, loading && styles.disabledButton]}
+          onPress={onGoogleButtonPress}
+          disabled={loading}
+        >
+          <Image source={{ uri: GOOGLE_ICON }} style={styles.googleIcon} />
+          <Text style={styles.signInButtonText}>Sign in with Google</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => navigation.navigate('SignIn')}
+          style={styles.emailLinkContainer}
+        >
+          <Text style={styles.emailLinkText}>Sign in with email</Text>
+        </TouchableOpacity>
+        <View style={styles.footerContainer}>
+          <Text style={styles.footerText}>
+            By signing in, you agree to our{' '}
+            <Text
+              style={styles.linkText}
+              onPress={() =>
+                openLink(
+                  'https://www.nominoinnovations.com/p/orucom-terms-and-conditions.html',
+                )
+              }
+            >
+              Terms
+            </Text>{' '}
+            and{' '}
+            <Text
+              style={styles.linkText}
+              onPress={() =>
+                openLink(
+                  'https://www.nominoinnovations.com/p/orucom-privacy-policy.html',
+                )
+              }
+            >
+              Privacy
+            </Text>
+          </Text>
         </View>
       </View>
-
-      <Modal visible={!!error} transparent animationType="fade">
-        <View style={styles.modalOverlay}>
-          <View style={styles.errorBox}>
-            <Text style={styles.errorText}>Error: {error}</Text>
-            <TouchableOpacity
-              style={styles.errorButton}
-              onPress={() => setError(null)}
-            >
-              <Text style={styles.errorButtonText}>OK</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
-
-      <Modal visible={loading} transparent animationType="fade">
+      <Modal visible={loading} transparent>
         <View style={styles.modalOverlay}>
           <ActivityIndicator size="large" color={white} />
         </View>
@@ -153,28 +156,20 @@ const SigninWithGoogleScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
+  container: { flex: 1 },
   contentContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    width: '100%',
     paddingHorizontal: 20,
   },
+  welcomeImage: { width: 125, height: 125, borderRadius: 12 },
   title: {
-    fontSize: 24,
+    fontSize: 30,
     fontWeight: '600',
     color: '#fff',
-    textAlign: 'center',
     marginTop: 20,
     marginBottom: 60,
-  },
-  buttonWrapper: {
-    width: '100%',
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   signInButton: {
     backgroundColor: '#fff',
@@ -184,26 +179,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
   },
-  googleIcon: {
-    width: 24,
-    height: 24,
-    marginRight: 10,
-  },
-  signInButtonText: {
-    color: primaryColor,
+  googleIcon: { width: 24, height: 24, marginRight: 10 },
+  signInButtonText: { color: primaryColor, fontSize: 16, fontWeight: 'bold' },
+  emailLinkContainer: { marginVertical: 15 },
+  emailLinkText: {
+    color: '#fff',
     fontSize: 16,
-    fontWeight: 'bold',
+    textDecorationLine: 'underline',
   },
-  welcomeImage: {
-    width: 100,
-    height: 100,
-    borderRadius: 12,
+  footerContainer: { marginTop: 15, width: '90%' },
+  footerText: { color: '#fff', fontSize: 13, textAlign: 'center' },
+  linkText: {
+    color: '#2768F5',
+    textDecorationLine: 'underline',
+    fontWeight: 'bold',
   },
   modalOverlay: {
     flex: 1,
@@ -211,30 +201,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  errorBox: {
-    backgroundColor: white,
-    padding: 20,
-    borderRadius: 10,
-    alignItems: 'center',
-    width: '80%',
-  },
-  errorText: {
-    color: 'red',
-    fontSize: 16,
-    marginBottom: 15,
-    textAlign: 'center',
-  },
-  errorButton: {
-    backgroundColor: primaryColor,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-  },
-  errorButtonText: {
-    color: white,
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
+  disabledButton: { opacity: 0.7 },
 });
 
 export default SigninWithGoogleScreen;

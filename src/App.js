@@ -188,6 +188,23 @@ function MainAppStack() {
   );
 }
 
+function AuthStack() {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen
+        name="SigninWithGoogleScreen"
+        component={SigninWithGoogleScreen}
+      />
+      <Stack.Screen name="SignIn" component={SignInScreen} />
+      <Stack.Screen name="SignUp" component={SignUpScreen} />
+      <Stack.Screen
+        name="OTPVerificationScreen"
+        component={OTPVerificationScreen}
+      />
+    </Stack.Navigator>
+  );
+}
+
 export default function App() {
   const { user, userData, loading, isEmailVerified } = useContext(AuthContext);
   const [notificationSetupComplete, setNotificationSetupComplete] =
@@ -222,16 +239,10 @@ export default function App() {
       if (userData.emailVerified || isEmailVerified) return 'MainAppStack';
       else return 'OTPVerificationScreen';
     }
-    return 'AuthScreen';
+    return 'AuthStack';
   };
 
   const initialRouteName = getInitialRoute();
-
-  // useEffect(() => {
-  //   firestore()
-  //     .settings({ persistence: false })
-  //     .then(() => console.log('Firestore ready'));
-  // }, []);
 
   useEffect(() => {
     const checkHealth = async () => {
@@ -241,7 +252,16 @@ export default function App() {
         .get()
         .catch(() => {});
     };
+    checkHealth();
   }, []);
+
+  if (loading) {
+    return (
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <SplashScreen />
+      </GestureHandlerRootView>
+    );
+  }
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
@@ -250,21 +270,14 @@ export default function App() {
           {initialRouteName === 'Splash' && (
             <Stack.Screen name="Splash" component={SplashScreen} />
           )}
-          {initialRouteName === 'AuthScreen' && (
-            <Stack.Screen
-              name="SigninWithGoogleScreen"
-              component={SigninWithGoogleScreen}
-            />
+          {initialRouteName === 'AuthStack' && (
+            <Stack.Screen name="AuthStack" component={AuthStack} />
           )}
           {initialRouteName === 'OTPVerificationScreen' && (
-            <>
-              <Stack.Screen name="SignIn" component={SignInScreen} />
-              <Stack.Screen name="SignUp" component={SignUpScreen} />
-              <Stack.Screen
-                name="OTPVerificationScreen"
-                component={OTPVerificationScreen}
-              />
-            </>
+            <Stack.Screen
+              name="OTPVerificationScreen"
+              component={OTPVerificationScreen}
+            />
           )}
           {initialRouteName === 'MainAppStack' && (
             <Stack.Screen name="MainAppStack" component={MainAppStack} />

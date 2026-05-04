@@ -21,7 +21,7 @@ export const AuthProvider = ({ children }) => {
         return null;
       }
     } catch (error) {
-      console.error('Error getting user UID from AsyncStorage:', error);
+      // Error getting user UID from AsyncStorage
       return null;
     }
   };
@@ -49,10 +49,7 @@ export const AuthProvider = ({ children }) => {
               setUserData(null);
             }
           } catch (error) {
-            console.error(
-              'Error fetching user data in onAuthStateChanged:',
-              error,
-            );
+            // Error fetching user data in onAuthStateChanged
             setUserData(null);
           }
         } else {
@@ -102,7 +99,7 @@ export const AuthProvider = ({ children }) => {
             setUserData(null); // Clear userData if document no longer exists
           }
         } catch (error) {
-          console.error('Error fetching user data in refreshUser:', error);
+          // Error fetching user data in refreshUser
           setUserData(null);
         }
       } else {

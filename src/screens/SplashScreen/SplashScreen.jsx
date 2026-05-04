@@ -1,49 +1,66 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Animated, Easing, StyleSheet } from 'react-native';
-import LottieView from 'lottie-react-native';
+import {
+  View,
+  Animated,
+  Easing,
+  StyleSheet,
+  Image,
+  Dimensions,
+  StatusBar,
+} from 'react-native';
+
+const { width } = Dimensions.get('window');
 
 const SplashScreen = ({ navigation }) => {
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const scaleAnim = useRef(new Animated.Value(0.5)).current;
+  const scaleAnim = useRef(new Animated.Value(0.8)).current;
+  const translateYAnim = useRef(new Animated.Value(30)).current;
 
   useEffect(() => {
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 1,
-        duration: 800,
+        duration: 2000,
+        useNativeDriver: true,
+        easing: Easing.out(Easing.quad),
+      }),
+      Animated.spring(scaleAnim, {
+        toValue: 1,
+        friction: 4,
+        tension: 40,
         useNativeDriver: true,
       }),
-      Animated.timing(scaleAnim, {
-        toValue: 1.2,
-        duration: 1000,
+      Animated.timing(translateYAnim, {
+        toValue: 0,
+        duration: 2000,
         easing: Easing.out(Easing.back(1.5)),
         useNativeDriver: true,
       }),
     ]).start();
-  }, [fadeAnim, scaleAnim]);
 
-  const onAnimationFinish = () => {
-    navigation.replace('MainApp');
-  };
+    const timer = setTimeout(() => {
+      navigation.replace('MainApp');
+    }, 3800);
+
+    return () => clearTimeout(timer);
+  }, [fadeAnim, scaleAnim, translateYAnim, navigation]);
 
   return (
     <View style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
       <Animated.View
         style={[
-          styles.zoomWrapper,
+          styles.animationWrapper,
           {
             opacity: fadeAnim,
-            transform: [{ scale: scaleAnim }],
+            transform: [{ scale: scaleAnim }, { translateY: translateYAnim }],
           },
         ]}
       >
-        <LottieView
-          source={require('../../assets/animations/brand.json')}
-          autoPlay
-          loop={false}
-          onAnimationFinish={onAnimationFinish}
-          resizeMode="cover"
-          style={styles.lottieIcon}
+        <Image
+          source={require('../../assets/images/orucom.png')}
+          style={styles.logo}
+          resizeMode="contain"
         />
       </Animated.View>
     </View>
@@ -55,18 +72,17 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#E84470',
+    backgroundColor: '#FFFFFF',
   },
-  zoomWrapper: {
-    width: 200,
-    height: 200,
-    overflow: 'hidden',
-    justifyContent: 'center',
+  animationWrapper: {
     alignItems: 'center',
+    justifyContent: 'center',
+    width: width * 0.85,
+    height: 200,
   },
-  lottieIcon: {
-    width: 80,
-    height: 80,
+  logo: {
+    width: '100%',
+    height: '100%',
   },
 });
 

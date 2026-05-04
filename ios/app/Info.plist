@@ -52,7 +52,11 @@
 <string>We need your location to show nearby shops.</string>
 <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 <string>We need your location to show nearby shops even when the app is in background.</string>
-
+<key>LSApplicationQueriesSchemes</key>
+<array>
+  <string>http</string>
+  <string>https</string>
+</array>
 
 </dict>
 </plist>

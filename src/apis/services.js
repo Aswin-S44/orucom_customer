@@ -125,7 +125,7 @@ export const createAppointment = async (userId, appointmentData) => {
       message: 'Appointment created successfully',
     };
   } catch (error) {
-    console.error('Error creating appointment:', error);
+    // Error creating appointment
     return {
       success: false,
       message: error.message,
@@ -213,7 +213,7 @@ export const getAppointmentsByCustomerId = async customerId => {
       };
     });
   } catch (error) {
-    console.error('Error fetching appointments with expert data:', error);
+    // Error fetching appointments with expert data
     throw error;
   }
 };
@@ -254,7 +254,7 @@ export const searchShopsByService = async searchTerm => {
     const shops = await Promise.all(shopsPromises);
     return shops.filter(shop => shop !== null);
   } catch (error) {
-    console.error('Search shops by service error:', error);
+    // Search shops by service error
     throw error;
   }
 };
@@ -281,7 +281,7 @@ export const searchShops = async searchTerm => {
     );
     return filteredShops;
   } catch (error) {
-    console.error('Search shops error:', error);
+    // Search shops error
     throw error;
   }
 };
@@ -299,7 +299,7 @@ const getShopOwnerByShopId = async shopId => {
 
     return allShops.find(shop => shop.uid === shopId || shop.id === shopId);
   } catch (error) {
-    console.error('Get shop owner error:', error);
+    // Get shop owner error
     return null;
   }
 };
@@ -314,7 +314,7 @@ const getServicesByShopId = async shopId => {
 
     return allServices.filter(service => service.shopId === shopId);
   } catch (error) {
-    console.error('Get services error:', error);
+    // Get services error:
     return [];
   }
 };
@@ -335,8 +335,6 @@ export const getCustomerById = async id => {
 
 export const updateUserData = async (uid, updateData) => {
   try {
-    console.log('**************', updateData);
-    console.log('uid----------------', uid);
     if (
       updateData.profileImage &&
       typeof updateData.profileImage === 'string' &&
@@ -369,7 +367,7 @@ export const updateUserData = async (uid, updateData) => {
     await firestore().collection('customers').doc(uid).update(updateData);
     return true;
   } catch (error) {
-    console.error('Error updating user data:', error);
+    // Error updating user data
     return false;
   }
 };
@@ -415,19 +413,19 @@ export const getExpertsWithShopDetailsByShopId = async expertId => {
             shopDetails: shopOwnerDoc.data(),
           };
         } else {
-          console.warn('Shop owner not found for shopId:', shopId);
+          // Shop owner not found for shopId
           return { expert: expertData, shopDetails: null };
         }
       } else {
-        console.warn('Expert data does not contain a shopId.');
+        // Expert data does not contain a shopId
         return { expert: expertData, shopDetails: null };
       }
     } else {
-      console.warn('No expert found with expertId:', expertId);
+      // 'No expert found with expertId
       return null;
     }
   } catch (error) {
-    console.error('Error fetching expert data:', error);
+    // Error fetching expert data
     throw error;
   }
 };
@@ -480,7 +478,7 @@ export const markNotificationAsRead = async id => {
 
     return { success: true };
   } catch (error) {
-    console.error('Error updating notification:', error);
+    // Error updating notification
     return { success: false, error };
   }
 };
@@ -491,14 +489,13 @@ export const deleteNotificationById = async id => {
     await notificationRef.delete();
     return { success: true };
   } catch (error) {
-    console.error('Error deleting notification:', error);
+    // 'Error deleting notification:
     return { success: false, error };
   }
 };
 
 export const getNotificationsCountByCustomerId = async customerId => {
   try {
-    console.log('customerId---------------', customerId);
     const querySnapshot = await firestore()
       .collection('notifications')
       .where('toId', '==', customerId)
@@ -507,7 +504,7 @@ export const getNotificationsCountByCustomerId = async customerId => {
 
     return querySnapshot?.size ?? 0;
   } catch (error) {
-    console.error('Error fetching notifications:', error);
+    // Error fetching notifications
     return 0;
   }
 };
@@ -526,7 +523,7 @@ export const updateCustomer = async (uid, dataToUpdate) => {
 
     return { success: true };
   } catch (error) {
-    console.error('Error updating customer:', error);
+    // Error updating customer
     return { success: false, error };
   }
 };
@@ -559,14 +556,13 @@ export const getOfferByServiceAndShop = async (serviceId, shopId) => {
     }
     return null;
   } catch (error) {
-    console.error('Error fetching offer:', error);
+    // Error fetching offer
     return null;
   }
 };
 
 export const getGalleryImages = async (placeId, page = 0) => {
   const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=photos&key=${GOOGLE_MAPS_API_KEY}`;
-  console.log('URL-------------', url);
 
   try {
     const res = await fetch(url);
@@ -591,9 +587,8 @@ export const getGalleryImages = async (placeId, page = 0) => {
 };
 
 export const getShopStatus = async placeId => {
-  console.log('getShopStatus===================');
   const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=opening_hours&key=${GOOGLE_MAPS_API_KEY}`;
-  console.log('url--------------------', url);
+
   try {
     const res = await fetch(url);
     const data = await res.json();
@@ -606,7 +601,6 @@ export const getShopStatus = async placeId => {
     // If Google does not provide status
     return 'Unavailable';
   } catch (error) {
-    console.log('Error fetching shop status : ', error);
     return 'Unknown';
   }
 };
@@ -657,7 +651,9 @@ export const sendAppointmentNotification = async (
       appointmentType,
       appointmentId,
     })
-    .catch(error => console.log('Error sending notification:', error));
+    .catch(error => {
+      // Error sending notification
+    });
 };
 export const updateShopViewers = async shopId => {
   try {
@@ -672,7 +668,6 @@ export const updateShopViewers = async shopId => {
         createdAt: firestore.FieldValue.serverTimestamp(),
         updatedAt: firestore.FieldValue.serverTimestamp(),
       });
-      console.log(`✅ New shop viewer record created for ${shopId}`);
     } else {
       // Increment safely with merge fallback
       await shopRef.set(
@@ -682,10 +677,9 @@ export const updateShopViewers = async shopId => {
         },
         { merge: true }, // 👈 ensures creation if not present
       );
-      console.log(`👀 Viewer count incremented for ${shopId}`);
     }
   } catch (error) {
-    console.error('❌ Error updating shop viewers:', error);
+    //  Error updating shop viewers:
   }
 };
 

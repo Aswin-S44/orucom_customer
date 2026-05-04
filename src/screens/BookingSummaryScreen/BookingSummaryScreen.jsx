@@ -137,7 +137,6 @@ const BookingSummaryScreen = ({ route, navigation }) => {
   }, [route.params]);
 
   const total = subtotal;
-  console.log('selected slot----------------', route?.params);
 
   const handleConfirmBooking = async () => {
     if (!userId) return;
@@ -147,7 +146,6 @@ const BookingSummaryScreen = ({ route, navigation }) => {
     const currentSlot = route?.params?.selectedSlot;
     const updatedSlotCount = currentSlot?.bookedCount + 1;
 
-    console.log('updatedSlotCount*****************', updatedSlotCount);
     const bookingData = {
       serviceIds,
       selectedDate,
@@ -161,7 +159,6 @@ const BookingSummaryScreen = ({ route, navigation }) => {
     };
 
     try {
-      console.log('selectedTime---------------', selectedTime);
       // const appointmentRes = await createAppointment(userId, bookingData);
 
       if (!userData?.phone || userData?.phone?.trim() == '') {
@@ -175,10 +172,7 @@ const BookingSummaryScreen = ({ route, navigation }) => {
         userId,
         createdAt: new Date(),
       });
-      console.log(
-        'appointmentRes------------',
-        appointmentRes ? appointmentRes.id : 'no appointmentRes',
-      );
+
       setModalVisible(true);
       const availabilityStatus =
         currentSlot?.bookedCount < currentSlot?.maxCapacity ? true : false;

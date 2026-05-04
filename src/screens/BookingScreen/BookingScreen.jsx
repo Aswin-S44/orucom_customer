@@ -67,7 +67,7 @@ const BookingScreen = ({ route, navigation }) => {
           setLoading(false);
         },
         error => {
-          console.error('Error fetching slots:', error);
+          // Error fetching slots
           setLoading(false);
           Alert.alert('Error', 'Failed to load slots');
         },

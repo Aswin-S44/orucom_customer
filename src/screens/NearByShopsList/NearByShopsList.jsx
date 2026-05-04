@@ -22,6 +22,7 @@ import NoShopsAvailable from '../../components/NoShopsAvailable/NoShopsAvailable
 import Card from '../../components/Card/Card';
 import { isShopOpen } from '../../utils/utils';
 import LocationEnabler from '../../../android/app/src/LocationEnabler';
+import { GOOGLE_MAPS_API_KEY, CLOUDINARY_DOC } from '@env';
 
 const NearByShopsList = ({ navigation }) => {
   const [region, setRegion] = useState(null);

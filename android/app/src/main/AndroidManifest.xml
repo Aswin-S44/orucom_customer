@@ -3,7 +3,7 @@
     <uses-permission android:name="android.permission.INTERNET" />
      <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION"/>
+    <!-- <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION"/> -->
 
 
     <application
@@ -34,8 +34,16 @@
 
         <meta-data
         android:name="com.google.android.geo.API_KEY"
-        android:value="AIzaSyBOKng2fU2So-ep_9fPWQq3cq5lKVtq5BY" />
+        android:value="AIzaSyAHfmbCw7lLHJ8Cp8XMVNsGN8ZVVseN5Ko" />
 
     </application>
-    
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="https" />
+        </intent>
+    </queries>
+
+     
 </manifest>
+ 

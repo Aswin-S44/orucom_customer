@@ -155,20 +155,13 @@ const BookingSummaryScreen = ({ route, navigation }) => {
 
     try {
       // const appointmentRes = await createAppointment(userId, bookingData);
-      console.log('USER DATA-------', userData);
-
       // const appointmentRes = firestore().collection('appointments').doc();
       // await appointmentRes.set({
       //   ...bookingData,
       //   userId,
       //   createdAt: new Date(),
       // });
-      // console.log(
-      //   'appointmentRes------------',
-      //   appointmentRes ? appointmentRes.id : 'no appointmentRes',
-      // );
       // setModalVisible(true);
-
       // updateSlotInFirestore(selectedSlot.id, { isAvailable: false });
       // await createNotification(
       //   userId,
@@ -184,7 +177,7 @@ const BookingSummaryScreen = ({ route, navigation }) => {
       //   appointmentRes.id ?? null,
       // );
     } catch (error) {
-      console.error('Error creating appointment:', error);
+      // Error creating appointment
     } finally {
       setConfirming(false);
     }

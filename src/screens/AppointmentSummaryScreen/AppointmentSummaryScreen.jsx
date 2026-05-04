@@ -36,7 +36,6 @@ const AppointmentSummaryScreen = ({ navigation }) => {
   const route = useRoute();
   const appointmentDetails = route?.params?.item;
   const shopId = route.params.item?.shopId;
-  console.log('appointmentDetails----------', appointmentDetails);
 
   const [shop, setShop] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -64,9 +63,11 @@ const AppointmentSummaryScreen = ({ navigation }) => {
 
   const handleOpenGoogleMaps = googleReviewUrl => {
     if (googleReviewUrl) {
-      Linking.openURL(googleReviewUrl).catch(err =>
-        console.error("Couldn't load page", err),
-      );
+      // Linking.openURL(googleReviewUrl).catch(err =>
+      //   console.error("Couldn't load page", err),
+      // );
+
+      Linking.openURL(googleReviewUrl);
     }
   };
 
@@ -96,7 +97,7 @@ const AppointmentSummaryScreen = ({ navigation }) => {
             setShop(res);
           }
         } catch (error) {
-          console.log('Error while fetching shop : ', error);
+          // Error while fetching shop
         } finally {
           setLoading(false);
         }
@@ -191,7 +192,7 @@ const AppointmentSummaryScreen = ({ navigation }) => {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Shop Details</Text>
             <Row label="Address" value={shop?.address ?? 'N/A'} />
-            {console.log('SHOP------------', shop ? shop : 'no shop')}
+
             <View style={styles.row}>
               <Text style={styles.text}>Phone</Text>
               {shop?.phone?.trim() === '' || !shop?.phone ? (

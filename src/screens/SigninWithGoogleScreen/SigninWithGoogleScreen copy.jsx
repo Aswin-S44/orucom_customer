@@ -49,7 +49,7 @@ const SigninWithGoogleScreen = () => {
       const signInResult = await GoogleSignin.signIn();
 
       let idToken = signInResult.data?.idToken || signInResult.idToken;
-      console.log('idToken--------------', idToken ? idToken : 'no idToken');
+
       const user = signInResult.data?.user;
 
       if (!idToken) throw new Error('No ID token found');
@@ -108,7 +108,7 @@ const SigninWithGoogleScreen = () => {
       //return await signInWithCredential(getAuth(), googleCredential);
       return firebaseUser;
     } catch (error) {
-      console.log('GOOGLE SIGN-IN ERROR =====>', error);
+      // Google signin error
     }
   }
 
@@ -119,11 +119,11 @@ const SigninWithGoogleScreen = () => {
     } catch (error) {
       if (error.code === statusCodes.SIGN_IN_CANCELLED) {
       } else if (error.code === statusCodes.IN_PROGRESS) {
-        console.log('In progress');
+        // In progress
       } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
-        console.log('Play services not available');
+        // Play servies not available
       } else {
-        console.log(error);
+        return error;
       }
     }
   };
@@ -145,11 +145,7 @@ const SigninWithGoogleScreen = () => {
       <View style={styles.buttonContainer}>
         <TouchableOpacity
           style={styles.signInButton}
-          onPress={() =>
-            onGoogleButtonPress().then(() =>
-              console.log('Signed in with Google!'),
-            )
-          }
+          onPress={() => onGoogleButtonPress().then(() => {})}
         >
           <Image source={{ uri: GOOGLE_ICON }} style={styles.googleIcon} />
           <Text style={styles.signInButtonText}>Sign in with Google</Text>

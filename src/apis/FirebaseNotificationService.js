@@ -29,7 +29,6 @@ class FirebaseNotificationService {
         );
       }
     } catch (error) {
-      console.error('Permission request error:', error);
       return false;
     }
   }
@@ -48,7 +47,6 @@ class FirebaseNotificationService {
 
       return token;
     } catch (error) {
-      console.error('Error getting FCM token:', error);
       return null;
     }
   }
@@ -60,8 +58,6 @@ class FirebaseNotificationService {
       }
 
       const token = await messaging().getToken();
-      console.log('TOKEN------------', token ? token : 'no token');
-      console.log('userId---------------', userId);
 
       const userDoc = await firestore()
         .collection('customers')
@@ -89,7 +85,6 @@ class FirebaseNotificationService {
 
       // return token;
     } catch (error) {
-      console.error('Error getting FCM token:', error);
       return null;
     }
   }
@@ -98,10 +93,6 @@ class FirebaseNotificationService {
   static async storeFCMToken(token) {
     try {
       const currentUser = auth().currentUser;
-      // console.log(
-      //   'currentUser=============',
-      //   currentUser ? currentUser : 'no currentUser',
-      // );
 
       if (currentUser) {
         const userDoc = await firestore()
@@ -126,7 +117,7 @@ class FirebaseNotificationService {
         }
       }
     } catch (error) {
-      console.error('Error storing FCM token:', error);
+      // Error storing fcm token
     }
   }
 
@@ -139,7 +130,9 @@ class FirebaseNotificationService {
         [
           {
             text: 'OK',
-            onPress: () => console.log('Notification pressed'),
+            onPress: () => {
+              // logic here
+            },
           },
         ],
       );
@@ -147,7 +140,6 @@ class FirebaseNotificationService {
 
     // Notification opened from background/quit state
     messaging().onNotificationOpenedApp(remoteMessage => {
-      console.log('Notification opened from background:', remoteMessage);
       // Handle navigation based on notification data
     });
 
@@ -156,7 +148,7 @@ class FirebaseNotificationService {
       .getInitialNotification()
       .then(remoteMessage => {
         if (remoteMessage) {
-          console.log('App opened by notification:', remoteMessage);
+          // app open notiicaiton
         }
       });
 
@@ -167,9 +159,8 @@ class FirebaseNotificationService {
   static async subscribeToShopTopic(shopId) {
     try {
       await messaging().subscribeToTopic(`shop_${shopId}`);
-      console.log(`Subscribed to shop topic: shop_${shopId}`);
     } catch (error) {
-      console.error('Error subscribing to topic:', error);
+      // Error subscribing to topic
     }
   }
 
@@ -177,9 +168,8 @@ class FirebaseNotificationService {
   static async unsubscribeFromShopTopic(shopId) {
     try {
       await messaging().unsubscribeFromTopic(`shop_${shopId}`);
-      console.log(`Unsubscribed from shop topic: shop_${shopId}`);
     } catch (error) {
-      console.error('Error unsubscribing from topic:', error);
+      // 'Error unsubscribing from topic
     }
   }
 
