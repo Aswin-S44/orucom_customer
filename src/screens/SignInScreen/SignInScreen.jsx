@@ -74,6 +74,37 @@ const SignInScreen = ({ navigation }) => {
     }
   };
 
+  // const handleSignIn = async () => {
+  //   setSubmitted(true);
+
+  //   let newErrors = {};
+
+  //   if (!email) newErrors.email = 'Email is required';
+  //   else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
+  //     newErrors.email = 'Invalid email format';
+
+  //   if (!password) newErrors.password = 'Password is required';
+  //   else if (password.length < 6)
+  //     newErrors.password = 'Password must be at least 6 characters';
+
+  //   setErrors(newErrors);
+
+  //   if (Object.keys(newErrors).length > 0) {
+  //     return; // stop if errors exist
+  //   }
+
+  //   setIsLoading(true);
+  //   try {
+  //     const user = await login(email, password);
+  //     console.log('user --------------------->>>', user);
+  //     // maybe navigate to main screen here
+  //   } catch (error) {
+  //     Alert.alert('Login Failed', error.message);
+  //   } finally {
+  //     setIsLoading(false);
+  //   }
+  // };
+
   const handleSignIn = async () => {
     setSubmitted(true);
     setLoginError('');
