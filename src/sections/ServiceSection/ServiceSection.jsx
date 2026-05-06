@@ -13,6 +13,7 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import ServiceCardSkeleton from '../../components/ServiceCardSkeleton/ServiceCardSkeleton'; // Assuming this is fine
 import EmptyComponent from '../../components/EmptyComponent/EmptyComponent'; // Assuming this is fine
 import { primaryColor } from '../../constants/colors';
+import { NO_IMAGE } from '../../constants/images';
 
 // Define a more modern color palette
 
@@ -77,10 +78,12 @@ const ServiceItem = ({ item, shopId, experts, offers }) => {
         />
         <View style={styles.listItemContent}>
           <Text style={styles.listItemTitle} numberOfLines={1}>
-            {item.serviceName}
+            {item?.name ?? ''}
           </Text>
-          <Text style={styles.listItemSubtitle}>{item.category}</Text>
-          <Text style={styles.listItemPrice}>₹{item.servicePrice}</Text>
+          <Text style={styles.listItemSubtitle}>
+            {item.category?.name ?? ''}
+          </Text>
+          <Text style={styles.listItemPrice}>₹{item?.rate ?? 0}</Text>
         </View>
         <Ionicons name="chevron-forward-outline" size={24} color={mediumGray} />
       </TouchableOpacity>
@@ -142,7 +145,7 @@ const OfferItem = ({ item, shopId, experts, offers }) => {
             uri:
               item.imageUrl && item.imageUrl.trim() !== ''
                 ? item.imageUrl
-                : 'https://via.placeholder.com/80/FFE0B2/808080?text=Offer',
+                : NO_IMAGE,
           }}
           style={styles.listItemImage}
         />

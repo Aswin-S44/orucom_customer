@@ -28,17 +28,20 @@ const ParlourDetails = ({ route, navigation }) => {
   const [loadingServices, setLoadingServices] = React.useState(false);
   const [loadingOffers, setLoadingOffers] = React.useState(false);
   const [experts, setExperts] = useState([]);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (!parlourData?.id) return;
 
     const fetchServices = async () => {
       try {
+        setLoadingServices(true);
         const url = `${BACKEND_URL}/api/v1/customer/shop/${parlourData.id}`;
         console.log('URL******************', url);
 
         const res = await fetch(url);
         const data = await res.json();
+        setLoadingServices(false);
 
         console.log('FULL DATA:', JSON.stringify(data, null, 2));
 
@@ -60,6 +63,7 @@ const ParlourDetails = ({ route, navigation }) => {
         console.log('ERROR:', err);
         setServices([]);
         setOffers([]);
+        setLoadingServices(false);
       }
     };
 
@@ -187,6 +191,7 @@ const ParlourDetails = ({ route, navigation }) => {
           address={parlourData?.address ?? ''}
         />
       )}
+      {console.log('SERVICES-------------------', services)}
 
       {activeTab === 'Service' && (
         <View style={styles.content}>
