@@ -25,7 +25,7 @@ export const getAllNearbyParlors = async onUpdate => {
       }));
       onUpdate(parlors);
     });
-};
+}; 
 
 export const getAllParlours = async () => {
   const shopSnapshot = await firestore()

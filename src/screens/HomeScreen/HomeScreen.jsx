@@ -29,8 +29,13 @@ import { getLocationPermission } from '../../apis/permissions';
 import Geolocation from '@react-native-community/geolocation';
 import { formattedDate, isShopOpen } from '../../utils/utils';
 import FirebaseNotificationService from '../../apis/FirebaseNotificationService';
-import { OFFER_CARD_IMAGE } from '../../constants/images';
+import {
+  DEFAULT_AVATAR,
+  NO_IMAGE,
+  OFFER_CARD_IMAGE,
+} from '../../constants/images';
 import client from '../../services/contentful';
+import { GET_ALL_SHOPS } from '../../services/apis';
 
 const { width } = Dimensions.get('window');
 
@@ -106,18 +111,40 @@ const HomeScreen = ({ navigation }) => {
     } catch (err) {}
   }, [user, userId]);
 
+  // const fetchShops = async () => {
+  //   try {
+  //     setLoading(true);
+  //     const res = await getAllParlours();
+  //     setShops(res || []);
+  //   } catch (err) {
+  //     setShops([]);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
   const fetchShops = async () => {
     try {
       setLoading(true);
-      const res = await getAllParlours();
-      setShops(res || []);
+
+      const response = await fetch(GET_ALL_SHOPS, {
+        method: 'GET',
+      });
+
+      const shopsData = await response.json();
+
+      if (shopsData?.shops?.length > 0) {
+        const transformedShops = shopsData.shops.map(item => item.shop);
+        setShops(transformedShops);
+      } else {
+        setShops([]);
+      }
     } catch (err) {
       setShops([]);
     } finally {
       setLoading(false);
     }
   };
-
   const fetchNotificationCount = async () => {
     if (userId) {
       const res = await getNotificationsCountByCustomerId(userId);
@@ -281,6 +308,7 @@ const HomeScreen = ({ navigation }) => {
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Top Rated Salons</Text>
           </View>
+
           {loading ? (
             <CardSkeleton />
           ) : shops && shops.length > 0 ? (
@@ -299,11 +327,12 @@ const HomeScreen = ({ navigation }) => {
                   style={styles.parlourCardWrapper}
                 >
                   <Card
-                    image={item.profileImage}
+                    image={item?.shopImage || NO_IMAGE}
                     title={item.parlourName}
                     location={item.address}
                     rating={item.totalRating ?? 0}
-                    status={isShopOpen(item.openingHours) ? 'Open' : 'Closed'}
+                    // status={isShopOpen(item.openingHours) ? 'Open' : 'Closed'}
+                    status={true}
                     servicesOffered={item.services
                       ?.map(s => s.serviceName)
                       .join(', ')}

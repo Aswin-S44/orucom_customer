@@ -5,9 +5,10 @@ export const APPOINTMENT_STATUSES = {
   COMPLETED: 'completed',
 };
 
-export const BACKEND_URL = `https://beauty-parlor-app-backend.onrender.com`;
+// export const BACKEND_URL = `https://beauty-parlor-app-backend.onrender.com`;
 
-//export const BACKEND_URL = `http://10.130.97.171:5000`;
+// export const BACKEND_URL = `http://10.130.97.171:5000`;
+
 
 export const NOTIFICATION_TYPES = {
   APPOINTMENT_REQUEST: 'appointment_request',

@@ -21,6 +21,10 @@ import { lightPurple, primaryColor, white } from '../../constants/colors';
 import LinearGradient from 'react-native-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { generateRandomUid, generateRandomName } from '../../utils/utils';
+import { GOOGLE_SIGNIN_URL } from '../../services/apis';
+
+// Replace with your actual backend URL
+const API_URL = 'https://your-backend-api.com';
 
 const SigninWithGoogleScreen = ({ navigation }) => {
   const { refreshUser } = useContext(AuthContext);
@@ -43,22 +47,127 @@ const SigninWithGoogleScreen = ({ navigation }) => {
     }
   };
 
+  // async function onGoogleButtonPress() {
+  //   setLoading(true);
+  //   setError(null);
+  //   try {
+  //     const signInResult = await GoogleSignin.signIn();
+  //     let idToken = signInResult.data?.idToken || signInResult.idToken;
+
+  //     // Call Node.js Backend
+  //     const response = await fetch(GOOGLE_SIGNIN_URL, {
+  //       method: 'POST',
+  //       headers: {
+  //         'Content-Type': 'application/json',
+  //       },
+  //       body: JSON.stringify({
+  //         idToken,
+  //         userType: 'customer', // Defaulting to customer as per context
+  //       }),
+  //     });
+
+  //     const backendData = await response.json();
+
+  //     if (!backendData.success) {
+  //       throw new Error(backendData.message || 'Backend authentication failed');
+  //     }
+
+  //     // Maintain existing Firebase Auth session for Firestore security rules compatibility
+  //     const googleCredential = GoogleAuthProvider.credential(idToken);
+  //     const userCredential = await auth().signInWithCredential(
+  //       googleCredential,
+  //     );
+  //     const firebaseUser = userCredential.user;
+
+  //     const shopOwnerSnap = await firestore()
+  //       .collection('shop-owners')
+  //       .doc(firebaseUser.uid)
+  //       .get();
+  //     const customerSnap = await firestore()
+  //       .collection('customers')
+  //       .where('email', '==', firebaseUser.email)
+  //       .get();
+
+  //     let uid = !customerSnap.empty
+  //       ? customerSnap.docs[0].id
+  //       : shopOwnerSnap.exists
+  //       ? generateRandomUid()
+  //       : firebaseUser.uid;
+  //     const customerRef = firestore().collection('customers').doc(uid);
+
+  //     await customerRef.set(
+  //       {
+  //         uid,
+  //         fullName: firebaseUser.displayName || generateRandomName(),
+  //         phone: '',
+  //         email: firebaseUser.email,
+  //         createdAt: firestore.FieldValue.serverTimestamp(),
+  //         profileImage: firebaseUser.photoURL || DEFAULT_AVATAR,
+  //         emailVerified: true,
+  //       },
+  //       { merge: true },
+  //     );
+
+  //     // Store both Backend JWT and UID
+  //     await AsyncStorage.setItem('auth_token', backendData.data.token);
+  //     await AsyncStorage.setItem('user_uid', uid);
+  //     await refreshUser();
+  //   } catch (error) {
+  //     setError(error.message);
+  //     Alert.alert('Sign In Error', error.message);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // }
+
   async function onGoogleButtonPress() {
     setLoading(true);
     setError(null);
+
     try {
+      // 1. Google login
       const signInResult = await GoogleSignin.signIn();
-      let idToken = signInResult.data?.idToken || signInResult.idToken;
-      const googleCredential = GoogleAuthProvider.credential(idToken);
+      const googleIdToken = signInResult.data?.idToken || signInResult.idToken;
+
+      if (!googleIdToken) {
+        throw new Error('No Google ID token received');
+      }
+
+      // 2. 🔥 Sign in to Firebase FIRST
+      const googleCredential = GoogleAuthProvider.credential(googleIdToken);
       const userCredential = await auth().signInWithCredential(
         googleCredential,
       );
+
       const firebaseUser = userCredential.user;
 
+      // 3. 🔥 Get Firebase ID token (THIS is what backend needs)
+      const firebaseIdToken = await firebaseUser.getIdToken();
+
+      // 4. ✅ Call backend with Firebase token
+      const response = await fetch(GOOGLE_SIGNIN_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          idToken: firebaseIdToken, // ✅ FIXED
+          userType: 'customer',
+        }),
+      });
+
+      const backendData = await response.json();
+
+      if (!backendData.success) {
+        throw new Error(backendData.message || 'Backend authentication failed');
+      }
+
+      // ✅ Continue your existing logic
       const shopOwnerSnap = await firestore()
         .collection('shop-owners')
         .doc(firebaseUser.uid)
         .get();
+
       const customerSnap = await firestore()
         .collection('customers')
         .where('email', '==', firebaseUser.email)
@@ -69,6 +178,7 @@ const SigninWithGoogleScreen = ({ navigation }) => {
         : shopOwnerSnap.exists
         ? generateRandomUid()
         : firebaseUser.uid;
+
       const customerRef = firestore().collection('customers').doc(uid);
 
       await customerRef.set(
@@ -84,10 +194,13 @@ const SigninWithGoogleScreen = ({ navigation }) => {
         { merge: true },
       );
 
+      await AsyncStorage.setItem('auth_token', backendData.data.token);
       await AsyncStorage.setItem('user_uid', uid);
+
       await refreshUser();
     } catch (error) {
       setError(error.message);
+      Alert.alert('Sign In Error', error.message);
     } finally {
       setLoading(false);
     }

@@ -17,6 +17,7 @@ import { NO_IMAGE } from '../../constants/images';
 import StarRating from '../../components/StarRating/StarRating';
 import AboutSection from '../../sections/AboutSection/AboutSection';
 import { updateShopViewers } from '../../apis/services';
+import { BACKEND_URL } from '../../services/apis';
 
 const ParlourDetails = ({ route, navigation }) => {
   const { parlourData } = route.params;
@@ -29,13 +30,50 @@ const ParlourDetails = ({ route, navigation }) => {
   const [experts, setExperts] = useState([]);
 
   useEffect(() => {
+    if (!parlourData?.id) return;
+
+    const fetchServices = async () => {
+      try {
+        const url = `${BACKEND_URL}/api/v1/customer/shop/${parlourData.id}`;
+        console.log('URL******************', url);
+
+        const res = await fetch(url);
+        const data = await res.json();
+
+        console.log('FULL DATA:', JSON.stringify(data, null, 2));
+
+        // ✅ handle both object & array response
+        let services = [];
+        let offers = [];
+
+        if (Array.isArray(data)) {
+          services = data.flatMap(item => item.services || []);
+          offers = data.flatMap(item => item.offers || []);
+        } else {
+          services = data?.services || [];
+          offers = data?.offers || [];
+        }
+
+        setServices(services);
+        setOffers(offers);
+      } catch (err) {
+        console.log('ERROR:', err);
+        setServices([]);
+        setOffers([]);
+      }
+    };
+
+    fetchServices();
+  }, [parlourData?.id]);
+
+  useEffect(() => {
     if (parlourData) {
-      if (parlourData?.services?.length > 0) {
-        setServices(parlourData?.services ?? []);
-      }
-      if (parlourData?.offers?.length > 0) {
-        setOffers(parlourData?.offers ?? []);
-      }
+      // if (parlourData?.services?.length > 0) {
+      //   setServices(parlourData?.services ?? []);
+      // }
+      // if (parlourData?.offers?.length > 0) {
+      //   setOffers(parlourData?.offers ?? []);
+      // }
       if (parlourData?.experts?.length > 0) {
         setExperts(parlourData?.experts ?? []);
       }
