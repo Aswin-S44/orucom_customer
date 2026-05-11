@@ -72,6 +72,12 @@ const AccordionMenuItem = ({ iconName, label, children, isLast }) => {
 const ProfileScreen = ({ navigation }) => {
   const { user, userData, loading, refreshUser, logout, userId } =
     useContext(AuthContext);
+
+  console.log(
+    'userData=======================',
+    userData ? userData : 'no userData',
+  );
+
   const [refreshing, setRefreshing] = useState(false);
   const [isImageViewerVisible, setIsImageViewerVisible] = useState(false);
 
@@ -146,7 +152,7 @@ const ProfileScreen = ({ navigation }) => {
                   </View>
                 </TouchableOpacity>
                 <Text style={styles.userName} numberOfLines={1}>
-                  {userData?.fullName ?? generateRandomName()}
+                  {userData?.username ?? generateRandomName()}
                 </Text>
                 {userData?.email && (
                   <Text style={styles.userContact}>{userData.email}</Text>

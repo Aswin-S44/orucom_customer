@@ -1,4 +1,4 @@
-import React, { useState, useContext, useEffect } from 'react';
+import React, { useContext } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { createDrawerNavigator } from '@react-navigation/drawer';
 import { createMaterialBottomTabNavigator } from '@react-navigation/material-bottom-tabs';
@@ -6,6 +6,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import Icon from 'react-native-vector-icons/FontAwesome';
+
 import HomeScreen from './screens/HomeScreen/HomeScreen';
 import ProfileScreen from './screens/ProfileScreen/ProfileScreen';
 import AllAppointments from './screens/AllAppointments/AllAppointments';
@@ -22,16 +23,15 @@ import OTPVerificationScreen from './screens/OTPVerificationScreen/OTPVerificati
 import SplashScreen from './screens/SplashScreen/SplashScreen';
 import SignInScreen from './screens/SignInScreen/SignInScreen';
 import SignUpScreen from './screens/SignUpScreen/SignUpScreen';
-import { primaryColor } from './constants/colors';
-import { AuthContext } from './context/AuthContext';
 import SearchResultsScreen from './screens/SearchResultsScreen/SearchResultsScreen';
-import FirebaseNotificationService from './apis/FirebaseNotificationService';
 import EditProfileScreen from './screens/EditProfileScreen/EditProfileScreen';
 import AllNotificationScreen from './screens/AllNotificationScreen/AllNotificationScreen';
 import NofificationDetailsScreen from './screens/NofificationDetailsScreen/NofificationDetailsScreen';
 import SigninWithGoogleScreen from './screens/SigninWithGoogleScreen/SigninWithGoogleScreen';
-import firestore from '@react-native-firebase/firestore';
 import AppointmentSummaryScreen from './screens/AppointmentSummaryScreen/AppointmentSummaryScreen';
+
+import { primaryColor } from './constants/colors';
+import { AuthContext } from './context/AuthContext';
 
 const Tab = createMaterialBottomTabNavigator();
 const Drawer = createDrawerNavigator();
@@ -75,22 +75,16 @@ function HomeStack() {
 function TabNavigator() {
   return (
     <Tab.Navigator
-      initialRouteName="Home"
       barStyle={{ backgroundColor: '#fff' }}
-      activeColor="#ffffff"
+      activeColor={primaryColor}
       inactiveColor="#cccccc"
     >
       <Tab.Screen
         name="Home"
         component={HomeStack}
         options={{
-          tabBarLabel: 'Home',
           tabBarIcon: ({ focused, color }) => (
-            <Ionicons
-              name="home"
-              size={focused ? 26 : 20}
-              color={focused ? primaryColor : color}
-            />
+            <Ionicons name="home" size={20} color={color} />
           ),
         }}
       />
@@ -98,13 +92,8 @@ function TabNavigator() {
         name="Shops"
         component={NearByShopsList}
         options={{
-          tabBarLabel: 'Nearby Shops',
-          tabBarIcon: ({ focused, color }) => (
-            <Ionicons
-              name="location"
-              size={focused ? 26 : 20}
-              color={focused ? primaryColor : color}
-            />
+          tabBarIcon: ({ color }) => (
+            <Ionicons name="location" size={20} color={color} />
           ),
         }}
       />
@@ -112,13 +101,8 @@ function TabNavigator() {
         name="Appointment"
         component={AllAppointments}
         options={{
-          tabBarLabel: 'Appointments',
-          tabBarIcon: ({ focused, color }) => (
-            <Icon
-              name="calendar"
-              size={focused ? 26 : 20}
-              color={focused ? primaryColor : color}
-            />
+          tabBarIcon: ({ color }) => (
+            <Icon name="calendar" size={20} color={color} />
           ),
         }}
       />
@@ -126,13 +110,8 @@ function TabNavigator() {
         name="Profile"
         component={ProfileScreen}
         options={{
-          tabBarLabel: 'Account',
-          tabBarIcon: ({ focused, color }) => (
-            <Ionicons
-              name="person-circle-outline"
-              size={focused ? 26 : 20}
-              color={focused ? primaryColor : color}
-            />
+          tabBarIcon: ({ color }) => (
+            <Ionicons name="person-circle-outline" size={20} color={color} />
           ),
         }}
       />
@@ -144,7 +123,6 @@ function AppDrawer() {
   return (
     <Drawer.Navigator
       drawerContent={props => <CustomDrawerContent {...props} />}
-      drawerStyle={{ width: 300 }}
     >
       <Drawer.Screen
         name="Main"
@@ -165,25 +143,6 @@ function MainAppStack() {
       />
       <Stack.Screen name="HelpSupportScreen" component={HelpSupportScreen} />
       <Stack.Screen name="EditProfileScreen" component={EditProfileScreen} />
-      <Stack.Screen name="Appointment" component={AllAppointments} />
-      <Stack.Screen name="ParlourDetails" component={ParlourDetails} />
-      <Stack.Screen
-        name="SearchResultsScreen"
-        component={SearchResultsScreen}
-      />
-      <Stack.Screen name="BookingScreen" component={BookingScreen} />
-      <Stack.Screen
-        name="BookingSummaryScreen"
-        component={BookingSummaryScreen}
-      />
-      <Stack.Screen
-        name="BeautyExpertDetailsScreen"
-        component={BeautyExpertDetailsScreen}
-      />
-      <Stack.Screen
-        name="AppointmentSummaryScreen"
-        component={AppointmentSummaryScreen}
-      />
     </Stack.Navigator>
   );
 }
@@ -206,54 +165,7 @@ function AuthStack() {
 }
 
 export default function App() {
-  const { user, userData, loading, isEmailVerified } = useContext(AuthContext);
-  const [notificationSetupComplete, setNotificationSetupComplete] =
-    useState(false);
-
-  // useEffect(() => {
-  //   const initializeNotifications = async () => {
-  //     // if (!notificationSetupComplete) {
-  //     try {
-  //       FirebaseNotificationService.setupNotificationHandlers();
-  //       // FirebaseNotificationService.listenForTokenRefresh();
-  //       const hasPermission =
-  //         await FirebaseNotificationService.requestNotificationPermission();
-
-  //       if (hasPermission && user) {
-  //         await FirebaseNotificationService.getFCMToken();
-  //       }
-  //       // setNotificationSetupComplete(true);
-  //     } catch (error) {
-  //       console.error('App initialization error:', error);
-  //     }
-  //     // }
-  //   };
-  //   if (!loading) {
-  //     initializeNotifications();
-  //   }
-  // }, [loading, user, notificationSetupComplete, userData]);
-
-  const getInitialRoute = () => {
-    if (loading) return 'Splash';
-    if (userData) {
-      if (userData.emailVerified || isEmailVerified) return 'MainAppStack';
-      else return 'OTPVerificationScreen';
-    }
-    return 'AuthStack';
-  };
-
-  const initialRouteName = getInitialRoute();
-
-  useEffect(() => {
-    const checkHealth = async () => {
-      await firestore()
-        .collection('ping')
-        .limit(1)
-        .get()
-        .catch(() => {});
-    };
-    checkHealth();
-  }, []);
+  const { userData, loading } = useContext(AuthContext);
 
   if (loading) {
     return (
@@ -267,20 +179,10 @@ export default function App() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <NavigationContainer>
         <Stack.Navigator screenOptions={{ headerShown: false }}>
-          {initialRouteName === 'Splash' && (
-            <Stack.Screen name="Splash" component={SplashScreen} />
-          )}
-          {initialRouteName === 'AuthStack' && (
-            <Stack.Screen name="AuthStack" component={AuthStack} />
-          )}
-          {initialRouteName === 'OTPVerificationScreen' && (
-            <Stack.Screen
-              name="OTPVerificationScreen"
-              component={OTPVerificationScreen}
-            />
-          )}
-          {initialRouteName === 'MainAppStack' && (
+          {userData ? (
             <Stack.Screen name="MainAppStack" component={MainAppStack} />
+          ) : (
+            <Stack.Screen name="AuthStack" component={AuthStack} />
           )}
         </Stack.Navigator>
       </NavigationContainer>

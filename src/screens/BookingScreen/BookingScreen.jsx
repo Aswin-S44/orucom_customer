@@ -17,6 +17,7 @@ import { NO_IMAGE } from '../../constants/images';
 import firestore from '@react-native-firebase/firestore';
 import moment from 'moment';
 import { AuthContext } from '../../context/AuthContext';
+import { BACKEND_URL } from '../../services/apis';
 
 const BookingScreen = ({ route, navigation }) => {
   const { user, userData } = useContext(AuthContext);
@@ -38,43 +39,86 @@ const BookingScreen = ({ route, navigation }) => {
   const formattedDate = selectedDate;
   const slotsForDate = slots[formattedDate] || [];
 
-  const { shopId, serviceId, experts, service, offers } = route.params;
+  const { shopId, serviceId, service, offers } = route.params;
+
+  const [experts, setExperts] = useState([]);
+
+  useEffect(() => {
+    if (route?.params?.shopId) {
+      const fetchExperts = async () => {
+        const expertUrl = `${BACKEND_URL}/api/v1/customer/experts/${route?.params?.shopId}`;
+
+        try {
+          setExpertsLoading(true);
+
+          const response = await fetch(expertUrl, {
+            method: 'GET',
+          });
+
+          const expertsData = await response.json();
+
+          if (expertsData && expertsData?.experts?.length > 0) {
+            // const transformedShops = shopsData.shops.map(item => item.shop);
+            setExperts(expertsData.experts);
+          } else {
+            setExperts([]);
+          }
+        } catch (err) {
+          setExperts([]);
+        } finally {
+          setExpertsLoading(false);
+        }
+      };
+      fetchExperts();
+    }
+  }, [route?.params?.shopId]);
+
+  console.log('expertes==============', experts);
 
   useEffect(() => {
     if (!route.params?.shopId) return;
 
-    setLoading(true);
+    const fetchSlots = async () => {
+      const slotsUrl = `${BACKEND_URL}/api/v1/customer/slots/${route?.params?.shopId}`;
 
-    const unsubscribe = firestore()
-      .collection('slots')
-      .where('shopId', '==', route.params.shopId)
-      .onSnapshot(
-        querySnapshot => {
-          const slotsData = {};
+      try {
+        setLoading(true);
 
-          querySnapshot.forEach(doc => {
-            const slot = { id: doc.id, ...doc.data() };
-            const slotDate = slot.date;
+        const response = await fetch(slotsUrl, {
+          method: 'GET',
+        });
 
-            if (!slotsData[slotDate]) {
-              slotsData[slotDate] = [];
+        const slotsData = await response.json();
+
+        console.log(
+          'SLOTS DATA---------------------',
+          slotsData ? slotsData : 'no slots data',
+        );
+
+        if (slotsData && slotsData?.slots?.length > 0) {
+          // Grouping logic to match the existing component structure
+          const groupedSlots = slotsData.slots.reduce((acc, slot) => {
+            const date = slot.slotDate; // API returns slotDate
+            if (!acc[date]) {
+              acc[date] = [];
             }
+            acc[date].push(slot);
+            return acc;
+          }, {});
 
-            slotsData[slotDate].push(slot);
-          });
-
-          setSlots(slotsData);
-          setLoading(false);
-        },
-        error => {
-          // Error fetching slots
-          setLoading(false);
-          Alert.alert('Error', 'Failed to load slots');
-        },
-      );
-
-    return () => unsubscribe();
-  }, [route]);
+          setSlots(groupedSlots);
+        } else {
+          setSlots({});
+        }
+      } catch (err) {
+        console.log('Error fetching slots:', err);
+        setSlots({});
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchSlots();
+  }, [route?.params?.shopId]);
 
   useEffect(() => {
     if (service) {
@@ -152,7 +196,7 @@ const BookingScreen = ({ route, navigation }) => {
     const now = moment();
     const slotDateTime = moment(
       `${selectedDate} ${slot.startTime}`,
-      'YYYY-MM-DD HH:mm',
+      'YYYY-MM-DD HH:mm:ss',
     );
 
     if (moment(selectedDate).isSame(now, 'day') && slotDateTime.isBefore(now)) {
@@ -214,8 +258,8 @@ const BookingScreen = ({ route, navigation }) => {
                         <Image
                           source={{
                             uri:
-                              typeof expert.imageUrl === 'string'
-                                ? expert.imageUrl
+                              typeof expert.image === 'string'
+                                ? expert.image
                                 : NO_IMAGE,
                           }}
                           style={styles.avatar}
@@ -232,9 +276,7 @@ const BookingScreen = ({ route, navigation }) => {
                           </View>
                         )}
                       </View>
-                      <Text style={styles.expertName}>
-                        {expert.expertName ?? ''}
-                      </Text>
+                      <Text style={styles.expertName}>{expert.name ?? ''}</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                       style={styles.viewDetailsButton}
@@ -303,11 +345,12 @@ const BookingScreen = ({ route, navigation }) => {
                 slotsForDate.map(slot => {
                   const startTimeFormatted = moment(
                     slot.startTime,
-                    'HH:mm',
+                    'HH:mm:ss',
                   ).format('h:mm A');
-                  const endTimeFormatted = moment(slot.endTime, 'HH:mm').format(
-                    'h:mm A',
-                  );
+                  const endTimeFormatted = moment(
+                    slot.endTime,
+                    'HH:mm:ss',
+                  ).format('h:mm A');
                   const slotLabel = `${startTimeFormatted} - ${endTimeFormatted}`;
 
                   const booked = slot.bookedCount || 0;
@@ -320,7 +363,7 @@ const BookingScreen = ({ route, navigation }) => {
                     moment(selectedDate).isSame(moment(), 'day') &&
                     moment(
                       `${selectedDate} ${slot.startTime}`,
-                      'YYYY-MM-DD HH:mm',
+                      'YYYY-MM-DD HH:mm:ss',
                     ).isBefore(moment());
 
                   return (

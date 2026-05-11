@@ -5,12 +5,17 @@ import firestore, {
   updateDoc,
 } from '@react-native-firebase/firestore';
 import axios from 'axios';
-import { BACKEND_URL, NOTIFICATION_TYPES } from '../constants/variables';
+import { NOTIFICATION_TYPES } from '../constants/variables';
 
 import { GOOGLE_MAPS_API_KEY, CLOUDINARY_DOC } from '@env';
 import { DEFAULT_AVATAR } from '../constants/images';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { BACKEND_URL } from '../services/apis';
 
-const CLOUDINARY_URL = `https://api.cloudinary.com/v1_1/${CLOUDINARY_DOC}/image/upload`;
+// const CLOUDINARY_URL = `https://api.cloudinary.com/v1_1/${CLOUDINARY_DOC}/image/upload`;
+
+export const CLOUDINARY_URL =
+  'https://api.cloudinary.com/v1_1/personalprojectaswins/image/upload';
 const CLOUDINARY_UPLOAD_PRESET = 'cloudinary_react';
 
 export const getAllNearbyParlors = async onUpdate => {
@@ -25,7 +30,7 @@ export const getAllNearbyParlors = async onUpdate => {
       }));
       onUpdate(parlors);
     });
-}; 
+};
 
 export const getAllParlours = async () => {
   const shopSnapshot = await firestore()
@@ -333,29 +338,160 @@ export const getCustomerById = async id => {
   }
 };
 
+// export const updateUserData = async (uid, updateData) => {
+//   try {
+//     console.log('updateData------------------', updateData);
+//     if (
+//       updateData.profileImage &&
+//       typeof updateData.profileImage === 'string' &&
+//       (updateData.profileImage.startsWith('file://') ||
+//         updateData.profileImage.startsWith('data:image/'))
+//     ) {
+//       const formData = new FormData();
+//       formData.append('file', {
+//         uri: updateData.profileImage,
+//         type: 'image/jpeg',
+//         name: 'upload.jpg',
+//       });
+
+//       formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+
+//       const response = await fetch(CLOUDINARY_URL, {
+//         method: 'POST',
+//         body: formData,
+//       });
+
+//       const responseData = await response.json();
+
+//       if (responseData.secure_url) {
+//         updateData.profileImage = responseData.secure_url;
+//       } else {
+//         return false;
+//       }
+//     }
+
+//     console.log(
+//       'update daa---------------',
+//       updateData ? updateData : 'no upd data',
+//     );
+
+//     // await firestore().collection('customers').doc(uid).update(updateData);
+//     // return true;
+//   } catch (error) {
+//     // Error updating user data
+//     return false;
+//   }
+// };
+
+// export const updateUserData = async (uid, updateData) => {
+//   try {
+//     const token = await AsyncStorage.getItem('token');
+//     console.log('111111111111111111');
+//     console.log('UPDDATE DAATA--------------', updateData);
+//     if (
+//       updateData.profileImage &&
+//       typeof updateData.profileImage === 'string' &&
+//       (updateData.profileImage.startsWith('file://') ||
+//         updateData.profileImage.startsWith('data:image/'))
+//     ) {
+//       console.log('222222222222222222222');
+//       const formData = new FormData();
+//       console.log('3333333333333333333');
+//       formData.append('file', {
+//         uri: updateData.profileImage,
+//         type: 'image/jpeg',
+//         name: 'upload.jpg',
+//       });
+
+//       console.log('4444444444444444');
+
+//       formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+//       console.log('5555555555555555');
+
+//       const response = await fetch(CLOUDINARY_URL, {
+//         method: 'POST',
+//         body: formData,
+//       });
+
+//       console.log('6666666666666666666666');
+
+//       console.log(
+//         'response----------------',
+//         response ? response : 'no response',
+//       );
+
+//       const responseData = await response.json();
+
+//       console.log(
+//         'responseData----------------',
+//         responseData ? responseData : 'no responseData',
+//       );
+
+//       if (responseData.secure_url) {
+//         updateData.profileImage = responseData.secure_url;
+//       } else {
+//         return false;
+//       }
+//     }
+
+//     //   console.log('token--------------', token);
+
+//     const updateUrl = `${BACKEND_URL}/api/v1/customer/profile`;
+
+//     const response = await fetch(updateUrl, {
+//       method: 'PATCH',
+//       headers: {
+//         'Content-Type': 'application/json',
+//         Authorization: `Bearer ${token}`,
+//       },
+//       body: JSON.stringify(updateData),
+//     });
+
+//     console.log('response---------------', response ? response : 'noresponse');
+
+//     // await firestore().collection('customers').doc(uid).update(updateData);
+//     // return true;
+//   } catch (error) {
+//     // Error updating user data
+//     return false;
+//   }
+// };
+
 export const updateUserData = async (uid, updateData) => {
   try {
+    const token = await AsyncStorage.getItem('token');
+
+    console.log('updateData----------------', updateData);
     if (
       updateData.profileImage &&
       typeof updateData.profileImage === 'string' &&
       (updateData.profileImage.startsWith('file://') ||
         updateData.profileImage.startsWith('data:image/'))
     ) {
+      console.log('******************');
       const formData = new FormData();
+      console.log('#######################');
+
       formData.append('file', {
         uri: updateData.profileImage,
         type: 'image/jpeg',
-        name: 'upload.jpg',
+        name: `profile_${Date.now()}.jpg`,
       });
 
       formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
 
-      const response = await fetch(CLOUDINARY_URL, {
+      const cloudinaryResponse = await fetch(CLOUDINARY_URL, {
         method: 'POST',
         body: formData,
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'multipart/form-data',
+        },
       });
 
-      const responseData = await response.json();
+      const responseData = await cloudinaryResponse.json();
+
+      console.log('Cloudinary Response:', responseData);
 
       if (responseData.secure_url) {
         updateData.profileImage = responseData.secure_url;
@@ -364,10 +500,26 @@ export const updateUserData = async (uid, updateData) => {
       }
     }
 
-    await firestore().collection('customers').doc(uid).update(updateData);
+    const updateUrl = `${BACKEND_URL}/api/v1/customer/profile`;
+
+    console.log('updateUrl---------------', updateUrl);
+
+    const response = await fetch(updateUrl, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `${token}`,
+      },
+      body: JSON.stringify(updateData),
+    });
+
+    const result = await response.json();
+
+    console.log('Update Response:', result);
+
     return true;
   } catch (error) {
-    // Error updating user data
+    console.log('UPDATE USER ERROR:', error);
     return false;
   }
 };

@@ -1,178 +1,290 @@
-import React, { useContext, useEffect } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
-  Button,
   StyleSheet,
   StatusBar,
+  ActivityIndicator,
+  Modal,
+  Image,
+  Linking,
+  Alert,
 } from 'react-native';
 import firestore from '@react-native-firebase/firestore';
 import auth from '@react-native-firebase/auth';
-import {
-  GoogleSignin,
-  statusCodes,
-  GoogleSigninButton,
-} from '@react-native-google-signin/google-signin';
-// import { WEB_CLIENT_ID } from '@env';
-import {
-  GoogleAuthProvider,
-  getAuth,
-  signInWithCredential,
-} from '@react-native-firebase/auth';
-import { Alert } from 'react-native';
+import { GoogleSignin } from '@react-native-google-signin/google-signin';
+import { GoogleAuthProvider } from '@react-native-firebase/auth';
 import { AuthContext } from '../../context/AuthContext';
-import { Image } from 'react-native';
-import { GOOGLE_ICON } from '../../constants/images';
-import { lightPurple, primaryColor } from '../../constants/colors';
+import { GOOGLE_ICON, DEFAULT_AVATAR } from '../../constants/images';
+import { lightPurple, primaryColor, white } from '../../constants/colors';
 import LinearGradient from 'react-native-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { generateRandomUid, generateRandomName } from '../../utils/utils';
+import { GOOGLE_SIGNIN_URL } from '../../services/apis';
 
-const SigninWithGoogleScreen = () => {
-  const { user, refreshUser, userData } = useContext(AuthContext);
-  let WEB_CLIENT_ID =
-    '297588641134-hi002t6fubg9iilqa4r2bjp9sdnasg3i.apps.googleusercontent.com';
+// Replace with your actual backend URL
+const API_URL = 'https://your-backend-api.com';
+
+const SigninWithGoogleScreen = ({ navigation }) => {
+  const { refreshUser } = useContext(AuthContext);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
   useEffect(() => {
     GoogleSignin.configure({
-      webClientId: WEB_CLIENT_ID,
+      webClientId:
+        '273666754104-8kqhpnril7nlsnvgf7mmddsc1mbf9r91.apps.googleusercontent.com',
       offlineAccess: false,
     });
   }, []);
 
-  async function onGoogleButtonPress() {
+  const openLink = async url => {
     try {
-      const test = await GoogleSignin.hasPlayServices({
-        showPlayServicesUpdateDialog: true,
-      });
+      await Linking.openURL(url);
+    } catch (err) {
+      Alert.alert('Error', 'Unable to open browser.');
+    }
+  };
 
-      // Sign in
+  // async function onGoogleButtonPress() {
+  //   setLoading(true);
+  //   setError(null);
+  //   try {
+  //     const signInResult = await GoogleSignin.signIn();
+  //     let idToken = signInResult.data?.idToken || signInResult.idToken;
+
+  //     // Call Node.js Backend
+  //     const response = await fetch(GOOGLE_SIGNIN_URL, {
+  //       method: 'POST',
+  //       headers: {
+  //         'Content-Type': 'application/json',
+  //       },
+  //       body: JSON.stringify({
+  //         idToken,
+  //         userType: 'customer', // Defaulting to customer as per context
+  //       }),
+  //     });
+
+  //     const backendData = await response.json();
+
+  //     if (!backendData.success) {
+  //       throw new Error(backendData.message || 'Backend authentication failed');
+  //     }
+
+  //     // Maintain existing Firebase Auth session for Firestore security rules compatibility
+  //     const googleCredential = GoogleAuthProvider.credential(idToken);
+  //     const userCredential = await auth().signInWithCredential(
+  //       googleCredential,
+  //     );
+  //     const firebaseUser = userCredential.user;
+
+  //     const shopOwnerSnap = await firestore()
+  //       .collection('shop-owners')
+  //       .doc(firebaseUser.uid)
+  //       .get();
+  //     const customerSnap = await firestore()
+  //       .collection('customers')
+  //       .where('email', '==', firebaseUser.email)
+  //       .get();
+
+  //     let uid = !customerSnap.empty
+  //       ? customerSnap.docs[0].id
+  //       : shopOwnerSnap.exists
+  //       ? generateRandomUid()
+  //       : firebaseUser.uid;
+  //     const customerRef = firestore().collection('customers').doc(uid);
+
+  //     await customerRef.set(
+  //       {
+  //         uid,
+  //         fullName: firebaseUser.displayName || generateRandomName(),
+  //         phone: '',
+  //         email: firebaseUser.email,
+  //         createdAt: firestore.FieldValue.serverTimestamp(),
+  //         profileImage: firebaseUser.photoURL || DEFAULT_AVATAR,
+  //         emailVerified: true,
+  //       },
+  //       { merge: true },
+  //     );
+
+  //     // Store both Backend JWT and UID
+  //     await AsyncStorage.setItem('auth_token', backendData.data.token);
+  //     await AsyncStorage.setItem('user_uid', uid);
+  //     await refreshUser();
+  //   } catch (error) {
+  //     setError(error.message);
+  //     Alert.alert('Sign In Error', error.message);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // }
+
+  async function onGoogleButtonPress() {
+    setLoading(true);
+    setError(null);
+
+    try {
+      // 1. Google login
       const signInResult = await GoogleSignin.signIn();
+      const googleIdToken = signInResult.data?.idToken || signInResult.idToken;
 
-      let idToken = signInResult.data?.idToken || signInResult.idToken;
-
-      const user = signInResult.data?.user;
-
-      if (!idToken) throw new Error('No ID token found');
-
-      if (!idToken) {
-        Alert.alert('Error', 'Error while signin');
-        return;
+      if (!googleIdToken) {
+        throw new Error('No Google ID token received');
       }
 
-      const googleCredential = GoogleAuthProvider.credential(idToken);
+      // 2. 🔥 Sign in to Firebase FIRST
+      const googleCredential = GoogleAuthProvider.credential(googleIdToken);
       const userCredential = await auth().signInWithCredential(
         googleCredential,
       );
+
       const firebaseUser = userCredential.user;
 
-      const customerRef = firestore()
+      // 3. 🔥 Get Firebase ID token (THIS is what backend needs)
+      const firebaseIdToken = await firebaseUser.getIdToken();
+
+      // 4. ✅ Call backend with Firebase token
+      const response = await fetch(GOOGLE_SIGNIN_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          idToken: firebaseIdToken, // ✅ FIXED
+          userType: 'customer',
+        }),
+      });
+
+      const backendData = await response.json();
+
+      if (!backendData.success) {
+        throw new Error(backendData.message || 'Backend authentication failed');
+      }
+
+      // ✅ Continue your existing logic
+      const shopOwnerSnap = await firestore()
+        .collection('shop-owners')
+        .doc(firebaseUser.uid)
+        .get();
+
+      const customerSnap = await firestore()
         .collection('customers')
-        .doc(firebaseUser.uid);
-      const docSnap = await customerRef.get();
+        .where('email', '==', firebaseUser.email)
+        .get();
 
-      let updateData = {
-        uid: firebaseUser.uid,
-        fullName: firebaseUser.displayName || generateRandomName(),
-        phone: '',
-        email: firebaseUser.email,
-        createdAt: firestore.FieldValue.serverTimestamp(),
-        profileImage: firebaseUser.photoURL || DEFAULT_AVATAR,
-        fcmToken: null,
-        emailVerified: firebaseUser.emailVerified,
-        otp: null, // OTP not applicable for Google Sign-In
-      };
+      let uid = !customerSnap.empty
+        ? customerSnap.docs[0].id
+        : shopOwnerSnap.exists
+        ? generateRandomUid()
+        : firebaseUser.uid;
 
-      if (!docSnap.exists) {
-        let updateData = {
-          uid: firebaseUser.uid,
+      const customerRef = firestore().collection('customers').doc(uid);
+
+      await customerRef.set(
+        {
+          uid,
           fullName: firebaseUser.displayName || generateRandomName(),
           phone: '',
           email: firebaseUser.email,
           createdAt: firestore.FieldValue.serverTimestamp(),
           profileImage: firebaseUser.photoURL || DEFAULT_AVATAR,
-          fcmToken: null,
-          emailVerified: firebaseUser.emailVerified,
-          otp: null, // OTP not applicable for Google Sign-In
-        };
+          emailVerified: true,
+        },
+        { merge: true },
+      );
 
-        await customerRef.set(updateData);
-      } else {
-        await firestore()
-          .collection('customers')
-          .doc(firebaseUser.uid)
-          .set(updateData);
-      }
-      let res = await signInWithCredential(getAuth(), googleCredential);
-      refreshUser();
-      await AsyncStorage.setItem('user_uid', firebaseUser?.uid);
-      //return await signInWithCredential(getAuth(), googleCredential);
-      return firebaseUser;
+      await AsyncStorage.setItem('auth_token', backendData.data.token);
+      // await AsyncStorage.setItem('user_uid', uid);
+      await AsyncStorage.setItem('user_uid', backendData?.data?.user?.uid);
+      await AsyncStorage.setItem('token', backendData?.data?.token);
+
+      await refreshUser();
     } catch (error) {
-      // Google signin error
+      setError(error.message);
+      Alert.alert('Sign In Error', error.message);
+    } finally {
+      setLoading(false);
     }
   }
-
-  const signIn = async () => {
-    try {
-      await GoogleSignin.hasPlayServices();
-      const userInfo = await GoogleSignin.signIn();
-    } catch (error) {
-      if (error.code === statusCodes.SIGN_IN_CANCELLED) {
-      } else if (error.code === statusCodes.IN_PROGRESS) {
-        // In progress
-      } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
-        // Play servies not available
-      } else {
-        return error;
-      }
-    }
-  };
 
   return (
     <LinearGradient
       colors={[primaryColor, lightPurple]}
       style={styles.container}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
     >
       <StatusBar backgroundColor={primaryColor} barStyle="light-content" />
-      <Image
-        source={require('../../assets/images/splash_logo.png')}
-        style={styles.welcomeImage}
-      />
-      <Text style={styles.title}>Beauty Customer App</Text>
-
-      <View style={styles.buttonContainer}>
+      <View style={styles.contentContainer}>
+        <Image
+          source={require('../../assets/images/splash_logo.png')}
+          style={styles.welcomeImage}
+        />
+        <Text style={styles.title}>Orucom</Text>
         <TouchableOpacity
-          style={styles.signInButton}
-          onPress={() => onGoogleButtonPress().then(() => {})}
+          style={[styles.signInButton, loading && styles.disabledButton]}
+          onPress={onGoogleButtonPress}
+          disabled={loading}
         >
           <Image source={{ uri: GOOGLE_ICON }} style={styles.googleIcon} />
           <Text style={styles.signInButtonText}>Sign in with Google</Text>
         </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => navigation.navigate('SignIn')}
+          style={styles.emailLinkContainer}
+        >
+          <Text style={styles.emailLinkText}>Sign in with email</Text>
+        </TouchableOpacity>
+        <View style={styles.footerContainer}>
+          <Text style={styles.footerText}>
+            By signing in, you agree to our{' '}
+            <Text
+              style={styles.linkText}
+              onPress={() =>
+                openLink(
+                  'https://www.nominoinnovations.com/p/orucom-terms-and-conditions.html',
+                )
+              }
+            >
+              Terms
+            </Text>{' '}
+            and{' '}
+            <Text
+              style={styles.linkText}
+              onPress={() =>
+                openLink(
+                  'https://www.nominoinnovations.com/p/orucom-privacy-policy.html',
+                )
+              }
+            >
+              Privacy
+            </Text>
+          </Text>
+        </View>
       </View>
+      <Modal visible={loading} transparent>
+        <View style={styles.modalOverlay}>
+          <ActivityIndicator size="large" color={white} />
+        </View>
+      </Modal>
     </LinearGradient>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  container: { flex: 1 },
+  contentContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
+    paddingHorizontal: 20,
   },
+  welcomeImage: { width: 125, height: 125, borderRadius: 12 },
   title: {
-    fontSize: 24,
+    fontSize: 30,
     fontWeight: '600',
     color: '#fff',
-    textAlign: 'center',
     marginTop: 20,
     marginBottom: 60,
-  },
-  buttonContainer: {
-    width: '100%',
-    alignItems: 'center',
   },
   signInButton: {
     backgroundColor: '#fff',
@@ -182,47 +294,29 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 12,
-    marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
   },
-  googleIcon: {
-    marginRight: 10,
-    // color: 'darkcyan',
-  },
-  signInButtonText: {
-    color: primaryColor,
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  signUpButton: {
-    backgroundColor: 'transparent',
-    borderWidth: 1.5,
-    borderColor: '#fff',
-    paddingVertical: 15,
-    width: '90%',
-    alignItems: 'center',
-    borderRadius: 12,
-  },
-  signUpButtonText: {
+  googleIcon: { width: 24, height: 24, marginRight: 10 },
+  signInButtonText: { color: primaryColor, fontSize: 16, fontWeight: 'bold' },
+  emailLinkContainer: { marginVertical: 15 },
+  emailLinkText: {
     color: '#fff',
     fontSize: 16,
+    textDecorationLine: 'underline',
+  },
+  footerContainer: { marginTop: 15, width: '90%' },
+  footerText: { color: '#fff', fontSize: 13, textAlign: 'center' },
+  linkText: {
+    color: '#2768F5',
+    textDecorationLine: 'underline',
     fontWeight: 'bold',
   },
-  welcomeImage: {
-    width: 100,
-    height: 100,
-    borderTopLeftRadius: 12,
-    borderTopRightRadius: 12,
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  googleIcon: {
-    width: 24,
-    height: 24,
-    marginRight: 10,
-  },
+  disabledButton: { opacity: 0.7 },
 });
 
 export default SigninWithGoogleScreen;

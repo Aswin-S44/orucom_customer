@@ -39,13 +39,13 @@ const EditProfileScreen = ({ navigation }) => {
   useEffect(() => {
     if (userData) {
       setProfileLoading(true);
-      setName(userData?.fullName || '');
+      setName(userData?.username || '');
       setPhone(userData.phone || '');
       setEmail(userData.email || '');
       setImageUri(userData.profileImage || null);
       setProfileLoading(false);
     }
-  }, [user.uid]);
+  }, [userData]);
 
   useEffect(() => {
     if (toastMessage) {
@@ -108,7 +108,7 @@ const EditProfileScreen = ({ navigation }) => {
   };
 
   const handleEditProfile = async () => {
-    if (!user) {
+    if (!userData) {
       setToastMessage('User not logged in.');
       return;
     }
@@ -127,8 +127,9 @@ const EditProfileScreen = ({ navigation }) => {
     };
 
     try {
-      await updateUserData(userId, updatedData);
-      await refreshUser();
+      await updateUserData(userData?.id, updatedData);
+
+      // await refreshUser();
       setToastMessage('Profile updated successfully!');
       // navigation.goBack(); // Keep user on screen to see toast
     } catch (error) {

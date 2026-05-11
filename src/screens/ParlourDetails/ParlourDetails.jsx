@@ -196,7 +196,7 @@ const ParlourDetails = ({ route, navigation }) => {
       {activeTab === 'Service' && (
         <View style={styles.content}>
           <ServiceSection
-            shopId={parlourData.uid}
+            shopId={parlourData.id}
             initialServices={services}
             initialOffers={offers}
             loadingServices={loadingServices}

@@ -30,6 +30,8 @@ import firestore, {
   getFirestore,
   updateDoc,
 } from '@react-native-firebase/firestore';
+import { BACKEND_URL } from '../../services/apis';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const Row = ({ icon, label, value }) => (
   <View style={styles.row}>
@@ -139,8 +141,12 @@ const BookingSummaryScreen = ({ route, navigation }) => {
   const total = subtotal;
 
   const handleConfirmBooking = async () => {
-    if (!userId) return;
-    setConfirming(true);
+    console.log('11111111111111111');
+    const token = await AsyncStorage.getItem('token');
+    console.log('token--------------', token ? token : 'no token');
+    console.log('user id---------', userId, token);
+    if (!userId || !token) return;
+    // setConfirming(true);
 
     const serviceIds = selectedServices.map(s => s.id);
     const currentSlot = route?.params?.selectedSlot;
@@ -158,53 +164,158 @@ const BookingSummaryScreen = ({ route, navigation }) => {
       bookedCount: updatedSlotCount,
     };
 
+    console.log('bookingData---------------', bookingData);
+
+    const newAppointment = {
+      shopId: route.params.shopId,
+      expertId: selectedExpert,
+      serviceIds,
+      slotId: currentSlot?.id,
+    };
+
+    console.log('newAppointment-----------------', newAppointment);
+
     try {
-      // const appointmentRes = await createAppointment(userId, bookingData);
+      setConfirming(true);
+
+      const newBookingUrl = `${BACKEND_URL}/api/v1/customer/booking`;
+
+      const response = await fetch(newBookingUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `${token}`,
+        },
+        body: JSON.stringify(newAppointment),
+      });
+
+      const result = await response.json();
+
+      console.log('result ---------------', result ? result : 'no result');
+
+      if (!response.ok) {
+        throw new Error(result?.message || 'Booking failed');
+      }
 
       if (!userData?.phone || userData?.phone?.trim() == '') {
         setShowWarningModal(true);
         return;
       }
 
-      const appointmentRes = firestore().collection('appointments').doc();
-      await appointmentRes.set({
-        ...bookingData,
-        userId,
-        createdAt: new Date(),
+      const notificationUrl = `${BACKEND_URL}/api/v1/notifications`;
+
+      const notificationPayload = {
+        notificationTypeId: 1,
+        toId: route?.params?.shopId,
+        message: `${userData?.username || 'Customer'} sent a booking request`,
+        shopId: route?.params?.shopId,
+      };
+
+      console.log('notificationPayload----------------', notificationPayload);
+
+      const notificationResponse = await fetch(notificationUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `${token}`,
+        },
+        body: JSON.stringify(notificationPayload),
       });
 
+      const notificationResult = await notificationResponse.json();
+
+      console.log('notificationResult----------------', notificationResult);
+
       setModalVisible(true);
-      const availabilityStatus =
-        currentSlot?.bookedCount < currentSlot?.maxCapacity ? true : false;
-      updateSlotInFirestore(selectedSlot.id, {
-        bookedCount: updatedSlotCount,
-        isAvailable: availabilityStatus,
-      });
-      await createNotification(
-        userId,
-        route.params.shopId,
-        appointmentRes.id ?? null,
-        userData?.fullName ?? '',
-        userData?.profileImage ?? DEFAULT_AVATAR,
-      );
-      sendAppointmentNotification(
-        userId,
-        route.params.shopId,
-        APPOINTMENT_TYPES.BOOKING_REQUEST_SENT,
-        appointmentRes.id ?? null,
-      );
     } catch (error) {
       console.error('Error creating appointment:', error);
     } finally {
       setConfirming(false);
     }
+
+    // try {
+    //   const newBookingUrl = `${BACKEND_URL}/api/v1/customer/booking`;
+    //   const response = await fetch(newBookingUrl, {
+    //     method: 'POST',
+    //     headers: {
+    //       'Content-Type': 'application/json',
+    //       Authorization: `${token}`,
+    //     },
+    //     body: JSON.stringify(newAppointment),
+    //   });
+
+    //   const result = await response.json();
+
+    //   console.log('result ---------------', result ? result : 'no result');
+
+    //   // const updateSlotUrl = `${BACKEND_URL}/api/v1/slots/${currentSlot?.id}`;
+
+    //   // const slotResponse = await fetch(updateSlotUrl, {
+    //   //   method: 'PATCH',
+    //   //   headers: {
+    //   //     'Content-Type': 'application/json',
+    //   //     Authorization: `${token}`,
+    //   //   },
+    //   //   body: JSON.stringify({
+    //   //     isAvailable: false,
+    //   //   }),
+    //   // });
+
+    //   // console.log(
+    //   //   'slotResponse -----------',
+    //   //   slotResponse ? slotResponse : 'no slotResponse',
+    //   // );
+
+    //   // const appointmentRes = await createAppointment(userId, bookingData);
+    //   if (!userData?.phone || userData?.phone?.trim() == '') {
+    //     setShowWarningModal(true);
+    //     return;
+    //   }
+    //   // const appointmentRes = firestore().collection('appointments').doc();
+    //   // await appointmentRes.set({
+    //   //   ...bookingData,
+    //   //   userId,
+    //   //   createdAt: new Date(),
+    //   // });
+    //   setModalVisible(true);
+    //   // const availabilityStatus =
+    //   //   currentSlot?.bookedCount < currentSlot?.maxCapacity ? true : false;
+    //   // updateSlotInFirestore(selectedSlot.id, {
+    //   //   bookedCount: updatedSlotCount,
+    //   //   isAvailable: availabilityStatus,
+    //   // });
+    //   // await createNotification(
+    //   //   userId,
+    //   //   route.params.shopId,
+    //   //   appointmentRes.id ?? null,
+    //   //   userData?.fullName ?? '',
+    //   //   userData?.profileImage ?? DEFAULT_AVATAR,
+    //   // );
+    //   // sendAppointmentNotification(
+    //   //   userId,
+    //   //   route.params.shopId,
+    //   //   APPOINTMENT_TYPES.BOOKING_REQUEST_SENT,
+    //   //   appointmentRes.id ?? null,
+    //   // );
+    // } catch (error) {
+    //   console.error('Error creating appointment:', error);
+    // } finally {
+    //   setConfirming(false);
+    // }
   };
 
   // const handleConfirmBooking = async () => {
-  //   if (!userId) return;
-  //   setConfirming(true);
+  //   console.log('11111111111111111');
+  //   const token = await AsyncStorage.getItem('token');
+  //   console.log('token--------------', token ? token : 'no token');
+  //   console.log('user id---------', userId, token);
+  //   if (!userId || !token) return;
+  //   // setConfirming(true);
 
   //   const serviceIds = selectedServices.map(s => s.id);
+  //   const currentSlot = route?.params?.selectedSlot;
+  //   const updatedSlotCount = currentSlot?.bookedCount + 1;
+
   //   const bookingData = {
   //     serviceIds,
   //     selectedDate,
@@ -214,27 +325,66 @@ const BookingSummaryScreen = ({ route, navigation }) => {
   //     totalAmount: subtotal,
   //     shopId: route.params.shopId,
   //     expertId: selectedExpert,
+  //     bookedCount: updatedSlotCount,
   //   };
 
+  //   console.log('bookingData---------------', bookingData);
+
+  //   const newAppointment = {
+  //     shopId: route.params.shopId,
+  //     expertId: selectedExpert,
+  //     serviceIds,
+  //     slotId: currentSlot?.id,
+  //   };
+
+  //   console.log('newAppointment-----------------', newAppointment);
+
   //   try {
-  //     const appointmentRes = await createAppointment(userId, bookingData);
+  //     const newBookingUrl = `${BACKEND_URL}/api/v1/customer/booking`;
+  //     const response = await fetch(newBookingUrl, {
+  //       method: 'POST',
+  //       headers: {
+  //         'Content-Type': 'application/json',
+  //         Authorization: `${token}`,
+  //       },
+  //       body: JSON.stringify(newAppointment),
+  //     });
 
-  //     setModalVisible(true);
+  //     const result = await response.json();
 
-  //     updateSlotInFirestore(selectedSlot.id, { isAvailable: false });
-  //     createNotification(
-  //       userId,
-  //       route.params.shopId,
-  //       appointmentRes.id ?? null,
-  //       userData?.fullName ?? '',
-  //       userData?.profileImage ?? DEFAULT_AVATAR,
-  //     );
-  //     sendAppointmentNotification(
-  //       userId,
-  //       route.params.shopId,
-  //       APPOINTMENT_TYPES.BOOKING_REQUEST_SENT,
-  //       appointmentRes.id ?? null,
-  //     );
+  //     console.log('result ---------------', result ? result : 'no result');
+
+  //     // const appointmentRes = await createAppointment(userId, bookingData);
+  //     // if (!userData?.phone || userData?.phone?.trim() == '') {
+  //     //   setShowWarningModal(true);
+  //     //   return;
+  //     // }
+  //     // const appointmentRes = firestore().collection('appointments').doc();
+  //     // await appointmentRes.set({
+  //     //   ...bookingData,
+  //     //   userId,
+  //     //   createdAt: new Date(),
+  //     // });
+  //     // setModalVisible(true);
+  //     // const availabilityStatus =
+  //     //   currentSlot?.bookedCount < currentSlot?.maxCapacity ? true : false;
+  //     // updateSlotInFirestore(selectedSlot.id, {
+  //     //   bookedCount: updatedSlotCount,
+  //     //   isAvailable: availabilityStatus,
+  //     // });
+  //     // await createNotification(
+  //     //   userId,
+  //     //   route.params.shopId,
+  //     //   appointmentRes.id ?? null,
+  //     //   userData?.fullName ?? '',
+  //     //   userData?.profileImage ?? DEFAULT_AVATAR,
+  //     // );
+  //     // sendAppointmentNotification(
+  //     //   userId,
+  //     //   route.params.shopId,
+  //     //   APPOINTMENT_TYPES.BOOKING_REQUEST_SENT,
+  //     //   appointmentRes.id ?? null,
+  //     // );
   //   } catch (error) {
   //     console.error('Error creating appointment:', error);
   //   } finally {
