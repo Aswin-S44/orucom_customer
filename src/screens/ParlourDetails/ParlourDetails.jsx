@@ -29,7 +29,7 @@ const ParlourDetails = ({ route, navigation }) => {
   const [loadingOffers, setLoadingOffers] = React.useState(false);
   const [experts, setExperts] = useState([]);
   const [loading, setLoading] = useState(false);
-
+  console.log('parlourData-----------------', parlourData);
   useEffect(() => {
     if (!parlourData?.id) return;
 
@@ -97,8 +97,8 @@ const ParlourDetails = ({ route, navigation }) => {
         <Image
           source={{
             uri:
-              typeof parlourData.profileImage === 'string'
-                ? parlourData.profileImage
+              typeof parlourData?.shopImage === 'string'
+                ? parlourData?.shopImage
                 : NO_IMAGE,
           }}
           style={styles.image}
@@ -205,7 +205,10 @@ const ParlourDetails = ({ route, navigation }) => {
           />
         </View>
       )}
-
+      {console.log(
+        'parlourData----------------',
+        parlourData ? parlourData : 'no parlourData',
+      )}
       {activeTab === 'Gallery' && (
         <View style={styles.content}>
           <GallerySection

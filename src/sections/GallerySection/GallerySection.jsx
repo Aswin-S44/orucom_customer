@@ -35,7 +35,7 @@ const GallerySection = ({ placeId }) => {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const flatListRef = useRef(null);
   const swipeHintAnim = useRef(new Animated.Value(0)).current;
-
+  console.log('######################');
   useEffect(() => {
     const fetchGallery = async () => {
       if (placeId) {
@@ -45,6 +45,8 @@ const GallerySection = ({ placeId }) => {
           setImages(res);
         }
         setLoading(false);
+      } else {
+        setImages([]);
       }
     };
     fetchGallery();

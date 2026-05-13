@@ -281,6 +281,10 @@ const BookingScreen = ({ route, navigation }) => {
                     <TouchableOpacity
                       style={styles.viewDetailsButton}
                       onPress={() => {
+                        console.log(
+                          'selectedExpert---------------',
+                          selectedExpert ? selectedExpert : 'no selectedExpert',
+                        );
                         navigation.navigate('BeautyExpertDetailsScreen', {
                           expertId: expert.id,
                         });

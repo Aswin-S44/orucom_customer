@@ -17,10 +17,10 @@ import { NO_IMAGE } from '../../constants/images';
 import Loader from '../../components/Loader/Loader';
 import EmptyComponent from '../../components/EmptyComponent/EmptyComponent';
 import { AuthContext } from '../../context/AuthContext';
-import firestore from '@react-native-firebase/firestore';
 import ServiceCardSkeleton from '../../components/ServiceCardSkeleton/ServiceCardSkeleton';
 import LocationPrompt from '../../components/LocationPrompt/LocationPrompt';
 import SearchPrompt from '../../components/SearchPrompt/SearchPrompt';
+import { GET_ALL_SHOPS } from '../../services/apis';
 
 const debounce = (func, wait) => {
   let timeout;
@@ -34,94 +34,19 @@ const debounce = (func, wait) => {
   };
 };
 
-const searchAllParloursAndServices = async searchTerm => {
-  try {
-    const shopsSnapshot = await firestore()
-      .collection('shop-owners')
-      .where('isOnboarded', '==', true)
-      .where('profileCompleted', '==', true)
-      .get();
-
-    const allShops = shopsSnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
-
-    const shopUids = allShops.map(shop => shop.uid);
-
-    const [servicesSnapshot, offersSnapshot, expertsSnapshot] =
-      await Promise.all([
-        firestore()
-          .collection('services')
-          .where('shopId', 'in', shopUids)
-          .get(),
-        firestore().collection('offers').where('shopId', 'in', shopUids).get(),
-        firestore()
-          .collection('beauty_experts')
-          .where('shopId', 'in', shopUids)
-          .get(),
-      ]);
-
-    const allServices = servicesSnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
-    const allOffers = offersSnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
-    const allExperts = expertsSnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
-
-    const enrichedShops = allShops.map(shop => ({
-      ...shop,
-      services: allServices.filter(s => s.shopId === shop.uid),
-      offers: allOffers.filter(o => o.shopId === shop.uid),
-      experts: allExperts.filter(e => e.shopId === shop.uid),
-    }));
-
-    if (!searchTerm) {
-      return enrichedShops;
-    }
-
-    const lowerCaseSearchTerm = searchTerm.toLowerCase();
-
-    return enrichedShops.filter(shop => {
-      const nameMatch =
-        shop.parlourName &&
-        shop.parlourName.toLowerCase().includes(lowerCaseSearchTerm);
-
-      const serviceMatch = shop.services.some(
-        service =>
-          service.serviceName &&
-          service.serviceName.toLowerCase().includes(lowerCaseSearchTerm),
-      );
-
-      return nameMatch || serviceMatch;
-    });
-  } catch (error) {
-    console.error('Search all parlours and services error:', error);
-    throw error;
-  }
-};
-
 const SearchItem = ({ item, navigation }) => {
   return (
     <View style={styles.card}>
       <Image
-        source={{ uri: item.profileImage ?? NO_IMAGE }}
+        source={{ uri: item.shopImage ?? NO_IMAGE }}
         style={styles.image}
       />
       <View style={styles.detailsContainer}>
         <View style={styles.header}>
           <Text style={styles.shopName}>{item.parlourName ?? ''}</Text>
         </View>
-        <Text style={styles.about}>
-          {item.about?.length > 25
-            ? `${item.about.slice(0, 50)}...`
-            : item.about}
+        <Text style={styles.about} numberOfLines={2}>
+          {item.about || item.address}
         </Text>
 
         <View style={styles.ratingContainer}>
@@ -163,6 +88,49 @@ const SearchResultsScreen = ({ navigation }) => {
   const [searchCount, setSearchCount] = useState(0);
   const { userData } = useContext(AuthContext);
 
+  const performSearch = async term => {
+    try {
+      setLoading(true);
+      const response = await fetch(GET_ALL_SHOPS, {
+        method: 'GET',
+      });
+
+      const shopsData = await response.json();
+      let transformedShops = [];
+
+      if (shopsData?.shops?.length > 0) {
+        transformedShops = shopsData.shops.map(item => item.shop);
+      }
+
+      if (!term.trim()) {
+        setSearchResults(transformedShops);
+        setSearchCount(transformedShops.length);
+      } else {
+        const lowerCaseSearchTerm = term.toLowerCase();
+        const filtered = transformedShops.filter(shop => {
+          const nameMatch = shop.parlourName
+            ?.toLowerCase()
+            .includes(lowerCaseSearchTerm);
+
+          const serviceMatch = shop.services?.some(service =>
+            service.serviceName?.toLowerCase().includes(lowerCaseSearchTerm),
+          );
+
+          return nameMatch || serviceMatch;
+        });
+
+        setSearchResults(filtered);
+        setSearchCount(filtered.length);
+      }
+    } catch (error) {
+      console.error('Search error:', error);
+      setSearchResults([]);
+      setSearchCount(0);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const debouncedSearch = useCallback(
     debounce(term => {
       performSearch(term);
@@ -171,22 +139,8 @@ const SearchResultsScreen = ({ navigation }) => {
   );
 
   useEffect(() => {
-    setLoading(true);
     debouncedSearch(searchTerm);
   }, [searchTerm, debouncedSearch]);
-
-  const performSearch = async term => {
-    try {
-      const results = await searchAllParloursAndServices(term);
-      setSearchResults(results);
-      setSearchCount(results.length);
-    } catch (error) {
-      setSearchResults([]);
-      setSearchCount(0);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleSearchSubmit = () => {
     performSearch(searchTerm);
@@ -238,7 +192,9 @@ const SearchResultsScreen = ({ navigation }) => {
             renderItem={({ item }) => (
               <SearchItem item={item} navigation={navigation} />
             )}
-            keyExtractor={item => item.id}
+            keyExtractor={(item, index) =>
+              item.id?.toString() || index.toString()
+            }
             showsVerticalScrollIndicator={false}
             ItemSeparatorComponent={() => <View style={styles.separator} />}
             contentContainerStyle={styles.flatListContent}

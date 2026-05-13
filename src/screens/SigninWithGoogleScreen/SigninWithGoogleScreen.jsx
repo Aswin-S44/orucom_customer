@@ -70,7 +70,8 @@ const SigninWithGoogleScreen = ({ navigation }) => {
       await AsyncStorage.setItem('token', backendData.data.token);
       await refreshUser();
     } catch (error) {
-      Alert.alert('Sign In Error', error.message);
+      // Alert.alert('Sign In Error', error.message);
+      console.log('Error=-----------------', error.message);
     } finally {
       setLoading(false);
     }

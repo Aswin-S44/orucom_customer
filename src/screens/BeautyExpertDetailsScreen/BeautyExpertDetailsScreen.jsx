@@ -11,10 +11,9 @@ import {
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { primaryColor, starColor } from '../../constants/colors';
 import { formatText } from '../../utils/utils';
-import { getExpertsWithShopDetailsByShopId } from '../../apis/services';
 import { DEFAULT_AVATAR } from '../../constants/images';
-
 import ProfileScreenSkeleton from '../../components/ProfileScreenSkeleton/ProfileScreenSkeleton';
+import { BACKEND_URL } from '../../services/apis';
 
 const StarRating = ({ rating, count }) => {
   const stars = [];
@@ -69,22 +68,33 @@ const StarRating = ({ rating, count }) => {
 const BeautyExpertDetailsScreen = ({ navigation, route }) => {
   const { expertId } = route.params;
 
-  const [loading, setLoading] = useState(null);
-  const [expert, setExpert] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState(null);
 
   useEffect(() => {
-    if (expertId) {
-      const fetchExpert = async () => {
-        setLoading(true);
-        const res = await getExpertsWithShopDetailsByShopId(expertId);
-        setLoading(false);
-        if (res) {
-          setExpert(res);
+    const fetchExpertDetails = async () => {
+      setLoading(true);
+      const url = `${BACKEND_URL}/api/v1/customer/expert/${expertId}`;
+      try {
+        const response = await fetch(url, {
+          method: 'GET',
+        });
+
+        const result = await response.json();
+        if (result) {
+          setData(result);
         }
-      };
-      fetchExpert();
+      } catch (error) {
+        console.log('Error fetching expert details:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (expertId) {
+      fetchExpertDetails();
     }
-  }, [expertId, route]);
+  }, [expertId]);
 
   return (
     <View style={styles.outerContainer}>
@@ -101,71 +111,64 @@ const BeautyExpertDetailsScreen = ({ navigation, route }) => {
       {loading ? (
         <ProfileScreenSkeleton />
       ) : (
-        <>
-          <View style={styles.container}>
-            <ScrollView showsVerticalScrollIndicator={false}>
-              <Text style={styles.mainTitle}>Beauty Expert</Text>
+        <View style={styles.container}>
+          <ScrollView showsVerticalScrollIndicator={false}>
+            <Text style={styles.mainTitle}>Beauty Expert</Text>
 
-              <View style={styles.profileSection}>
-                <Image
-                  source={{
-                    uri: expert?.expert?.imageUrl ?? DEFAULT_AVATAR,
-                  }}
-                  style={styles.avatar}
+            <View style={styles.profileSection}>
+              <Image
+                source={{
+                  uri: data?.expert?.image ?? DEFAULT_AVATAR,
+                }}
+                style={styles.avatar}
+              />
+              <Text style={styles.expertName}>{data?.expert?.name ?? '_'}</Text>
+              <Text style={styles.expertSpecialty}>
+                {formatText(data?.expert?.specialist ?? '')}
+              </Text>
+              <StarRating rating={data?.shop?.totalRating ?? 0} count={0} />
+              <TouchableOpacity
+                style={styles.bookButton}
+                onPress={() =>
+                  navigation.navigate('BookingScreen', {
+                    shopId: data?.shop?.id,
+                    selectedExpert: expertId,
+                  })
+                }
+              >
+                <Text style={styles.bookButtonText}>Book Now</Text>
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>About</Text>
+              <Text style={styles.descriptionText}>
+                {data?.expert?.about ?? ''}
+              </Text>
+            </View>
+
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Shop</Text>
+              <Text style={styles.descriptionText}>
+                {data?.shop?.parlourName ?? ''}
+              </Text>
+            </View>
+
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Address</Text>
+              <View style={styles.addressContainer}>
+                <Ionicons
+                  name="location-sharp"
+                  size={24}
+                  color={primaryColor}
                 />
-                <Text style={styles.expertName}>
-                  {expert?.expert?.expertName ?? '_'}
-                </Text>
-                <Text style={styles.expertSpecialty}>
-                  {' '}
-                  {formatText(expert?.expert?.specialist ?? '')}
-                </Text>
-                <StarRating rating={4.9} count={150} />
-                <TouchableOpacity
-                  style={styles.bookButton}
-                  onPress={() =>
-                    navigation.navigate('BookingScreen', {
-                      shopId: expert?.expert?.shopId,
-                      selectedExpert: expertId,
-                    })
-                  }
-                >
-                  <Text style={styles.bookButtonText}>Book Now</Text>
-                </TouchableOpacity>
-              </View>
-
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>About</Text>
-                <Text style={styles.descriptionText}>
-                  {expert?.expert?.about ?? ''}
+                <Text style={styles.addressText}>
+                  {data?.shop?.address ?? '-'}
                 </Text>
               </View>
-
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Opening Hours</Text>
-                <View style={styles.hoursRow}>
-                  <Text style={styles.hoursDay}>
-                    {expert?.shopDetails?.openingHours ?? '-'}
-                  </Text>
-                </View>
-              </View>
-
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Address</Text>
-                <View style={styles.addressContainer}>
-                  <Ionicons
-                    name="location-sharp"
-                    size={24}
-                    color={primaryColor}
-                  />
-                  <Text style={styles.addressText}>
-                    {expert?.shopDetails?.address ?? '-'}
-                  </Text>
-                </View>
-              </View>
-            </ScrollView>
-          </View>
-        </>
+            </View>
+          </ScrollView>
+        </View>
       )}
     </View>
   );
@@ -260,39 +263,6 @@ const styles = StyleSheet.create({
     color: '#555',
     lineHeight: 22,
   },
-  bulletPoint: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginTop: 15,
-  },
-  bulletIcon: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: primaryColor,
-    marginRight: 12,
-    marginTop: 6,
-  },
-  bulletText: {
-    flex: 1,
-    fontSize: 15,
-    color: '#555',
-    lineHeight: 22,
-  },
-  hoursRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 10,
-  },
-  hoursDay: {
-    fontSize: 16,
-    color: '#555',
-  },
-  hoursTime: {
-    fontSize: 16,
-    color: '#333',
-    fontWeight: '500',
-  },
   addressContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -303,11 +273,6 @@ const styles = StyleSheet.create({
     color: '#555',
     lineHeight: 24,
     marginHorizontal: 15,
-  },
-  distanceText: {
-    fontSize: 16,
-    color: '#555',
-    marginLeft: 8,
   },
 });
 

@@ -61,6 +61,7 @@ const CustomDrawerContent = props => {
   return (
     <View style={styles.container}>
       <DrawerContentScrollView {...props}>
+        {console.log('userData---------------', userData)}
         <View style={styles.profileContainer}>
           <Image
             source={{ uri: userData?.profileImage ?? DEFAULT_AVATAR }}
@@ -68,7 +69,7 @@ const CustomDrawerContent = props => {
           />
           <View>
             <Text style={styles.userName}>
-              {userData?.fullName ?? randomName}
+              {userData?.username ?? randomName}
             </Text>
             <Text style={styles.userPhone}>{userData?.email ?? '_'}</Text>
           </View>

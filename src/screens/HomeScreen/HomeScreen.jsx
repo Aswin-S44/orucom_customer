@@ -21,6 +21,7 @@ import {
   getAllParlours,
   getNotificationsCountByCustomerId,
   updateCustomer,
+  getReviews,
 } from '../../apis/services';
 import CardSkeleton from '../../components/CardSkeleton/CardSkeleton';
 import { AuthContext } from '../../context/AuthContext';
@@ -135,7 +136,28 @@ const HomeScreen = ({ navigation }) => {
 
       if (shopsData?.shops?.length > 0) {
         const transformedShops = shopsData.shops.map(item => item.shop);
-        setShops(transformedShops);
+
+        const shopsWithRatings = await Promise.all(
+          transformedShops.map(async shop => {
+            if (shop.placeId) {
+              const reviewData = await getReviews(shop.placeId);
+              return {
+                ...shop,
+                totalRating: reviewData?.rating || 0,
+              };
+            }
+            return {
+              ...shop,
+              totalRating: 0,
+            };
+          }),
+        );
+
+        console.log(
+          'transformedShopsWithRatings---------------',
+          shopsWithRatings,
+        );
+        setShops(shopsWithRatings);
       } else {
         setShops([]);
       }
@@ -145,6 +167,7 @@ const HomeScreen = ({ navigation }) => {
       setLoading(false);
     }
   };
+
   const fetchNotificationCount = async () => {
     if (userId) {
       const res = await getNotificationsCountByCustomerId(userId);
