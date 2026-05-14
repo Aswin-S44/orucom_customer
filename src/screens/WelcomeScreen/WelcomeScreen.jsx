@@ -13,7 +13,7 @@ import { lightPurple, primaryColor } from '../../constants/colors';
 const WelcomeScreen = ({ navigation }) => {
   return (
     <LinearGradient
-      colors={[primaryColor, '#A80E5A']}
+      colors={['#0D0618', '#D41172']}
       style={styles.container}
     >
       <StatusBar backgroundColor={primaryColor} barStyle="light-content" />
@@ -21,7 +21,8 @@ const WelcomeScreen = ({ navigation }) => {
         source={require('../../assets/images/splash_logo.png')}
         style={styles.welcomeImage}
       />
-      <Text style={styles.title}>Beauty Parlour Booking App</Text>
+      <Text style={styles.title}>Beauty Parlour{'\n'}Booking App</Text>
+      <Text style={styles.tagline}>Luxury · Style · You</Text>
       <View style={styles.buttonContainer}>
         <TouchableOpacity
           style={styles.signInButton}
@@ -48,44 +49,53 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   title: {
-    fontSize: 26,
-    fontWeight: '700',
+    fontSize: 30,
+    fontWeight: '800',
     color: '#fff',
     textAlign: 'center',
-    marginTop: 20,
-    marginBottom: 60,
-    lineHeight: 36,
-    letterSpacing: 0.3,
+    marginTop: 16,
+    marginBottom: 6,
+    lineHeight: 40,
+    letterSpacing: 1,
+  },
+  tagline: {
+    fontSize: 13,
+    color: 'rgba(255,255,255,0.5)',
+    letterSpacing: 2.5,
+    textTransform: 'uppercase',
+    marginBottom: 55,
   },
   buttonContainer: {
     width: '100%',
     alignItems: 'center',
   },
   signInButton: {
-    backgroundColor: '#fff',
-    paddingVertical: 15,
+    backgroundColor: 'rgba(255,255,255,0.96)',
+    paddingVertical: 16,
     paddingHorizontal: 28,
     width: '90%',
     alignItems: 'center',
     borderRadius: 50,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.07,
-    shadowRadius: 24,
-    elevation: 5,
+    marginBottom: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.25)',
+    shadowColor: '#D41172',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.35,
+    shadowRadius: 40,
+    elevation: 10,
   },
   signInButtonText: {
     color: '#D41172',
     fontSize: 16,
-    fontWeight: '600',
-    letterSpacing: 0.2,
+    fontWeight: '700',
+    letterSpacing: 0.5,
   },
   signUpButton: {
-    backgroundColor: 'transparent',
+    backgroundColor: 'rgba(255,255,255,0.07)',
     borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.8)',
-    paddingVertical: 15,
+    borderColor: 'rgba(255,255,255,0.35)',
+    paddingVertical: 16,
     paddingHorizontal: 28,
     width: '90%',
     alignItems: 'center',
@@ -95,12 +105,14 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
-    letterSpacing: 0.2,
+    letterSpacing: 0.4,
   },
   welcomeImage: {
     width: 110,
     height: 110,
-    borderRadius: 20,
+    borderRadius: 28,
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.15)',
   },
 });
 

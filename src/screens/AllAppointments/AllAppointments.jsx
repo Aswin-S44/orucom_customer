@@ -238,22 +238,27 @@ const AllAppointments = ({ route, navigation }) => {
 const styles = StyleSheet.create({
   outerContainer: {
     flex: 1,
-    backgroundColor: '#D41172',
+    backgroundColor: '#0D0618',
   },
   container: {
     flex: 1,
     marginTop: 80,
-    backgroundColor: '#FFFBF6',
+    backgroundColor: '#FFFFFF',
     borderTopLeftRadius: 40,
     borderTopRightRadius: 40,
     paddingHorizontal: 25,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 20,
   },
   mainTitle: {
-    fontSize: 26,
-    fontWeight: '600',
+    fontSize: 28,
+    fontWeight: '800',
     color: '#160B26',
     textAlign: 'center',
     marginVertical: 25,
+    letterSpacing: 0.3,
   },
   headerRow: {
     flexDirection: 'row',

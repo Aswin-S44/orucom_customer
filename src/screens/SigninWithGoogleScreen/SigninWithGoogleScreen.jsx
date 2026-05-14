@@ -208,7 +208,7 @@ const SigninWithGoogleScreen = ({ navigation }) => {
 
   return (
     <LinearGradient
-      colors={[primaryColor, '#A80E5A']}
+      colors={['#0D0618', '#D41172']}
       style={styles.container}
     >
       <StatusBar backgroundColor={primaryColor} barStyle="light-content" />
@@ -218,6 +218,7 @@ const SigninWithGoogleScreen = ({ navigation }) => {
           style={styles.welcomeImage}
         />
         <Text style={styles.title}>Orucom</Text>
+        <Text style={styles.subtitle}>Your beauty, redefined.</Text>
         <TouchableOpacity
           style={[styles.signInButton, loading && styles.disabledButton]}
           onPress={onGoogleButtonPress}
@@ -276,53 +277,72 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
   },
-  welcomeImage: { width: 125, height: 125, borderRadius: 20 },
+  welcomeImage: {
+    width: 120,
+    height: 120,
+    borderRadius: 30,
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.15)',
+  },
   title: {
-    fontSize: 32,
-    fontWeight: '700',
+    fontSize: 38,
+    fontWeight: '800',
     color: '#fff',
-    marginTop: 20,
-    marginBottom: 60,
-    letterSpacing: 0.5,
+    marginTop: 22,
+    marginBottom: 8,
+    letterSpacing: 1.5,
+    textAlign: 'center',
   },
   signInButton: {
-    backgroundColor: '#fff',
-    paddingVertical: 15,
+    backgroundColor: 'rgba(255,255,255,0.95)',
+    paddingVertical: 16,
     paddingHorizontal: 28,
     width: '90%',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 50,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.07,
-    shadowRadius: 24,
-    elevation: 5,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.3)',
+    shadowColor: '#D41172',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.35,
+    shadowRadius: 40,
+    elevation: 10,
   },
-  googleIcon: { width: 24, height: 24, marginRight: 10 },
-  signInButtonText: { color: '#D41172', fontSize: 16, fontWeight: '600', letterSpacing: 0.2 },
-  emailLinkContainer: { marginVertical: 15 },
+  googleIcon: { width: 22, height: 22, marginRight: 12 },
+  signInButtonText: { color: '#D41172', fontSize: 16, fontWeight: '700', letterSpacing: 0.4 },
+  emailLinkContainer: { marginVertical: 18 },
   emailLinkText: {
-    color: 'rgba(255,255,255,0.9)',
+    color: 'rgba(255,255,255,0.85)',
     fontSize: 15,
-    textDecorationLine: 'underline',
     fontWeight: '500',
+    letterSpacing: 0.3,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.4)',
+    paddingBottom: 2,
   },
-  footerContainer: { marginTop: 15, width: '90%' },
-  footerText: { color: 'rgba(255,255,255,0.75)', fontSize: 13, textAlign: 'center', lineHeight: 20 },
+  footerContainer: { marginTop: 20, width: '85%' },
+  footerText: { color: 'rgba(255,255,255,0.5)', fontSize: 12, textAlign: 'center', lineHeight: 19 },
   linkText: {
-    color: '#fff',
-    textDecorationLine: 'underline',
-    fontWeight: '600',
+    color: 'rgba(255,255,255,0.9)',
+    fontWeight: '700',
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(13,6,24,0.7)',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  disabledButton: { opacity: 0.7 },
+  subtitle: {
+    fontSize: 14,
+    color: 'rgba(255,255,255,0.55)',
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+    marginBottom: 55,
+    marginTop: 4,
+  },
+  disabledButton: { opacity: 0.55 },
 });
 
 export default SigninWithGoogleScreen;
