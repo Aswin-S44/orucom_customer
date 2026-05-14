@@ -166,7 +166,7 @@ const OTPVerificationScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#FFFBF6',
   },
   backButton: {
     position: 'absolute',
@@ -182,8 +182,8 @@ const styles = StyleSheet.create({
   },
   mainTitle: {
     fontSize: 28,
-    fontWeight: '400',
-    color: '#333',
+    fontWeight: '600',
+    color: '#160B26',
     marginBottom: 20,
   },
   illustration: {
@@ -194,7 +194,7 @@ const styles = StyleSheet.create({
   },
   infoText: {
     fontSize: 16,
-    color: '#888',
+    color: '#6B7280',
   },
   resendContainer: {
     flexDirection: 'row',
@@ -202,12 +202,12 @@ const styles = StyleSheet.create({
   },
   resendText: {
     fontSize: 15,
-    color: '#888',
+    color: '#6B7280',
   },
   resendLink: {
     fontSize: 15,
-    color: primaryColor,
-    fontWeight: 'bold',
+    color: '#D41172',
+    fontWeight: '600',
   },
   otpInputContainer: {
     flexDirection: 'row',
@@ -219,7 +219,7 @@ const styles = StyleSheet.create({
     width: 45,
     height: 60,
     borderBottomWidth: 2,
-    borderBottomColor: '#ccc',
+    borderBottomColor: '#D41172',
     justifyContent: 'center',
     alignItems: 'center',
     marginHorizontal: 5,
@@ -227,30 +227,37 @@ const styles = StyleSheet.create({
   otpInput: {
     fontSize: 24,
     fontWeight: '600',
-    color: '#333',
+    color: '#160B26',
     textAlign: 'center',
     width: '100%',
     height: '100%',
   },
   errorText: {
-    color: 'red',
+    color: '#D41172',
     fontSize: 14,
     marginTop: 10,
     textAlign: 'center',
   },
   createButton: {
-    backgroundColor: primaryColor,
-    padding: 18,
-    borderRadius: 15,
+    backgroundColor: '#D41172',
+    paddingVertical: 18,
+    paddingHorizontal: 28,
+    borderRadius: 50,
     alignItems: 'center',
     marginBottom: 30,
     width: '80%',
     marginTop: 20,
+    shadowColor: '#D41172',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.18,
+    shadowRadius: 32,
+    elevation: 8,
   },
   createButtonText: {
     color: '#fff',
     fontSize: 16,
-    fontWeight: '500',
+    fontWeight: '600',
+    letterSpacing: 0.2,
   },
   signInContainer: {
     flexDirection: 'row',
@@ -260,11 +267,11 @@ const styles = StyleSheet.create({
   },
   signInText: {
     fontSize: 15,
-    color: '#555',
+    color: '#6B7280',
   },
   signInLink: {
     fontSize: 15,
-    color: primaryColor,
+    color: '#D41172',
     fontWeight: '500',
   },
 });

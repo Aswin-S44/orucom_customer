@@ -176,7 +176,7 @@ const SignInScreen = ({ navigation }) => {
             <View
               style={[
                 styles.inputContainer,
-                submitted && errors.email && { borderColor: 'red' },
+                submitted && errors.email && { borderColor: '#D41172' },
               ]}
             >
               <Feather
@@ -205,7 +205,7 @@ const SignInScreen = ({ navigation }) => {
             <View
               style={[
                 styles.inputContainer,
-                submitted && errors.password && { borderColor: 'red' },
+                submitted && errors.password && { borderColor: '#D41172' },
               ]}
             >
               <Ionicons
@@ -255,7 +255,9 @@ const SignInScreen = ({ navigation }) => {
             style={[
               styles.signInButton,
               (!isSignInButtonEnabled || isLoading) && {
-                backgroundColor: '#ccc',
+                backgroundColor: '#94A3B8',
+                shadowOpacity: 0,
+                elevation: 0,
               },
             ]}
             onPress={handleSignIn}
@@ -287,7 +289,7 @@ const SignInScreen = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  outerContainer: { flex: 1, backgroundColor: primaryColor },
+  outerContainer: { flex: 1, backgroundColor: '#D41172' },
   backButton: {
     position: 'absolute',
     top: 55,
@@ -296,50 +298,51 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     zIndex: 10,
   },
-  backButtonText: { color: '#fff', fontSize: 18, marginLeft: 5 },
+  backButtonText: { color: '#fff', fontSize: 18, marginLeft: 5, fontWeight: '500' },
   container: {
     flex: 1,
     marginTop: 100,
-    backgroundColor: '#fff',
+    backgroundColor: '#FFFBF6',
     borderTopLeftRadius: 40,
     borderTopRightRadius: 40,
     padding: 25,
   },
   mainTitle: {
     fontSize: 28,
-    fontWeight: '400',
-    color: '#333',
+    fontWeight: '600',
+    color: '#160B26',
     textAlign: 'center',
     marginTop: 10,
     marginBottom: 30,
   },
   errorBox: {
-    backgroundColor: '#ffebeb',
+    backgroundColor: '#FFF0F7',
     padding: 10,
-    borderRadius: 8,
+    borderRadius: 12,
     marginBottom: 20,
     borderWidth: 1,
-    borderColor: '#ff0000',
+    borderColor: '#FFE0EF',
     alignItems: 'center',
   },
-  loginErrorText: { color: '#ff0000', fontSize: 14, textAlign: 'center' },
+  loginErrorText: { color: '#D41172', fontSize: 14, textAlign: 'center', fontWeight: '500' },
   inputGroup: { marginBottom: 20 },
   inputLabel: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '500',
-    color: '#333',
+    color: '#374151',
     marginBottom: 10,
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#E0E0E0',
+    borderColor: '#E2E8F0',
     borderRadius: 12,
-    paddingHorizontal: 15,
+    paddingHorizontal: 16,
+    backgroundColor: '#F8FAFC',
   },
   inputIcon: { marginRight: 10 },
-  input: { flex: 1, height: 50, fontSize: 16, color: '#333' },
+  input: { flex: 1, height: 50, fontSize: 16, color: '#1A1A1A' },
   optionsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -347,23 +350,29 @@ const styles = StyleSheet.create({
     marginBottom: 30,
   },
   rememberMe: { flexDirection: 'row', alignItems: 'center' },
-  rememberMeText: { marginLeft: 8, fontSize: 14, color: '#555' },
+  rememberMeText: { marginLeft: 8, fontSize: 14, color: '#6B7280' },
   signInButton: {
-    backgroundColor: primaryColor,
-    padding: 18,
-    borderRadius: 15,
+    backgroundColor: '#D41172',
+    paddingVertical: 18,
+    paddingHorizontal: 28,
+    borderRadius: 50,
     alignItems: 'center',
     marginBottom: 30,
+    shadowColor: '#D41172',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.18,
+    shadowRadius: 32,
+    elevation: 8,
   },
-  signInButtonText: { color: '#fff', fontSize: 16, fontWeight: '500' },
+  signInButtonText: { color: '#fff', fontSize: 16, fontWeight: '600', letterSpacing: 0.2 },
   signUpContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  signUpText: { fontSize: 15, color: '#555' },
-  signUpLink: { fontSize: 15, color: primaryColor, fontWeight: '500' },
-  errorText: { color: 'red', fontSize: 13, marginTop: 5 },
+  signUpText: { fontSize: 15, color: '#6B7280' },
+  signUpLink: { fontSize: 15, color: '#D41172', fontWeight: '600' },
+  errorText: { color: '#D41172', fontSize: 13, marginTop: 5 },
   loadingOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.6)',

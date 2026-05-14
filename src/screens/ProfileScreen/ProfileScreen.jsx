@@ -52,7 +52,7 @@ const AccordionMenuItem = ({ iconName, label, children, isLast }) => {
         activeOpacity={0.8}
       >
         <LinearGradient
-          colors={['#A7C7E7', '#7BB0E1']}
+          colors={['#FF4D9E', '#D41172']}
           style={styles.menuItemIconBackground}
         >
           <Ionicons name={iconName} size={22} color="#fff" />
@@ -110,7 +110,7 @@ const ProfileScreen = ({ navigation }) => {
         <ProfileScreenSkeleton />
       ) : (
         <>
-          <StatusBar backgroundColor="#FF6B6B" barStyle="light-content" />
+          <StatusBar backgroundColor="#D41172" barStyle="light-content" />
 
           <ScrollView
             showsVerticalScrollIndicator={false}
@@ -124,7 +124,7 @@ const ProfileScreen = ({ navigation }) => {
             }
           >
             <LinearGradient
-              colors={['#FF6B6B', primaryColor]}
+              colors={['#D41172', '#A80E5A']}
               style={styles.headerBackground}
             >
               <View style={styles.header}>
@@ -259,7 +259,7 @@ const ProfileScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   outerContainer: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#FFFBF6',
   },
   scrollContent: {
     flexGrow: 1,
@@ -293,9 +293,9 @@ const styles = StyleSheet.create({
     padding: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 3,
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
   profileSection: {
     alignItems: 'center',
@@ -306,16 +306,16 @@ const styles = StyleSheet.create({
     height: 110,
     borderRadius: 55,
     borderWidth: 3,
-    borderColor: 'rgba(255,255,255,0.5)',
+    borderColor: 'rgba(255,255,255,0.6)',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 12,
     backgroundColor: '#fff',
-    elevation: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 0.2,
-    shadowRadius: 5,
+    shadowColor: '#D41172',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.18,
+    shadowRadius: 32,
+    elevation: 8,
   },
   avatar: {
     width: 100,
@@ -327,7 +327,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 0,
     right: 0,
-    backgroundColor: '#4CAF50',
+    backgroundColor: '#D41172',
     borderRadius: 15,
     padding: 5,
     borderWidth: 2,
@@ -354,13 +354,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
-    borderRadius: 15,
+    borderRadius: 16,
     padding: 14,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
-    shadowRadius: 5,
-    elevation: 3,
+    shadowRadius: 8,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
   },
   menuItemIconBackground: {
     width: 38,
@@ -373,19 +375,19 @@ const styles = StyleSheet.create({
   menuItemText: {
     flex: 1,
     fontSize: 16,
-    color: '#333',
+    color: '#374151',
     fontWeight: '500',
   },
   accordionContainer: {
     marginBottom: 12,
   },
   accordionContent: {
-    backgroundColor: '#F9F9F9',
+    backgroundColor: '#FFF0F7',
     padding: 15,
     borderBottomLeftRadius: 15,
     borderBottomRightRadius: 15,
     borderWidth: 1,
-    borderColor: '#F0F0F0',
+    borderColor: '#FFE0EF',
     marginTop: -8,
     zIndex: -1,
   },
@@ -399,20 +401,22 @@ const styles = StyleSheet.create({
   },
   contactText: {
     fontSize: 14,
-    color: '#555',
+    color: '#6B7280',
   },
   logoutButton: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
-    borderRadius: 15,
+    borderRadius: 16,
     padding: 14,
     marginTop: 10,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
-    shadowRadius: 5,
-    elevation: 3,
+    shadowRadius: 8,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
   },
   logoutText: {
     flex: 1,
