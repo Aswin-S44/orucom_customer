@@ -118,7 +118,7 @@ const SignUpScreen = ({ navigation }) => {
             <View
               style={[
                 styles.inputContainer,
-                submitted && errors.email && { borderColor: 'red' },
+                submitted && errors.email && { borderColor: '#D41172' },
               ]}
             >
               <Feather
@@ -147,7 +147,7 @@ const SignUpScreen = ({ navigation }) => {
             <View
               style={[
                 styles.inputContainer,
-                submitted && errors.password && { borderColor: 'red' },
+                submitted && errors.password && { borderColor: '#D41172' },
               ]}
             >
               <Ionicons
@@ -184,7 +184,7 @@ const SignUpScreen = ({ navigation }) => {
             <View
               style={[
                 styles.inputContainer,
-                submitted && errors.confirmPassword && { borderColor: 'red' },
+                submitted && errors.confirmPassword && { borderColor: '#D41172' },
               ]}
             >
               <Ionicons
@@ -239,7 +239,7 @@ const SignUpScreen = ({ navigation }) => {
           <TouchableOpacity
             style={[
               styles.createButton,
-              (!isFormValid || isLoading) && { backgroundColor: '#ccc' },
+              (!isFormValid || isLoading) && { backgroundColor: '#94A3B8', shadowOpacity: 0, elevation: 0 },
             ]}
             onPress={handleSubmit}
             disabled={!isFormValid || isLoading}
@@ -262,7 +262,7 @@ const SignUpScreen = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  outerContainer: { flex: 1, backgroundColor: primaryColor },
+  outerContainer: { flex: 1, backgroundColor: '#D41172' },
   backButton: {
     position: 'absolute',
     top: 55,
@@ -271,68 +271,76 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     zIndex: 10,
   },
-  backButtonText: { color: '#fff', fontSize: 18, marginLeft: 5 },
+  backButtonText: { color: '#fff', fontSize: 18, marginLeft: 5, fontWeight: '500' },
   container: {
     flex: 1,
     marginTop: 100,
-    backgroundColor: '#fff',
+    backgroundColor: '#FFFBF6',
     borderTopLeftRadius: 40,
     borderTopRightRadius: 40,
     padding: 25,
   },
   mainTitle: {
     fontSize: 28,
-    fontWeight: '400',
-    color: '#333',
+    fontWeight: '600',
+    color: '#160B26',
     textAlign: 'center',
     marginTop: 10,
     marginBottom: 10,
   },
   signupErrorBox: {
-    color: 'red',
+    color: '#D41172',
     fontSize: 14,
     textAlign: 'center',
     marginBottom: 20,
-    backgroundColor: '#ffe0e0',
+    backgroundColor: '#FFF0F7',
     padding: 10,
-    borderRadius: 8,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: 'red',
+    borderColor: '#FFE0EF',
+    fontWeight: '500',
   },
   inputGroup: { marginBottom: 20 },
   inputLabel: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '500',
-    color: '#333',
+    color: '#374151',
     marginBottom: 10,
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#E0E0E0',
+    borderColor: '#E2E8F0',
     borderRadius: 12,
-    paddingHorizontal: 15,
+    paddingHorizontal: 16,
+    backgroundColor: '#F8FAFC',
   },
   inputIcon: { marginRight: 10 },
-  input: { flex: 1, height: 50, fontSize: 16, color: '#333' },
+  input: { flex: 1, height: 50, fontSize: 16, color: '#1A1A1A' },
   termsContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 30,
     marginTop: 5,
   },
-  termsText: { marginLeft: 10, fontSize: 14, color: '#555' },
-  termsLink: { color: primaryColor, fontWeight: '500' },
+  termsText: { marginLeft: 10, fontSize: 14, color: '#6B7280' },
+  termsLink: { color: '#D41172', fontWeight: '600' },
   createButton: {
-    backgroundColor: primaryColor,
-    padding: 18,
-    borderRadius: 15,
+    backgroundColor: '#D41172',
+    paddingVertical: 18,
+    paddingHorizontal: 28,
+    borderRadius: 50,
     alignItems: 'center',
     marginBottom: 30,
+    shadowColor: '#D41172',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.18,
+    shadowRadius: 32,
+    elevation: 8,
   },
-  signInButtonText: { color: '#fff', fontSize: 16, fontWeight: '500' },
-  errorText: { color: 'red', fontSize: 13, marginTop: 5 },
+  signInButtonText: { color: '#fff', fontSize: 16, fontWeight: '600', letterSpacing: 0.2 },
+  errorText: { color: '#D41172', fontSize: 13, marginTop: 5 },
   loadingOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.6)',

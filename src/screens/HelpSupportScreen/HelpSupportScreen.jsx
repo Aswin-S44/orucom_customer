@@ -112,7 +112,7 @@ const HelpSupportScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   outerContainer: {
     flex: 1,
-    backgroundColor: primaryColor,
+    backgroundColor: '#D41172',
   },
   backButton: {
     position: 'absolute',
@@ -126,45 +126,48 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 18,
     marginLeft: 5,
+    fontWeight: '500',
   },
   container: {
     flex: 1,
     marginTop: 100,
-    backgroundColor: '#fff',
+    backgroundColor: '#FFFBF6',
     borderTopLeftRadius: 40,
     borderTopRightRadius: 40,
     paddingHorizontal: 25,
   },
   mainTitle: {
     fontSize: 28,
-    fontWeight: '400',
-    color: '#333',
+    fontWeight: '600',
+    color: '#160B26',
     textAlign: 'center',
     marginTop: 25,
     marginBottom: 20,
   },
   sectionTitle: {
     fontSize: 20,
-    fontWeight: '500',
-    color: '#333',
+    fontWeight: '600',
+    color: '#160B26',
     marginVertical: 15,
   },
   helpItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#FAFAFA',
+    backgroundColor: '#F8FAFC',
     borderRadius: 12,
     padding: 18,
     marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
   },
   helpItemText: {
     fontSize: 16,
-    color: '#333',
+    color: '#374151',
   },
   faqItemContainer: {
     borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
+    borderBottomColor: '#E2E8F0',
   },
   faqQuestionRow: {
     flexDirection: 'row',
@@ -174,18 +177,21 @@ const styles = StyleSheet.create({
   },
   faqQuestionText: {
     fontSize: 16,
-    color: '#333',
+    color: '#374151',
+    fontWeight: '500',
   },
   faqAnswerContainer: {
-    backgroundColor: '#FAFAFA',
+    backgroundColor: '#FFF0F7',
     borderRadius: 12,
     padding: 15,
     marginBottom: 20,
+    borderWidth: 1,
+    borderColor: '#FFE0EF',
   },
   faqAnswerText: {
     fontSize: 15,
-    color: '#555',
-    lineHeight: 22,
+    color: '#6B7280',
+    lineHeight: 24,
   },
 });
 

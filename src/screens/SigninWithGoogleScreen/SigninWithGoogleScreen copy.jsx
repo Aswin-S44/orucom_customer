@@ -31,7 +31,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 const SigninWithGoogleScreen = () => {
   const { user, refreshUser, userData } = useContext(AuthContext);
   let WEB_CLIENT_ID =
-    '297588641134-hi002t6fubg9iilqa4r2bjp9sdnasg3i.apps.googleusercontent.com';
+    '273666754104-8kqhpnril7nlsnvgf7mmddsc1mbf9r91.apps.googleusercontent.com';
   useEffect(() => {
     GoogleSignin.configure({
       webClientId: WEB_CLIENT_ID,

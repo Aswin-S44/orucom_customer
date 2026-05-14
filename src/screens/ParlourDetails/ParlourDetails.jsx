@@ -227,7 +227,7 @@ const ParlourDetails = ({ route, navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#FFFBF6',
   },
   imageContainer: {
     height: 300,
@@ -240,7 +240,7 @@ const styles = StyleSheet.create({
   },
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.4)',
+    backgroundColor: 'rgba(22,11,38,0.45)',
   },
   backButton: {
     position: 'absolute',
@@ -253,6 +253,7 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 18,
     marginLeft: 5,
+    fontWeight: '500',
   },
   headerContent: {
     flexDirection: 'row',
@@ -271,10 +272,11 @@ const styles = StyleSheet.create({
     fontSize: 26,
     color: '#fff',
     marginBottom: 4,
+    fontWeight: '700',
   },
   locationText: {
-    fontSize: 16,
-    color: '#fff',
+    fontSize: 15,
+    color: 'rgba(255,255,255,0.9)',
     marginBottom: 8,
   },
   ratingContainer: {
@@ -282,10 +284,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   bookButton: {
-    backgroundColor: primaryColor,
+    backgroundColor: '#D41172',
     paddingVertical: 10,
     paddingHorizontal: 20,
-    borderRadius: 25,
+    borderRadius: 50,
     marginLeft: 10,
   },
   bookButtonText: {
@@ -295,7 +297,7 @@ const styles = StyleSheet.create({
   },
   tabContainer: {
     flexDirection: 'row',
-    backgroundColor: '#000',
+    backgroundColor: '#160B26',
   },
   tab: {
     flex: 1,
@@ -304,19 +306,18 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   activeTab: {
-    backgroundColor: primaryColor,
+    backgroundColor: '#D41172',
   },
   tabText: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '500',
-    color: '#fff',
+    color: 'rgba(255,255,255,0.75)',
   },
   activeTabText: {
-    fontWeight: 'bold',
+    fontWeight: '700',
+    color: '#fff',
   },
   content: {
-    // This style might need adjustment depending on other sections' needs
-    // For AboutSection, it's better handled by the ScrollView and Card styles within it.
     flex: 1,
   },
 });

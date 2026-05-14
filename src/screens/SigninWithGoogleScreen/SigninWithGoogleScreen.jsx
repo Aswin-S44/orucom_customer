@@ -208,7 +208,7 @@ const SigninWithGoogleScreen = ({ navigation }) => {
 
   return (
     <LinearGradient
-      colors={[primaryColor, lightPurple]}
+      colors={[primaryColor, '#A80E5A']}
       style={styles.container}
     >
       <StatusBar backgroundColor={primaryColor} barStyle="light-content" />
@@ -276,37 +276,45 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
   },
-  welcomeImage: { width: 125, height: 125, borderRadius: 12 },
+  welcomeImage: { width: 125, height: 125, borderRadius: 20 },
   title: {
-    fontSize: 30,
-    fontWeight: '600',
+    fontSize: 32,
+    fontWeight: '700',
     color: '#fff',
     marginTop: 20,
     marginBottom: 60,
+    letterSpacing: 0.5,
   },
   signInButton: {
     backgroundColor: '#fff',
     paddingVertical: 15,
+    paddingHorizontal: 28,
     width: '90%',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 12,
+    borderRadius: 50,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.07,
+    shadowRadius: 24,
+    elevation: 5,
   },
   googleIcon: { width: 24, height: 24, marginRight: 10 },
-  signInButtonText: { color: primaryColor, fontSize: 16, fontWeight: 'bold' },
+  signInButtonText: { color: '#D41172', fontSize: 16, fontWeight: '600', letterSpacing: 0.2 },
   emailLinkContainer: { marginVertical: 15 },
   emailLinkText: {
-    color: '#fff',
-    fontSize: 16,
+    color: 'rgba(255,255,255,0.9)',
+    fontSize: 15,
     textDecorationLine: 'underline',
+    fontWeight: '500',
   },
   footerContainer: { marginTop: 15, width: '90%' },
-  footerText: { color: '#fff', fontSize: 13, textAlign: 'center' },
+  footerText: { color: 'rgba(255,255,255,0.75)', fontSize: 13, textAlign: 'center', lineHeight: 20 },
   linkText: {
-    color: '#2768F5',
+    color: '#fff',
     textDecorationLine: 'underline',
-    fontWeight: 'bold',
+    fontWeight: '600',
   },
   modalOverlay: {
     flex: 1,

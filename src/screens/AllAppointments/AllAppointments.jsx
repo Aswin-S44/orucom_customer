@@ -26,8 +26,8 @@ const getStatusStyles = status => {
   switch (status) {
     case 'pending':
       return {
-        container: { backgroundColor: '#FAC3D7' },
-        text: { color: '#111' },
+        container: { backgroundColor: '#FFE0EF' },
+        text: { color: '#D41172' },
       };
     case 'completed':
       return {
@@ -36,13 +36,13 @@ const getStatusStyles = status => {
       };
     case 'confirmed':
       return {
-        container: { backgroundColor: primaryColor },
+        container: { backgroundColor: '#D41172' },
         text: { color: '#FFFFFF' },
       };
     case 'canceled':
       return {
-        container: { backgroundColor: '#F1F1F1' },
-        text: { color: '#9E9E9E' },
+        container: { backgroundColor: '#F1F5F9' },
+        text: { color: '#94A3B8' },
       };
     default:
       return {};
@@ -238,35 +238,37 @@ const AllAppointments = ({ route, navigation }) => {
 const styles = StyleSheet.create({
   outerContainer: {
     flex: 1,
-    backgroundColor: primaryColor,
+    backgroundColor: '#D41172',
   },
   container: {
     flex: 1,
     marginTop: 80,
-    backgroundColor: '#fff',
+    backgroundColor: '#FFFBF6',
     borderTopLeftRadius: 40,
     borderTopRightRadius: 40,
     paddingHorizontal: 25,
   },
   mainTitle: {
     fontSize: 26,
-    fontWeight: '400',
-    color: '#333',
+    fontWeight: '600',
+    color: '#160B26',
     textAlign: 'center',
     marginVertical: 25,
   },
   headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    backgroundColor: '#FAFAFA',
+    backgroundColor: '#FFF0F7',
     borderRadius: 12,
     padding: 15,
     marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#FFE0EF',
   },
   headerText: {
     fontSize: 15,
-    fontWeight: '500',
-    color: '#111',
+    fontWeight: '600',
+    color: '#374151',
   },
   itemContainer: {
     flexDirection: 'row',
@@ -287,18 +289,18 @@ const styles = StyleSheet.create({
   expertName: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#333',
+    color: '#160B26',
   },
   expertSpecialty: {
     fontSize: 13,
-    color: '#777',
+    color: '#6B7280',
   },
   descriptionColumn: {
     flex: 1.2,
   },
   descriptionText: {
     fontSize: 12,
-    color: '#555',
+    color: '#6B7280',
     lineHeight: 20,
   },
   statusColumn: {
@@ -312,11 +314,11 @@ const styles = StyleSheet.create({
   },
   statusText: {
     fontSize: 10,
-    fontWeight: '500',
+    fontWeight: '600',
   },
   separator: {
     height: 1,
-    backgroundColor: '#F0F0F0',
+    backgroundColor: '#F1F5F9',
   },
   emptyListContainer: {
     flexGrow: 1,

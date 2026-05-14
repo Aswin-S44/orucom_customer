@@ -156,7 +156,7 @@ const EditProfileScreen = ({ navigation }) => {
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor={primaryColor} />
       <LinearGradient
-        colors={['#FF6B6B', primaryColor]}
+        colors={['#D41172', '#A80E5A']}
         style={styles.headerGradient}
       >
         <View style={styles.header}>
@@ -273,7 +273,7 @@ const EditProfileScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#FFFBF6',
   },
   headerGradient: {
     paddingTop: Platform.OS === 'ios' ? 50 : 20,
@@ -281,7 +281,7 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 30,
     borderBottomRightRadius: 30,
     overflow: 'hidden',
-    marginBottom: -20, // Overlap with scrollview
+    marginBottom: -20,
   },
   header: {
     flexDirection: 'row',
@@ -305,6 +305,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#fff',
+    letterSpacing: 0.2,
   },
   imageContainer: {
     alignItems: 'center',
@@ -318,16 +319,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 2,
     borderColor: 'rgba(255,255,255,0.7)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.2,
-    shadowRadius: 10,
+    shadowColor: '#D41172',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.18,
+    shadowRadius: 32,
+    elevation: 8,
   },
   avatar: {
     width: 130,
     height: 130,
     borderRadius: 65,
-    backgroundColor: '#E0E0E0',
+    backgroundColor: '#FFE0EF',
     borderWidth: 2,
     borderColor: '#fff',
   },
@@ -335,60 +337,58 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 5,
     right: '33%',
-    backgroundColor: '#4CAF50', // A nice green for edit action
+    backgroundColor: '#D41172',
     padding: 10,
     borderRadius: 22,
     borderWidth: 2,
     borderColor: '#fff',
-    shadowColor: '#000',
+    shadowColor: '#D41172',
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
     elevation: 6,
   },
   scrollContent: {
-    paddingTop: 40, // Account for the overlap
+    paddingTop: 40,
     paddingHorizontal: 20,
     paddingBottom: 30,
   },
   card: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 15,
+    borderRadius: 16,
     padding: 20,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 0.08,
-    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.07,
+    shadowRadius: 24,
+    elevation: 5,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
   },
   inputGroup: {
     marginBottom: 20,
   },
   label: {
     fontSize: 14,
-    color: '#666',
+    color: '#6B7280',
     marginBottom: 8,
     fontWeight: '600',
   },
   input: {
-    backgroundColor: '#F8F9FA',
-    borderRadius: 10,
-    paddingHorizontal: 15,
+    backgroundColor: '#F8FAFC',
+    borderRadius: 12,
+    paddingHorizontal: 16,
     paddingVertical: 12,
     fontSize: 16,
-    color: '#333',
+    color: '#1A1A1A',
     borderWidth: 1,
-    borderColor: '#E8E8E8',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.03,
-    shadowRadius: 2,
-    elevation: 1,
+    borderColor: '#E2E8F0',
   },
   inputError: {
-    borderColor: '#FF6B6B', // Softer red for error
+    borderColor: '#D41172',
   },
   errorText: {
-    color: '#FF6B6B',
+    color: '#D41172',
     fontSize: 12,
     marginTop: 5,
     marginLeft: 5,
@@ -415,22 +415,22 @@ const styles = StyleSheet.create({
     bottom: 30,
     left: 20,
     right: 20,
-    borderRadius: 25,
+    borderRadius: 50,
     padding: 15,
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 2000,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.07,
+    shadowRadius: 24,
     elevation: 5,
   },
   toastSuccess: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: '#D41172',
   },
   toastError: {
-    backgroundColor: '#FF6B6B',
+    backgroundColor: '#A80E5A',
   },
   toastText: {
     color: '#fff',

@@ -11,7 +11,7 @@ import {
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { GREY } from '../../constants/colors';
 
-const primaryColor = '#8E44AD';
+const primaryColor = '#D41172';
 
 const servicesData = [
   {
@@ -103,12 +103,12 @@ const AppointmentScreen = ({ route, navigation }) => {
 const styles = StyleSheet.create({
   outerContainer: {
     flex: 1,
-    backgroundColor: primaryColor,
+    backgroundColor: '#D41172',
   },
   container: {
     flex: 1,
     marginTop: 60,
-    backgroundColor: '#fff',
+    backgroundColor: '#FFFBF6',
     borderTopLeftRadius: 40,
     borderTopRightRadius: 40,
   },
@@ -117,15 +117,15 @@ const styles = StyleSheet.create({
   },
   mainTitle: {
     fontSize: 26,
-    fontWeight: 400,
-    color: '#333',
+    fontWeight: '600',
+    color: '#160B26',
     textAlign: 'center',
     marginBottom: 30,
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: 500,
-    color: '#333',
+    fontWeight: '600',
+    color: '#160B26',
     marginBottom: 15,
   },
   radioGroup: {
@@ -142,7 +142,7 @@ const styles = StyleSheet.create({
     width: 22,
     borderRadius: 11,
     borderWidth: 2,
-    borderColor: primaryColor,
+    borderColor: '#D41172',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 8,
@@ -151,32 +151,32 @@ const styles = StyleSheet.create({
     height: 12,
     width: 12,
     borderRadius: 6,
-    backgroundColor: primaryColor,
+    backgroundColor: '#D41172',
   },
   radioLabel: {
     fontSize: 16,
-    color: '#555',
+    color: '#6B7280',
   },
   card: {
     flexDirection: 'row',
-    backgroundColor: GREY,
-    borderRadius: 15,
+    backgroundColor: '#F8FAFC',
+    borderRadius: 16,
     marginBottom: 15,
     overflow: 'hidden',
     alignItems: 'center',
     shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
     padding: 10,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
   },
   cardImage: {
     width: 70,
     height: 70,
-    borderRadius: 10,
+    borderRadius: 12,
   },
   cardTextContainer: {
     flex: 1,
@@ -184,39 +184,46 @@ const styles = StyleSheet.create({
   },
   cardTitle: {
     fontSize: 18,
-    fontWeight: 500,
-    color: '#333',
+    fontWeight: '600',
+    color: '#374151',
   },
   cardSubtitle: {
     fontSize: 14,
-    color: '#777',
+    color: '#6B7280',
     marginTop: 4,
   },
   styleButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F3E5F5',
+    backgroundColor: '#FFF0F7',
     paddingHorizontal: 15,
     paddingVertical: 10,
     borderRadius: 10,
   },
   styleButtonText: {
-    color: 'grey',
-    fontWeight: 400,
+    color: '#D41172',
+    fontWeight: '500',
     marginRight: 5,
   },
   nextButton: {
-    backgroundColor: primaryColor,
-    padding: 18,
-    borderRadius: 15,
+    backgroundColor: '#D41172',
+    paddingVertical: 18,
+    paddingHorizontal: 28,
+    borderRadius: 50,
     alignItems: 'center',
     marginTop: 20,
     marginBottom: 20,
+    shadowColor: '#D41172',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.18,
+    shadowRadius: 32,
+    elevation: 8,
   },
   nextButtonText: {
     color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
+    fontSize: 16,
+    fontWeight: '600',
+    letterSpacing: 0.2,
   },
 });
 

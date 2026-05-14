@@ -68,7 +68,7 @@ const OnboardingScreen = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+      <StatusBar barStyle="dark-content" backgroundColor="#FFFBF6" />
       <FlatList
         ref={flatListRef}
         data={slides}
@@ -96,7 +96,7 @@ const OnboardingScreen = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
+  container: { flex: 1, backgroundColor: '#FFFBF6' },
   slide: { width, alignItems: 'center', justifyContent: 'center', padding: 20 },
   mainImage: {
     width: width * 0.7,
@@ -105,19 +105,20 @@ const styles = StyleSheet.create({
     marginBottom: 40,
   },
   title: {
-    fontSize: 24,
-    fontWeight: '500',
-    color: '#333',
+    fontSize: 26,
+    fontWeight: '600',
+    color: '#160B26',
     textAlign: 'center',
     marginBottom: 15,
+    lineHeight: 34,
   },
   text: {
     fontSize: 16,
-    color: '#888',
+    color: '#6B7280',
     textAlign: 'center',
     paddingHorizontal: 20,
+    lineHeight: 25,
   },
-
   footer: { padding: 20, paddingBottom: 40 },
   pagerContainer: {
     flexDirection: 'row',
@@ -126,15 +127,21 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   dot: { height: 10, borderRadius: 5, marginHorizontal: 4 },
-  dotActive: { backgroundColor: primaryColor, width: 25 },
-  dotInactive: { backgroundColor: '#D1C4E9', width: 10 },
+  dotActive: { backgroundColor: '#D41172', width: 25 },
+  dotInactive: { backgroundColor: '#FFE0EF', width: 10 },
   getStartedButton: {
-    backgroundColor: primaryColor,
-    padding: 18,
-    borderRadius: 15,
+    backgroundColor: '#D41172',
+    paddingVertical: 18,
+    paddingHorizontal: 28,
+    borderRadius: 50,
     alignItems: 'center',
+    shadowColor: '#D41172',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.18,
+    shadowRadius: 32,
+    elevation: 8,
   },
-  getStartedButtonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+  getStartedButtonText: { color: '#fff', fontSize: 16, fontWeight: '600', letterSpacing: 0.2 },
 });
 
 export default OnboardingScreen;
