@@ -152,7 +152,7 @@ const SignInScreen = ({ navigation }) => {
 
   return (
     <View style={styles.outerContainer}>
-      <StatusBar backgroundColor={primaryColor} barStyle="light-content" />
+      <StatusBar backgroundColor="#0D0618" barStyle="light-content" />
       <TouchableOpacity
         style={styles.backButton}
         onPress={() => navigation.goBack()}
@@ -289,7 +289,7 @@ const SignInScreen = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  outerContainer: { flex: 1, backgroundColor: '#D41172' },
+  outerContainer: { flex: 1, backgroundColor: '#0D0618' },
   backButton: {
     position: 'absolute',
     top: 55,
@@ -302,18 +302,23 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     marginTop: 100,
-    backgroundColor: '#FFFBF6',
+    backgroundColor: '#FFFFFF',
     borderTopLeftRadius: 40,
     borderTopRightRadius: 40,
     padding: 25,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 20,
   },
   mainTitle: {
-    fontSize: 28,
-    fontWeight: '600',
+    fontSize: 32,
+    fontWeight: '800',
     color: '#160B26',
     textAlign: 'center',
     marginTop: 10,
     marginBottom: 30,
+    letterSpacing: 0.5,
   },
   errorBox: {
     backgroundColor: '#FFF0F7',
@@ -335,14 +340,19 @@ const styles = StyleSheet.create({
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: '#E2E8F0',
-    borderRadius: 12,
+    borderRadius: 14,
     paddingHorizontal: 16,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#FAFBFC',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    elevation: 1,
   },
   inputIcon: { marginRight: 10 },
-  input: { flex: 1, height: 50, fontSize: 16, color: '#1A1A1A' },
+  input: { flex: 1, height: 52, fontSize: 16, color: '#1A1A1A' },
   optionsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -359,12 +369,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 30,
     shadowColor: '#D41172',
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.18,
-    shadowRadius: 32,
-    elevation: 8,
+    shadowOffset: { width: 0, height: 14 },
+    shadowOpacity: 0.40,
+    shadowRadius: 40,
+    elevation: 12,
   },
-  signInButtonText: { color: '#fff', fontSize: 16, fontWeight: '600', letterSpacing: 0.2 },
+  signInButtonText: { color: '#fff', fontSize: 16, fontWeight: '700', letterSpacing: 0.5 },
   signUpContainer: {
     flexDirection: 'row',
     justifyContent: 'center',

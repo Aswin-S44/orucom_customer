@@ -112,7 +112,7 @@ const HelpSupportScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   outerContainer: {
     flex: 1,
-    backgroundColor: '#D41172',
+    backgroundColor: '#0D0618',
   },
   backButton: {
     position: 'absolute',
@@ -131,24 +131,33 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     marginTop: 100,
-    backgroundColor: '#FFFBF6',
+    backgroundColor: '#FFFFFF',
     borderTopLeftRadius: 40,
     borderTopRightRadius: 40,
     paddingHorizontal: 25,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 20,
   },
   mainTitle: {
-    fontSize: 28,
-    fontWeight: '600',
+    fontSize: 30,
+    fontWeight: '800',
     color: '#160B26',
     textAlign: 'center',
     marginTop: 25,
     marginBottom: 20,
+    letterSpacing: 0.3,
   },
   sectionTitle: {
-    fontSize: 20,
-    fontWeight: '600',
+    fontSize: 18,
+    fontWeight: '700',
     color: '#160B26',
     marginVertical: 15,
+    letterSpacing: 0.2,
+    borderLeftWidth: 3,
+    borderLeftColor: '#D41172',
+    paddingLeft: 10,
   },
   helpItem: {
     flexDirection: 'row',

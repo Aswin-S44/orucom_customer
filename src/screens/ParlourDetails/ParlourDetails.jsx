@@ -300,25 +300,31 @@ const styles = StyleSheet.create({
   },
   tabContainer: {
     flexDirection: 'row',
-    backgroundColor: '#160B26',
+    backgroundColor: '#0D0618',
+    paddingHorizontal: 5,
   },
   tab: {
     flex: 1,
     paddingVertical: 15,
     alignItems: 'center',
     justifyContent: 'center',
+    borderBottomWidth: 3,
+    borderBottomColor: 'transparent',
   },
   activeTab: {
-    backgroundColor: '#D41172',
+    borderBottomColor: '#D41172',
+    backgroundColor: 'transparent',
   },
   tabText: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '500',
-    color: 'rgba(255,255,255,0.75)',
+    color: 'rgba(255,255,255,0.5)',
+    letterSpacing: 0.3,
   },
   activeTabText: {
     fontWeight: '700',
     color: '#fff',
+    letterSpacing: 0.3,
   },
   content: {
     flex: 1,

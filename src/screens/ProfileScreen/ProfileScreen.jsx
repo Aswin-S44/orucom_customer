@@ -124,7 +124,7 @@ const ProfileScreen = ({ navigation }) => {
             }
           >
             <LinearGradient
-              colors={['#D41172', '#A80E5A']}
+              colors={['#0D0618', '#D41172']}
               style={styles.headerBackground}
             >
               <View style={styles.header}>
@@ -259,7 +259,7 @@ const ProfileScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   outerContainer: {
     flex: 1,
-    backgroundColor: '#FFFBF6',
+    backgroundColor: '#FFFFFF',
   },
   scrollContent: {
     flexGrow: 1,

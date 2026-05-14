@@ -166,7 +166,7 @@ const OTPVerificationScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFBF6',
+    backgroundColor: '#FFFFFF',
   },
   backButton: {
     position: 'absolute',
@@ -181,10 +181,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   mainTitle: {
-    fontSize: 28,
-    fontWeight: '600',
+    fontSize: 30,
+    fontWeight: '800',
     color: '#160B26',
     marginBottom: 20,
+    letterSpacing: 0.3,
   },
   illustration: {
     width: 150,
@@ -248,10 +249,10 @@ const styles = StyleSheet.create({
     width: '80%',
     marginTop: 20,
     shadowColor: '#D41172',
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.18,
-    shadowRadius: 32,
-    elevation: 8,
+    shadowOffset: { width: 0, height: 14 },
+    shadowOpacity: 0.40,
+    shadowRadius: 40,
+    elevation: 12,
   },
   createButtonText: {
     color: '#fff',

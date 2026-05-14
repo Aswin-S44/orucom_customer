@@ -157,7 +157,7 @@ const EditProfileScreen = ({ navigation }) => {
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor={primaryColor} />
       <LinearGradient
-        colors={['#D41172', '#A80E5A']}
+        colors={['#0D0618', '#D41172']}
         style={styles.headerGradient}
       >
         <View style={styles.header}>
@@ -274,7 +274,7 @@ const EditProfileScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFBF6',
+    backgroundColor: '#FFFFFF',
   },
   headerGradient: {
     paddingTop: Platform.OS === 'ios' ? 50 : 20,

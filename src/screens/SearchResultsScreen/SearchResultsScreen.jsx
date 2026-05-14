@@ -206,7 +206,7 @@ const SearchResultsScreen = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  outerContainer: { flex: 1, backgroundColor: '#D41172' },
+  outerContainer: { flex: 1, backgroundColor: '#0D0618' },
   backButton: {
     position: 'absolute',
     top: 55,
@@ -219,18 +219,23 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     marginTop: 100,
-    backgroundColor: '#FFFBF6',
+    backgroundColor: '#FFFFFF',
     borderTopLeftRadius: 40,
     borderTopRightRadius: 40,
     padding: 15,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 20,
   },
   searchTitle: {
-    fontSize: 20,
-    fontWeight: '600',
+    fontSize: 18,
+    fontWeight: '700',
     color: '#160B26',
     textAlign: 'center',
     marginTop: 10,
-    marginBottom: 30,
+    marginBottom: 25,
+    letterSpacing: 0.2,
   },
   searchBox: {
     paddingHorizontal: 20,
@@ -240,17 +245,17 @@ const styles = StyleSheet.create({
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F8FAFC',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    borderWidth: 1,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 50,
+    paddingHorizontal: 20,
+    borderWidth: 1.5,
     borderColor: '#E2E8F0',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-    height: 50,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    elevation: 3,
+    height: 52,
     width: '100%',
   },
   searchIcon: {

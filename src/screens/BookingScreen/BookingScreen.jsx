@@ -480,7 +480,7 @@ const BookingScreen = ({ route, navigation }) => {
 const styles = StyleSheet.create({
   outerContainer: {
     flex: 1,
-    backgroundColor: '#D41172',
+    backgroundColor: '#0D0618',
   },
   backButton: {
     position: 'absolute',
@@ -499,22 +499,27 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     marginTop: 90,
-    backgroundColor: '#FFFBF6',
+    backgroundColor: '#FFFFFF',
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,
     paddingHorizontal: 15,
     paddingVertical: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 20,
   },
   scrollViewContent: {
     paddingBottom: 10,
   },
   mainTitle: {
-    fontSize: 22,
-    fontWeight: '600',
+    fontSize: 24,
+    fontWeight: '800',
     color: '#160B26',
     textAlign: 'center',
     marginTop: 15,
     marginBottom: 10,
+    letterSpacing: 0.3,
   },
   errorMessageContainer: {
     flexDirection: 'row',
@@ -544,9 +549,13 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   sectionTitle: {
-    fontSize: 17,
-    fontWeight: '600',
+    fontSize: 16,
+    fontWeight: '700',
     color: '#160B26',
+    letterSpacing: 0.2,
+    borderLeftWidth: 3,
+    borderLeftColor: '#D41172',
+    paddingLeft: 8,
   },
   loadingText: {
     textAlign: 'center',
@@ -734,16 +743,16 @@ const styles = StyleSheet.create({
   },
   nextButton: {
     backgroundColor: '#D41172',
-    paddingVertical: 14,
+    paddingVertical: 16,
     paddingHorizontal: 28,
     borderRadius: 50,
     alignItems: 'center',
     marginVertical: 10,
     shadowColor: '#D41172',
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.18,
-    shadowRadius: 32,
-    elevation: 8,
+    shadowOffset: { width: 0, height: 14 },
+    shadowOpacity: 0.40,
+    shadowRadius: 40,
+    elevation: 12,
   },
   disabledButton: {
     backgroundColor: '#94A3B8',
