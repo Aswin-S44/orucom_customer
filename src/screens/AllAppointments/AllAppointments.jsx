@@ -8,7 +8,9 @@ import {
   Image,
   RefreshControl,
   TouchableOpacity,
+  Dimensions,
 } from 'react-native';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AuthContext } from '../../context/AuthContext';
 import EmptyComponent from '../../components/EmptyComponent/EmptyComponent';
@@ -23,30 +25,35 @@ import { primaryColor } from '../../constants/colors';
 import { useFocusEffect } from '@react-navigation/native';
 import { BACKEND_URL } from '../../services/apis';
 
+const { width } = Dimensions.get('window');
+
 const getStatusStyles = status => {
   switch (status) {
     case 'pending':
       return {
-        container: { backgroundColor: '#FFE0EF' },
+        container: { backgroundColor: '#FFF0F6', borderColor: '#FFD6E7' },
         text: { color: '#D41172' },
       };
     case 'completed':
       return {
-        container: { backgroundColor: '#E1BEE7' },
-        text: { color: '#6A1B9A' },
+        container: { backgroundColor: '#F3E5F5', borderColor: '#E1BEE7' },
+        text: { color: '#7B1FA2' },
       };
     case 'confirmed':
       return {
-        container: { backgroundColor: '#D41172' },
+        container: { backgroundColor: '#D41172', borderColor: '#D41172' },
         text: { color: '#FFFFFF' },
       };
     case 'canceled':
       return {
-        container: { backgroundColor: '#F1F5F9' },
-        text: { color: '#94A3B8' },
+        container: { backgroundColor: '#F8F9FA', borderColor: '#E9ECEF' },
+        text: { color: '#6C757D' },
       };
     default:
-      return {};
+      return {
+        container: { backgroundColor: '#F8F9FA', borderColor: '#E9ECEF' },
+        text: { color: '#6C757D' },
+      };
   }
 };
 
@@ -64,48 +71,59 @@ const HistoryItem = ({ item, navigation }) => {
 
   return (
     <TouchableOpacity
-      style={styles.itemContainer}
+      style={styles.card}
+      activeOpacity={0.9}
       onPress={() => {
         navigation.navigate('AppointmentSummaryScreen', { item });
       }}
     >
-      <View style={styles.expertColumn}>
-        <Image source={{ uri: expertImageUrl }} style={styles.avatar} />
-
-        <View>
-          <Text style={styles.expertName}>
-            {item?.expert?.name || 'Unknown Expert'}
+      <View style={styles.cardHeader}>
+        <View style={styles.shopInfo}>
+          <Ionicons name="business" size={16} color={primaryColor} />
+          <Text style={styles.shopName} numberOfLines={1}>
+            {item?.shop?.parlourName}
           </Text>
-
-          <Text style={styles.expertSpecialty}>
-            {formatText(item?.expert?.specialist ?? '')}
-          </Text>
-
-          <Text style={styles.shopName}>{item?.shop?.parlourName}</Text>
         </View>
-      </View>
-
-      <View style={styles.descriptionColumn}>
-        <Text style={styles.descriptionText}>
-          {formatTimestamp(item?.appointment?.createdAt)}
-        </Text>
-
-        {/* <Text style={styles.descriptionText}>
-          {item?.slot?.startTime || ''}
-        </Text> */}
-
-        <Text style={styles.amountText}>
-          Amount : ₹{item?.appointment?.rate ?? 0}
-        </Text>
-      </View>
-
-      <View style={styles.statusColumn}>
-        <View style={[styles.statusBadge, statusStyles.container]}>
+        <View
+          style={[
+            styles.statusBadge,
+            statusStyles.container,
+            { borderWidth: 1 },
+          ]}
+        >
           <Text style={[styles.statusText, statusStyles.text]}>
             {convertFIrstCharToUpper(appointmentStatus)}
           </Text>
         </View>
       </View>
+
+      <View style={styles.cardBody}>
+        <Image source={{ uri: expertImageUrl }} style={styles.expertAvatar} />
+        <View style={styles.mainDetails}>
+          <Text style={styles.expertName}>
+            {item?.expert?.name || 'Unknown Expert'}
+          </Text>
+          <Text style={styles.specialtyText}>
+            {formatText(item?.expert?.specialist ?? 'Stylist')}
+          </Text>
+
+          <View style={styles.dateTimeRow}>
+            <Ionicons name="calendar-outline" size={14} color="#6B7280" />
+            <Text style={styles.dateText}>
+              {formatTimestamp(item?.appointment?.createdAt)}
+            </Text>
+          </View>
+        </View>
+        <View style={styles.priceContainer}>
+          <Text style={styles.priceLabel}>Total</Text>
+          <Text style={styles.priceValue}>₹{item?.appointment?.rate ?? 0}</Text>
+        </View>
+      </View>
+
+      {/* <View style={styles.cardFooter}>
+        <Text style={styles.viewDetailsText}>View Summary</Text>
+        <Ionicons name="chevron-forward" size={14} color="#9CA3AF" />
+      </View> */}
     </TouchableOpacity>
   );
 };
@@ -126,11 +144,8 @@ const AllAppointments = ({ route, navigation }) => {
       setLoading(true);
 
       const token = await AsyncStorage.getItem('token');
-      console.log('TOKEN=----------------', token);
 
       const url = `${BACKEND_URL}/api/v1/customer/appointments`;
-
-      console.log('appointments url------------', url);
 
       const response = await fetch(url, {
         method: 'GET',
@@ -148,7 +163,6 @@ const AllAppointments = ({ route, navigation }) => {
 
       setAppointments(result?.data || []);
     } catch (e) {
-      console.log('appointment fetch error------------', e);
       setAppointments([]);
     } finally {
       setLoading(false);
@@ -169,9 +183,7 @@ const AllAppointments = ({ route, navigation }) => {
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-
     await fetchAppointmentHistory();
-
     setRefreshing(false);
   }, [fetchAppointmentHistory]);
 
@@ -180,186 +192,173 @@ const AllAppointments = ({ route, navigation }) => {
   }
 
   return (
-    <View style={styles.outerContainer}>
+    <View style={styles.mainContainer}>
       <StatusBar backgroundColor={primaryColor} barStyle="light-content" />
 
-      <View style={styles.container}>
-        <Text style={styles.mainTitle}>Appointment History</Text>
+      <View style={styles.headerBackground}>
+        <Text style={styles.headerTitle}>My Appointments</Text>
+        <Text style={styles.headerSubtitle}>Manage your beauty sessions</Text>
+      </View>
 
-        {appointments.length === 0 && !loading ? (
-          <FlatList
-            data={[]}
-            renderItem={null}
-            ListEmptyComponent={
-              <EmptyComponent title="No appointments Found" />
-            }
-            refreshControl={
-              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-            }
-            contentContainerStyle={styles.emptyListContainer}
-          />
-        ) : (
-          <>
-            <View style={styles.headerRow}>
-              <Text style={[styles.headerText, { flex: 1.5 }]}>
-                Beauty Expert
-              </Text>
-
-              <Text style={[styles.headerText, { flex: 1.2 }]}>
-                Description
-              </Text>
-
-              <Text
-                style={[styles.headerText, { flex: 0.8, textAlign: 'right' }]}
-              >
-                Status
-              </Text>
-            </View>
-
-            <FlatList
-              data={appointments}
-              renderItem={({ item }) => (
-                <HistoryItem item={item} navigation={navigation} />
-              )}
-              keyExtractor={(item, index) =>
-                String(item?.appointment?.id || index)
-              }
-              showsVerticalScrollIndicator={false}
-              ItemSeparatorComponent={() => <View style={styles.separator} />}
-              refreshControl={
-                <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-              }
+      <View style={styles.listWrapper}>
+        <FlatList
+          data={appointments}
+          renderItem={({ item }) => (
+            <HistoryItem item={item} navigation={navigation} />
+          )}
+          keyExtractor={(item, index) => String(item?.appointment?.id || index)}
+          contentContainerStyle={styles.listContent}
+          showsVerticalScrollIndicator={false}
+          ListEmptyComponent={
+            !loading && <EmptyComponent title="No appointments scheduled yet" />
+          }
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={[primaryColor]}
+              tintColor={primaryColor}
             />
-          </>
-        )}
+          }
+        />
       </View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  outerContainer: {
+  mainContainer: {
     flex: 1,
-    backgroundColor: '#0D0618',
+    backgroundColor: '#F8F9FE',
   },
-
-  container: {
-    flex: 1,
-    marginTop: 80,
-    backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 40,
-    borderTopRightRadius: 40,
+  headerBackground: {
+    backgroundColor: primaryColor,
+    paddingTop: 60,
+    paddingBottom: 40,
     paddingHorizontal: 25,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -4 },
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+  },
+  headerTitle: {
+    fontSize: 26,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+  },
+  headerSubtitle: {
+    fontSize: 14,
+    color: 'rgba(255,255,255,0.8)',
+    marginTop: 5,
+  },
+  listWrapper: {
+    flex: 1,
+    marginTop: -20,
+  },
+  listContent: {
+    paddingHorizontal: 20,
+    paddingBottom: 30,
+    paddingTop: 10,
+  },
+  card: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 16,
+    marginBottom: 16,
+    shadowColor: '#D41172',
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
-    shadowRadius: 20,
+    shadowRadius: 12,
+    elevation: 4,
   },
-
-  mainTitle: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: '#160B26',
-    textAlign: 'center',
-    marginVertical: 25,
-    letterSpacing: 0.3,
-  },
-
-  headerRow: {
+  cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    backgroundColor: '#FFF0F7',
-    borderRadius: 12,
-    padding: 15,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: '#FFE0EF',
+    alignItems: 'center',
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
+    marginBottom: 12,
   },
-
-  headerText: {
+  shopInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  shopName: {
     fontSize: 15,
-    fontWeight: '600',
-    color: '#374151',
+    fontWeight: '700',
+    color: '#1F2937',
+    marginLeft: 6,
   },
-
-  itemContainer: {
+  statusBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  statusText: {
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  },
+  cardBody: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 15,
   },
-
-  expertColumn: {
-    flex: 1.5,
-    flexDirection: 'row',
-    alignItems: 'center',
+  expertAvatar: {
+    width: 60,
+    height: 60,
+    borderRadius: 15,
+    backgroundColor: '#F3F4F6',
   },
-
-  avatar: {
-    width: 45,
-    height: 45,
-    borderRadius: 22.5,
-    marginRight: 10,
+  mainDetails: {
+    flex: 1,
+    marginLeft: 15,
   },
-
   expertName: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#160B26',
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#111827',
   },
-
-  expertSpecialty: {
+  specialtyText: {
     fontSize: 13,
     color: '#6B7280',
-  },
-
-  shopName: {
-    fontSize: 12,
-    color: primaryColor,
     marginTop: 2,
   },
-
-  descriptionColumn: {
-    flex: 1.2,
+  dateTimeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 6,
   },
-
-  descriptionText: {
+  dateText: {
     fontSize: 12,
     color: '#6B7280',
-    lineHeight: 20,
+    marginLeft: 4,
   },
-
-  amountText: {
-    fontSize: 12,
-    color: '#111',
-    fontWeight: '600',
-    marginTop: 2,
-  },
-
-  statusColumn: {
-    flex: 0.8,
+  priceContainer: {
     alignItems: 'flex-end',
   },
-
-  statusBadge: {
-    borderRadius: 15,
-    paddingVertical: 6,
-    paddingHorizontal: 12,
+  priceLabel: {
+    fontSize: 11,
+    color: '#9CA3AF',
   },
-
-  statusText: {
-    fontSize: 10,
-    fontWeight: '600',
+  priceValue: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: primaryColor,
   },
-
-  separator: {
-    height: 1,
-    backgroundColor: '#F1F5F9',
-  },
-
-  emptyListContainer: {
-    flexGrow: 1,
-    justifyContent: 'center',
+  cardFooter: {
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'flex-end',
+    marginTop: 12,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: '#F9FAFB',
+  },
+  viewDetailsText: {
+    fontSize: 12,
+    color: '#9CA3AF',
+    fontWeight: '600',
+    marginRight: 4,
   },
 });
 

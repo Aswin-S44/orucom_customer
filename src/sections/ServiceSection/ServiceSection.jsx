@@ -57,6 +57,13 @@ const ServiceItem = ({ item, shopId, experts, offers }) => {
         onPressOut={handlePressOut}
         activeOpacity={0.8}
         onPress={() => {
+          console.log('TEST-------------------', {
+            shopId: shopId,
+            serviceId: item.id,
+            experts,
+            service: item,
+            offers,
+          });
           navigation.navigate('BookingScreen', {
             shopId: shopId,
             serviceId: item.id,

@@ -461,16 +461,13 @@ export const updateUserData = async (uid, updateData) => {
   try {
     const token = await AsyncStorage.getItem('token');
 
-    console.log('updateData----------------', updateData);
     if (
       updateData.profileImage &&
       typeof updateData.profileImage === 'string' &&
       (updateData.profileImage.startsWith('file://') ||
         updateData.profileImage.startsWith('data:image/'))
     ) {
-      console.log('******************');
       const formData = new FormData();
-      console.log('#######################');
 
       formData.append('file', {
         uri: updateData.profileImage,
@@ -491,8 +488,6 @@ export const updateUserData = async (uid, updateData) => {
 
       const responseData = await cloudinaryResponse.json();
 
-      console.log('Cloudinary Response:', responseData);
-
       if (responseData.secure_url) {
         updateData.profileImage = responseData.secure_url;
       } else {
@@ -501,8 +496,6 @@ export const updateUserData = async (uid, updateData) => {
     }
 
     const updateUrl = `${BACKEND_URL}/api/v1/customer/profile`;
-
-    console.log('updateUrl---------------', updateUrl);
 
     const response = await fetch(updateUrl, {
       method: 'PATCH',
@@ -515,11 +508,8 @@ export const updateUserData = async (uid, updateData) => {
 
     const result = await response.json();
 
-    console.log('Update Response:', result);
-
     return true;
   } catch (error) {
-    console.log('UPDATE USER ERROR:', error);
     return false;
   }
 };
@@ -682,7 +672,7 @@ export const updateCustomer = async (uid, dataToUpdate) => {
 
 export const getReviews = async (placeId, page = 0) => {
   const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=name,rating,reviews&key=${GOOGLE_MAPS_API_KEY}`;
- 
+
   try {
     const res = await axios.get(url);
     if (res?.data?.result) {
@@ -716,7 +706,7 @@ export const getOfferByServiceAndShop = async (serviceId, shopId) => {
 
 export const getGalleryImages = async (placeId, page = 0) => {
   const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=photos&key=${GOOGLE_MAPS_API_KEY}`;
-  console.log('URL----------------------', url);
+
   try {
     const res = await fetch(url);
     const data = await res.json();

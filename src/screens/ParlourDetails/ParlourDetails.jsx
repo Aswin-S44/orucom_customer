@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   StatusBar,
+  ActivityIndicator,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import Reviews from '../../components/Reviews/Reviews';
@@ -20,91 +21,136 @@ import { updateShopViewers } from '../../apis/services';
 import { BACKEND_URL } from '../../services/apis';
 
 const ParlourDetails = ({ route, navigation }) => {
-  const { parlourData } = route.params;
+  const routeParlourData = route.params?.parlourData || null;
 
-  const [activeTab, setActiveTab] = React.useState('Service');
-  const [services, setServices] = React.useState([]);
-  const [offers, setOffers] = React.useState([]);
-  const [loadingServices, setLoadingServices] = React.useState(false);
-  const [loadingOffers, setLoadingOffers] = React.useState(false);
+  const shopId =
+    routeParlourData?.id || routeParlourData?._id || routeParlourData?.uid;
+
+  const [activeTab, setActiveTab] = useState('Service');
+  const [parlourData, setParlourData] = useState(routeParlourData);
+  const [services, setServices] = useState([]);
+  const [offers, setOffers] = useState([]);
   const [experts, setExperts] = useState([]);
-  const [loading, setLoading] = useState(false);
-  console.log('parlourData-----------------', parlourData);
-  useEffect(() => {
-    if (!parlourData?.id) return;
+  const [loading, setLoading] = useState(true);
 
-    const fetchServices = async () => {
-      try {
-        setLoadingServices(true);
-        const url = `${BACKEND_URL}/api/v1/customer/shop/${parlourData.id}`;
-        console.log('URL******************', url);
-
-        const res = await fetch(url);
-        const data = await res.json();
-        setLoadingServices(false);
-
-        console.log('FULL DATA:', JSON.stringify(data, null, 2));
-
-        // ✅ handle both object & array response
-        let services = [];
-        let offers = [];
-
-        if (Array.isArray(data)) {
-          services = data.flatMap(item => item.services || []);
-          offers = data.flatMap(item => item.offers || []);
-        } else {
-          services = data?.services || [];
-          offers = data?.offers || [];
-        }
-
-        setServices(services);
-        setOffers(offers);
-      } catch (err) {
-        console.log('ERROR:', err);
-        setServices([]);
-        setOffers([]);
-        setLoadingServices(false);
-      }
-    };
-
-    fetchServices();
-  }, [parlourData?.id]);
-
-  useEffect(() => {
-    if (parlourData) {
-      // if (parlourData?.services?.length > 0) {
-      //   setServices(parlourData?.services ?? []);
-      // }
-      // if (parlourData?.offers?.length > 0) {
-      //   setOffers(parlourData?.offers ?? []);
-      // }
-      if (parlourData?.experts?.length > 0) {
-        setExperts(parlourData?.experts ?? []);
-      }
+  const fetchShopData = useCallback(async () => {
+    if (!shopId) {
+      setLoading(false);
+      return;
     }
-  }, [parlourData]);
+
+    try {
+      setLoading(true);
+      const res = await fetch(`${BACKEND_URL}/api/v1/customer/shop/${shopId}`);
+      const data = await res.json();
+
+      if (data?.shop) {
+        setParlourData(prev => ({
+          ...prev,
+          ...data.shop,
+          totalRating: prev?.totalRating ?? data.shop?.totalRating ?? 0,
+        }));
+        setServices(data.services || []);
+        setOffers(data.offers || []);
+        setExperts(data.shop.experts || []);
+      }
+    } catch (err) {
+      console.error('Error fetching shop details:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [shopId]);
 
   useEffect(() => {
-    if (parlourData) {
-      updateShopViewers(parlourData.id);
+    fetchShopData();
+    if (shopId) {
+      updateShopViewers(shopId);
     }
-  }, [parlourData]);
+  }, [fetchShopData, shopId]);
+
+  if (loading && !parlourData) {
+    return (
+      <View style={styles.loaderContainer}>
+        <ActivityIndicator size="large" color={primaryColor} />
+      </View>
+    );
+  }
+
+  if (!parlourData) {
+    return (
+      <View style={styles.loaderContainer}>
+        <Text>Failed to load shop details.</Text>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={{ marginTop: 20 }}
+        >
+          <Text style={{ color: primaryColor }}>Go Back</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  const displayImage =
+    parlourData?.shopImage || parlourData?.profileImage || NO_IMAGE;
+
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case 'About':
+        return (
+          <AboutSection
+            about={parlourData?.about ?? ''}
+            experts={experts}
+            phone={parlourData?.phone ?? ''}
+            email={parlourData?.email ?? ''}
+            googleReviewUrl={parlourData?.googleReviewUrl ?? ''}
+            address={parlourData?.address ?? ''}
+          />
+        );
+      case 'Service':
+        return (
+          <View style={styles.content}>
+            <ServiceSection
+              shopId={shopId}
+              initialServices={services}
+              initialOffers={offers}
+              loadingServices={false}
+              loadingOffers={false}
+              experts={experts}
+            />
+          </View>
+        );
+      case 'Gallery':
+        return (
+          <View style={styles.content}>
+            <GallerySection shopId={shopId} placeId={parlourData?.placeId} />
+          </View>
+        );
+      case 'Review':
+        return (
+          <View style={styles.content}>
+            <Reviews placeId={parlourData?.placeId ?? null} />
+          </View>
+        );
+      default:
+        return null;
+    }
+  };
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      <StatusBar barStyle="light-content" />
+      <StatusBar
+        barStyle="light-content"
+        translucent
+        backgroundColor="transparent"
+      />
       <View style={styles.imageContainer}>
         <Image
           source={{
-            uri:
-              typeof parlourData?.shopImage === 'string'
-                ? parlourData?.shopImage
-                : NO_IMAGE,
+            uri: typeof displayImage === 'string' ? displayImage : NO_IMAGE,
           }}
           style={styles.image}
         />
         <View style={styles.overlay} />
-
         <TouchableOpacity
           style={styles.backButton}
           onPress={() => navigation.goBack()}
@@ -119,117 +165,42 @@ const ParlourDetails = ({ route, navigation }) => {
               {parlourData?.address ?? ''}
             </Text>
             <View style={styles.ratingContainer}>
-              <StarRating rating={parlourData.totalRating ?? 4.5} />
+              <StarRating rating={parlourData?.totalRating ?? 0} />
             </View>
           </View>
         </View>
       </View>
 
       <View style={styles.tabContainer}>
-        <TouchableOpacity
-          style={[styles.tab, activeTab === 'Service' && styles.activeTab]}
-          onPress={() => setActiveTab('Service')}
-        >
-          <Text
-            style={[
-              styles.tabText,
-              activeTab === 'Service' && styles.activeTabText,
-            ]}
+        {['Service', 'About', 'Gallery', 'Review'].map(tab => (
+          <TouchableOpacity
+            key={tab}
+            style={[styles.tab, activeTab === tab && styles.activeTab]}
+            onPress={() => setActiveTab(tab)}
           >
-            Service
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.tab, activeTab === 'About' && styles.activeTab]}
-          onPress={() => setActiveTab('About')}
-        >
-          <Text
-            style={[
-              styles.tabText,
-              activeTab === 'About' && styles.activeTabText,
-            ]}
-          >
-            About
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.tab, activeTab === 'Gallery' && styles.activeTab]}
-          onPress={() => setActiveTab('Gallery')}
-        >
-          <Text
-            style={[
-              styles.tabText,
-              activeTab === 'Gallery' && styles.activeTabText,
-            ]}
-          >
-            Gallery
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.tab, activeTab === 'Review' && styles.activeTab]}
-          onPress={() => setActiveTab('Review')}
-        >
-          <Text
-            style={[
-              styles.tabText,
-              activeTab === 'Review' && styles.activeTabText,
-            ]}
-          >
-            Review
-          </Text>
-        </TouchableOpacity>
+            <Text
+              style={[
+                styles.tabText,
+                activeTab === tab && styles.activeTabText,
+              ]}
+            >
+              {tab}
+            </Text>
+          </TouchableOpacity>
+        ))}
       </View>
 
-      {activeTab === 'About' && (
-        <AboutSection
-          about={parlourData?.about ?? ''}
-          experts={experts}
-          phone={parlourData?.phone ?? ''}
-          email={parlourData?.email ?? ''}
-          googleReviewUrl={parlourData?.googleReviewUrl ?? ''}
-          address={parlourData?.address ?? ''}
-        />
-      )}
-      {console.log('SERVICES-------------------', services)}
-
-      {activeTab === 'Service' && (
-        <View style={styles.content}>
-          <ServiceSection
-            shopId={parlourData.id}
-            initialServices={services}
-            initialOffers={offers}
-            loadingServices={loadingServices}
-            loadingOffers={loadingOffers}
-            experts={experts}
-          />
-        </View>
-      )}
-      {console.log(
-        'parlourData----------------',
-        parlourData ? parlourData : 'no parlourData',
-      )}
-      {activeTab === 'Gallery' && (
-        <View style={styles.content}>
-          <GallerySection
-            shopId={parlourData?.uid}
-            placeId={parlourData?.placeId}
-          />
-        </View>
-      )}
-
-      {activeTab === 'Review' && (
-        <View style={styles.content}>
-          <Reviews placeId={parlourData?.placeId ?? null} />
-        </View>
-      )}
+      {renderTabContent()}
     </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  container: { flex: 1, backgroundColor: '#FFFBF6' },
+  loaderContainer: {
     flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
     backgroundColor: '#FFFBF6',
   },
   imageContainer: {
@@ -237,13 +208,10 @@ const styles = StyleSheet.create({
     position: 'relative',
     justifyContent: 'flex-end',
   },
-  image: {
-    width: '100%',
-    height: '100%',
-  },
+  image: { width: '100%', height: '100%' },
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(22,11,38,0.45)',
+    backgroundColor: 'rgba(0,0,0,0.4)',
   },
   backButton: {
     position: 'absolute',
@@ -251,6 +219,7 @@ const styles = StyleSheet.create({
     left: 15,
     flexDirection: 'row',
     alignItems: 'center',
+    zIndex: 10,
   },
   backButtonText: {
     color: '#fff',
@@ -259,76 +228,32 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   headerContent: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-end',
     padding: 20,
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
   },
-  headerLeft: {
-    flex: 1,
-  },
-  title: {
-    fontSize: 26,
-    color: '#fff',
-    marginBottom: 4,
-    fontWeight: '700',
-  },
+  headerLeft: { flex: 1 },
+  title: { fontSize: 26, color: '#fff', marginBottom: 4, fontWeight: '700' },
   locationText: {
     fontSize: 15,
     color: 'rgba(255,255,255,0.9)',
     marginBottom: 8,
   },
-  ratingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  bookButton: {
-    backgroundColor: '#D41172',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 50,
-    marginLeft: 10,
-  },
-  bookButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  tabContainer: {
-    flexDirection: 'row',
-    backgroundColor: '#0D0618',
-    paddingHorizontal: 5,
-  },
+  ratingContainer: { flexDirection: 'row', alignItems: 'center' },
+  tabContainer: { flexDirection: 'row', backgroundColor: '#0D0618' },
   tab: {
     flex: 1,
     paddingVertical: 15,
     alignItems: 'center',
-    justifyContent: 'center',
     borderBottomWidth: 3,
     borderBottomColor: 'transparent',
   },
-  activeTab: {
-    borderBottomColor: '#D41172',
-    backgroundColor: 'transparent',
-  },
-  tabText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: 'rgba(255,255,255,0.5)',
-    letterSpacing: 0.3,
-  },
-  activeTabText: {
-    fontWeight: '700',
-    color: '#fff',
-    letterSpacing: 0.3,
-  },
-  content: {
-    flex: 1,
-  },
+  activeTab: { borderBottomColor: '#D41172' },
+  tabText: { fontSize: 14, fontWeight: '500', color: 'rgba(255,255,255,0.5)' },
+  activeTabText: { fontWeight: '700', color: '#fff' },
+  content: { flex: 1 },
 });
 
 export default ParlourDetails;

@@ -14,7 +14,6 @@ import { Calendar } from 'react-native-calendars';
 import { lightPurple, primaryColor } from '../../constants/colors';
 import BookingScreenSkeleton from '../../components/BookingScreenSkeleton/BookingScreenSkeleton';
 import { NO_IMAGE } from '../../constants/images';
-import firestore from '@react-native-firebase/firestore';
 import moment from 'moment';
 import { AuthContext } from '../../context/AuthContext';
 import { BACKEND_URL } from '../../services/apis';
@@ -58,7 +57,6 @@ const BookingScreen = ({ route, navigation }) => {
           const expertsData = await response.json();
 
           if (expertsData && expertsData?.experts?.length > 0) {
-            // const transformedShops = shopsData.shops.map(item => item.shop);
             setExperts(expertsData.experts);
           } else {
             setExperts([]);
@@ -72,8 +70,6 @@ const BookingScreen = ({ route, navigation }) => {
       fetchExperts();
     }
   }, [route?.params?.shopId]);
-
-  console.log('expertes==============', experts);
 
   useEffect(() => {
     if (!route.params?.shopId) return;
@@ -90,15 +86,9 @@ const BookingScreen = ({ route, navigation }) => {
 
         const slotsData = await response.json();
 
-        console.log(
-          'SLOTS DATA---------------------',
-          slotsData ? slotsData : 'no slots data',
-        );
-
         if (slotsData && slotsData?.slots?.length > 0) {
-          // Grouping logic to match the existing component structure
           const groupedSlots = slotsData.slots.reduce((acc, slot) => {
-            const date = slot.slotDate; // API returns slotDate
+            const date = slot.slotDate;
             if (!acc[date]) {
               acc[date] = [];
             }
@@ -111,7 +101,6 @@ const BookingScreen = ({ route, navigation }) => {
           setSlots({});
         }
       } catch (err) {
-        console.log('Error fetching slots:', err);
         setSlots({});
       } finally {
         setLoading(false);
@@ -220,29 +209,23 @@ const BookingScreen = ({ route, navigation }) => {
       </TouchableOpacity>
 
       <View style={styles.container}>
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.scrollViewContent}
-        >
-          <Text style={styles.mainTitle}>Book Your Appointment</Text>
-          {errorMessage ? (
+        <ScrollView showsVerticalScrollIndicator={false}>
+          <Text style={styles.mainTitle}>Book Appointment</Text>
+
+          {errorMessage && (
             <View style={styles.errorMessageContainer}>
-              <Ionicons name="alert-circle-outline" size={20} color="red" />
+              <Ionicons name="alert-circle-outline" size={18} color="#FF4444" />
               <Text style={styles.errorMessageText}>{errorMessage}</Text>
             </View>
-          ) : null}
+          )}
 
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Choose Your Beauty Expert</Text>
+            <Text style={styles.sectionTitle}>Experts</Text>
             {expertsLoading && (
-              <Text style={styles.loadingText}>Please wait....</Text>
+              <Text style={styles.loadingText}>Loading...</Text>
             )}
 
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.expertScroll}
-            >
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
               {!loading && experts.length === 0 ? (
                 <Text style={styles.noExpertsText}>No experts available</Text>
               ) : (
@@ -250,9 +233,7 @@ const BookingScreen = ({ route, navigation }) => {
                   <View key={expert.id} style={styles.expertItem}>
                     <TouchableOpacity
                       style={styles.expertCard}
-                      onPress={() => {
-                        setSelectedExpert(expert.id);
-                      }}
+                      onPress={() => setSelectedExpert(expert.id)}
                     >
                       <View style={styles.avatarContainer}>
                         <Image
@@ -264,14 +245,12 @@ const BookingScreen = ({ route, navigation }) => {
                           }}
                           style={styles.avatar}
                         />
-
                         {selectedExpert === expert.id && (
                           <View style={styles.avatarOverlay}>
                             <Ionicons
                               name="checkmark-circle"
-                              size={28}
+                              size={24}
                               color="#fff"
-                              style={styles.checkIcon}
                             />
                           </View>
                         )}
@@ -280,18 +259,13 @@ const BookingScreen = ({ route, navigation }) => {
                     </TouchableOpacity>
                     <TouchableOpacity
                       style={styles.viewDetailsButton}
-                      onPress={() => {
-                        console.log(
-                          'selectedExpert---------------',
-                          selectedExpert ? selectedExpert : 'no selectedExpert',
-                        );
+                      onPress={() =>
                         navigation.navigate('BeautyExpertDetailsScreen', {
                           expertId: expert.id,
-                        });
-                      }}
+                        })
+                      }
                     >
-                      <Ionicons name="eye" size={18} color={primaryColor} />
-                      <Text style={styles.viewDetailsText}>View Details</Text>
+                      <Text style={styles.viewDetailsText}>Details</Text>
                     </TouchableOpacity>
                   </View>
                 ))
@@ -300,7 +274,7 @@ const BookingScreen = ({ route, navigation }) => {
           </View>
 
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Select Date</Text>
+            <Text style={styles.sectionTitle}>Date</Text>
             <Calendar
               onDayPress={onDayPress}
               markedDates={markedDates}
@@ -309,42 +283,33 @@ const BookingScreen = ({ route, navigation }) => {
                 selectedDayTextColor: '#ffffff',
                 todayTextColor: primaryColor,
                 arrowColor: primaryColor,
-                dotColor: primaryColor,
-                textDayFontSize: 16,
-                textMonthFontSize: 16,
-                textDayHeaderFontSize: 14,
-                'stylesheet.calendar.header': {
-                  week: {
-                    marginTop: 5,
-                    flexDirection: 'row',
-                    justifyContent: 'space-between',
-                  },
-                },
+                textDayFontSize: 14,
+                textMonthFontSize: 14,
+                textDayHeaderFontSize: 12,
               }}
               minDate={moment().format('YYYY-MM-DD')}
               style={styles.calendar}
             />
+            <View style={styles.legendRow}>
+              <View
+                style={[styles.legendDot, { backgroundColor: primaryColor }]}
+              />
+              <Text style={styles.legendText}>Available</Text>
+              <View
+                style={[
+                  styles.legendDot,
+                  { backgroundColor: lightPurple, marginLeft: 8 },
+                ]}
+              />
+              <Text style={styles.legendText}>Booked</Text>
+            </View>
           </View>
 
           <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Select Time Slot</Text>
-              <View style={styles.legendContainer}>
-                <View
-                  style={[styles.legendDot, { backgroundColor: primaryColor }]}
-                />
-                <Text style={styles.legendText}>Available</Text>
-                <View
-                  style={[styles.legendDot, { backgroundColor: lightPurple }]}
-                />
-                <Text style={styles.legendText}>Full/Booked</Text>
-              </View>
-            </View>
+            <Text style={styles.sectionTitle}>Time Slots</Text>
             <View style={styles.timeSlotsContainer}>
               {slotsForDate.length === 0 ? (
-                <Text style={styles.noSlotsText}>
-                  No slots available for this date
-                </Text>
+                <Text style={styles.noSlotsText}>No slots available</Text>
               ) : (
                 slotsForDate.map(slot => {
                   const startTimeFormatted = moment(
@@ -355,14 +320,11 @@ const BookingScreen = ({ route, navigation }) => {
                     slot.endTime,
                     'HH:mm:ss',
                   ).format('h:mm A');
-                  const slotLabel = `${startTimeFormatted} - ${endTimeFormatted}`;
-
                   const booked = slot.bookedCount || 0;
                   const capacity = slot.maxCapacity || 1;
                   const isFull = booked >= capacity;
                   const isSelected = selectedTime?.id === slot.id;
                   const isDisabled = !slot.isAvailable || isFull;
-
                   const isPastTime =
                     moment(selectedDate).isSame(moment(), 'day') &&
                     moment(
@@ -379,7 +341,6 @@ const BookingScreen = ({ route, navigation }) => {
                         styles.timeSlot,
                         isSelected && styles.timeSlotSelected,
                         (isDisabled || isPastTime) && styles.timeSlotDisabled,
-                        isDisabled && !isPastTime && styles.timeSlotUnavailable,
                       ]}
                     >
                       <Text
@@ -388,18 +349,14 @@ const BookingScreen = ({ route, navigation }) => {
                           isSelected && styles.timeSlotTextSelected,
                           (isDisabled || isPastTime) &&
                             styles.timeSlotTextDisabled,
-                          isDisabled &&
-                            !isPastTime &&
-                            styles.timeSlotTextUnavailable,
                         ]}
                       >
-                        {slotLabel}
+                        {startTimeFormatted}
                       </Text>
                       <Text
                         style={[
                           styles.capacityText,
                           isSelected && { color: '#fff' },
-                          (isDisabled || isPastTime) && { color: '#999' },
                         ]}
                       >
                         {isFull ? 'Full' : `${capacity - booked} left`}
@@ -412,9 +369,9 @@ const BookingScreen = ({ route, navigation }) => {
           </View>
 
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Service Amount</Text>
+            <Text style={styles.sectionTitle}>Services</Text>
             <View style={styles.table}>
-              <View style={[styles.tableRow, styles.tableHeader]}>
+              <View style={styles.tableRow}>
                 <Text
                   style={[
                     styles.tableCell,
@@ -437,22 +394,26 @@ const BookingScreen = ({ route, navigation }) => {
                   Price
                 </Text>
               </View>
-              {selectedServices &&
-                selectedServices.length > 0 &&
-                selectedServices.map(service => (
-                  <View key={service.id} style={styles.tableRow}>
-                    <Text style={[styles.tableCell, { flex: 2 }]}>
-                      {service.serviceName}
-                    </Text>
-                    <Text style={styles.tableCell}>{service.qty ?? 1}</Text>
-                    <Text style={[styles.tableCell, { textAlign: 'right' }]}>
-                      {service.servicePrice}
-                    </Text>
-                  </View>
-                ))}
+              {selectedServices?.map(service => (
+                <View key={service.id} style={styles.tableRow}>
+                  <Text style={[styles.tableCell, { flex: 2 }]}>
+                    {service.serviceName}
+                  </Text>
+                  <Text style={styles.tableCell}>{service.qty ?? 1}</Text>
+                  <Text
+                    style={[
+                      styles.tableCell,
+                      { textAlign: 'right', color: primaryColor },
+                    ]}
+                  >
+                    ₹{service.servicePrice}
+                  </Text>
+                </View>
+              ))}
             </View>
           </View>
         </ScrollView>
+
         <TouchableOpacity
           style={[
             styles.nextButton,
@@ -480,90 +441,70 @@ const BookingScreen = ({ route, navigation }) => {
 const styles = StyleSheet.create({
   outerContainer: {
     flex: 1,
-    backgroundColor: '#0D0618',
+    backgroundColor: primaryColor,
   },
   backButton: {
     position: 'absolute',
     top: 55,
-    left: 20,
+    left: 15,
     flexDirection: 'row',
     alignItems: 'center',
     zIndex: 10,
   },
   backButtonText: {
     color: '#fff',
-    fontSize: 16,
-    marginLeft: 5,
+    fontSize: 14,
+    marginLeft: 4,
     fontWeight: '500',
   },
   container: {
     flex: 1,
-    marginTop: 90,
+    marginTop: 85,
     backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 30,
-    borderTopRightRadius: 30,
-    paddingHorizontal: 15,
-    paddingVertical: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 20,
-  },
-  scrollViewContent: {
-    paddingBottom: 10,
+    borderTopLeftRadius: 25,
+    borderTopRightRadius: 25,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
   },
   mainTitle: {
-    fontSize: 24,
-    fontWeight: '800',
+    fontSize: 22,
+    fontWeight: 'bold',
     color: '#160B26',
     textAlign: 'center',
-    marginTop: 15,
-    marginBottom: 10,
-    letterSpacing: 0.3,
+    marginBottom: 12,
   },
   errorMessageContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
     backgroundColor: '#FFF0F7',
-    paddingVertical: 8,
+    paddingVertical: 6,
     paddingHorizontal: 10,
-    borderRadius: 12,
-    marginBottom: 15,
-    borderWidth: 1,
-    borderColor: '#FFE0EF',
+    borderRadius: 8,
+    marginBottom: 12,
   },
   errorMessageText: {
     color: '#D41172',
-    fontSize: 13,
+    fontSize: 12,
     marginLeft: 6,
-    fontWeight: '500',
+    flex: 1,
   },
   section: {
-    marginBottom: 20,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: 16,
   },
   sectionTitle: {
-    fontSize: 16,
-    fontWeight: '700',
+    fontSize: 15,
+    fontWeight: 'bold',
     color: '#160B26',
-    letterSpacing: 0.2,
+    marginBottom: 8,
     borderLeftWidth: 3,
     borderLeftColor: '#D41172',
     paddingLeft: 8,
   },
   loadingText: {
     textAlign: 'center',
-    color: '#6B7280',
-    marginTop: 8,
-  },
-  expertScroll: {
-    paddingVertical: 8,
+    color: '#999',
+    fontSize: 12,
+    marginVertical: 4,
   },
   expertItem: {
     marginRight: 10,
@@ -571,94 +512,77 @@ const styles = StyleSheet.create({
   },
   expertCard: {
     alignItems: 'center',
-    padding: 8,
-    borderRadius: 16,
+    padding: 6,
+    borderRadius: 12,
     backgroundColor: '#F8FAFC',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-    borderWidth: 1,
-    borderColor: '#F1F5F9',
+    width: 70,
   },
   avatarContainer: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    marginBottom: 6,
+    width: 55,
+    height: 55,
+    borderRadius: 28,
+    marginBottom: 4,
     backgroundColor: '#FFE0EF',
     overflow: 'hidden',
-    borderWidth: 2,
-    borderColor: '#FFE0EF',
   },
   avatar: {
     width: '100%',
     height: '100%',
-    borderRadius: 35,
+    borderRadius: 28,
   },
   avatarOverlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(212, 17, 114, 0.7)',
-    borderRadius: 35,
+    borderRadius: 28,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  checkIcon: {
-    position: 'absolute',
-    bottom: -2,
-    right: -2,
-    backgroundColor: '#D41172',
-    borderRadius: 14,
-  },
   expertName: {
-    fontSize: 13,
+    fontSize: 11,
     fontWeight: '500',
     color: '#374151',
-    marginTop: 4,
+    textAlign: 'center',
   },
   noExpertsText: {
-    color: '#6B7280',
+    color: '#999',
+    fontSize: 12,
     textAlign: 'center',
-    marginTop: 8,
-    width: '100%',
+    paddingVertical: 10,
   },
   viewDetailsButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 6,
-    paddingVertical: 4,
-    paddingHorizontal: 8,
+    marginTop: 3,
+    paddingVertical: 2,
+    paddingHorizontal: 6,
     backgroundColor: '#FFF0F7',
-    borderRadius: 8,
+    borderRadius: 6,
   },
   viewDetailsText: {
-    fontSize: 11,
+    fontSize: 9,
     color: '#D41172',
-    marginLeft: 4,
     fontWeight: '500',
   },
   calendar: {
-    borderRadius: 12,
-    overflow: 'hidden',
-    borderWidth: 1,
+    borderRadius: 10,
+    borderWidth: 0.5,
     borderColor: '#E2E8F0',
     paddingBottom: 5,
   },
-  legendContainer: {
+  legendRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    marginTop: 6,
+    justifyContent: 'flex-end',
   },
   legendDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    marginRight: 5,
-    marginLeft: 8,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: 3,
   },
   legendText: {
-    fontSize: 12,
-    color: '#6B7280',
+    fontSize: 10,
+    color: '#666',
+    marginRight: 6,
   },
   timeSlotsContainer: {
     flexDirection: 'row',
@@ -667,103 +591,79 @@ const styles = StyleSheet.create({
   },
   timeSlot: {
     backgroundColor: '#D41172',
-    borderRadius: 12,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    marginBottom: 8,
+    borderRadius: 8,
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+    marginBottom: 6,
     width: '48%',
     alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: '#D41172',
   },
   timeSlotSelected: {
     backgroundColor: '#A80E5A',
-    borderColor: '#A80E5A',
   },
   timeSlotDisabled: {
     backgroundColor: '#FFE0EF',
-    borderColor: '#E2E8F0',
-    opacity: 0.7,
-  },
-  timeSlotUnavailable: {
-    backgroundColor: '#FFE0EF',
-    borderColor: '#FFE0EF',
+    opacity: 0.6,
   },
   timeSlotText: {
     color: '#fff',
-    fontWeight: '700',
-    fontSize: 12,
-  },
-  capacityText: {
-    color: 'rgba(255,255,255,0.8)',
-    fontSize: 10,
-    marginTop: 2,
+    fontWeight: '600',
+    fontSize: 11,
   },
   timeSlotTextSelected: {
     color: '#fff',
   },
   timeSlotTextDisabled: {
-    color: '#94A3B8',
+    color: '#999',
   },
-  timeSlotTextUnavailable: {
-    color: '#D41172',
+  capacityText: {
+    color: 'rgba(255,255,255,0.8)',
+    fontSize: 9,
+    marginTop: 2,
   },
   noSlotsText: {
-    color: '#6B7280',
+    color: '#999',
     textAlign: 'center',
-    marginTop: 8,
-    width: '100%',
+    paddingVertical: 15,
+    fontSize: 12,
   },
   table: {
-    borderWidth: 1,
+    borderWidth: 0.5,
     borderColor: '#E2E8F0',
-    borderRadius: 12,
+    borderRadius: 8,
     overflow: 'hidden',
   },
   tableRow: {
     flexDirection: 'row',
-    paddingVertical: 12,
-    paddingHorizontal: 10,
-    borderBottomWidth: 1,
+    paddingVertical: 8,
+    paddingHorizontal: 8,
+    borderBottomWidth: 0.5,
     borderBottomColor: '#F1F5F9',
-    alignItems: 'center',
-  },
-  tableHeader: {
-    backgroundColor: '#F8FAFC',
   },
   tableCell: {
     flex: 1,
-    fontSize: 13,
+    fontSize: 12,
     color: '#6B7280',
   },
   tableHeaderText: {
-    fontWeight: '700',
+    fontWeight: 'bold',
     color: '#160B26',
+    fontSize: 11,
   },
   nextButton: {
     backgroundColor: '#D41172',
-    paddingVertical: 16,
-    paddingHorizontal: 28,
-    borderRadius: 50,
+    paddingVertical: 12,
+    borderRadius: 25,
     alignItems: 'center',
-    marginVertical: 10,
-    shadowColor: '#D41172',
-    shadowOffset: { width: 0, height: 14 },
-    shadowOpacity: 0.40,
-    shadowRadius: 40,
-    elevation: 12,
+    marginTop: 8,
   },
   disabledButton: {
-    backgroundColor: '#94A3B8',
-    shadowOpacity: 0,
-    elevation: 0,
+    backgroundColor: '#CCC',
   },
   nextButtonText: {
     color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-    letterSpacing: 0.2,
+    fontSize: 14,
+    fontWeight: 'bold',
   },
 });
 

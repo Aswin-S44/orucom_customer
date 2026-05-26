@@ -141,10 +141,8 @@ const BookingSummaryScreen = ({ route, navigation }) => {
   const total = subtotal;
 
   const handleConfirmBooking = async () => {
-    console.log('11111111111111111');
     const token = await AsyncStorage.getItem('token');
-    console.log('token--------------', token ? token : 'no token');
-    console.log('user id---------', userId, token);
+
     if (!userId || !token) return;
     // setConfirming(true);
 
@@ -164,16 +162,12 @@ const BookingSummaryScreen = ({ route, navigation }) => {
       bookedCount: updatedSlotCount,
     };
 
-    console.log('bookingData---------------', bookingData);
-
     const newAppointment = {
       shopId: route.params.shopId,
       expertId: selectedExpert,
       serviceIds,
       slotId: currentSlot?.id,
     };
-
-    console.log('newAppointment-----------------', newAppointment);
 
     try {
       setConfirming(true);
@@ -191,8 +185,6 @@ const BookingSummaryScreen = ({ route, navigation }) => {
 
       const result = await response.json();
 
-      console.log('result ---------------', result ? result : 'no result');
-
       if (!response.ok) {
         throw new Error(result?.message || 'Booking failed');
       }
@@ -204,27 +196,27 @@ const BookingSummaryScreen = ({ route, navigation }) => {
 
       const notificationUrl = `${BACKEND_URL}/api/v1/notifications`;
 
-      const notificationPayload = {
-        notificationTypeId: 1,
-        toId: route?.params?.shopId,
-        message: `${userData?.username || 'Customer'} sent a booking request`,
-        shopId: route?.params?.shopId,
-      };
+      // const notificationPayload = {
+      //   notificationTypeId: 1,
+      //   toId: route?.params?.shopId,
+      //   message: `${userData?.username || 'Customer'} sent a booking request`,
+      //   shopId: route?.params?.shopId,
+      // };
 
-      console.log('notificationPayload----------------', notificationPayload);
+      // console.log('notificationPayload----------------', notificationPayload);
 
-      const notificationResponse = await fetch(notificationUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `${token}`,
-        },
-        body: JSON.stringify(notificationPayload),
-      });
+      // const notificationResponse = await fetch(notificationUrl, {
+      //   method: 'POST',
+      //   headers: {
+      //     'Content-Type': 'application/json',
+      //     Authorization: `${token}`,
+      //   },
+      //   body: JSON.stringify(notificationPayload),
+      // });
 
-      const notificationResult = await notificationResponse.json();
+      // const notificationResult = await notificationResponse.json();
 
-      console.log('notificationResult----------------', notificationResult);
+      // console.log('notificationResult----------------', notificationResult);
 
       setModalVisible(true);
     } catch (error) {
@@ -552,7 +544,7 @@ const BookingSummaryScreen = ({ route, navigation }) => {
 const styles = StyleSheet.create({
   outerContainer: {
     flex: 1,
-    backgroundColor: '#0D0618',
+    backgroundColor: primaryColor,
   },
   backButton: {
     position: 'absolute',
@@ -676,7 +668,7 @@ const styles = StyleSheet.create({
     marginVertical: 20,
     shadowColor: '#D41172',
     shadowOffset: { width: 0, height: 14 },
-    shadowOpacity: 0.40,
+    shadowOpacity: 0.4,
     shadowRadius: 40,
     elevation: 12,
   },
@@ -705,7 +697,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 20 },
-    shadowOpacity: 0.10,
+    shadowOpacity: 0.1,
     shadowRadius: 48,
     elevation: 10,
   },

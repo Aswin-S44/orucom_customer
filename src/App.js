@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { createDrawerNavigator } from '@react-navigation/drawer';
 import { createMaterialBottomTabNavigator } from '@react-navigation/material-bottom-tabs';
@@ -32,6 +32,7 @@ import AppointmentSummaryScreen from './screens/AppointmentSummaryScreen/Appoint
 
 import { primaryColor } from './constants/colors';
 import { AuthContext } from './context/AuthContext';
+import FirebaseNotificationService from './apis/FirebaseNotificationService';
 
 const Tab = createMaterialBottomTabNavigator();
 const Drawer = createDrawerNavigator();
@@ -72,6 +73,29 @@ function HomeStack() {
   );
 }
 
+function ShopsStack() {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="ShopsMain" component={NearByShopsList} />
+      <Stack.Screen name="ParlourDetails" component={ParlourDetails} />
+      <Stack.Screen name="BookingScreen" component={BookingScreen} />
+      {/* Add any other screens reachable from Shops tab */}
+    </Stack.Navigator>
+  );
+}
+
+function AppointmentStack() {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="AllAppointments" component={AllAppointments} />
+      <Stack.Screen
+        name="AppointmentSummaryScreen"
+        component={AppointmentSummaryScreen}
+      />
+    </Stack.Navigator>
+  );
+}
+
 function TabNavigator() {
   return (
     <Tab.Navigator
@@ -83,14 +107,14 @@ function TabNavigator() {
         name="Home"
         component={HomeStack}
         options={{
-          tabBarIcon: ({ focused, color }) => (
+          tabBarIcon: ({ color }) => (
             <Ionicons name="home" size={20} color={color} />
           ),
         }}
       />
       <Tab.Screen
         name="Shops"
-        component={NearByShopsList}
+        component={ShopsStack}
         options={{
           tabBarIcon: ({ color }) => (
             <Ionicons name="location" size={20} color={color} />
@@ -99,7 +123,7 @@ function TabNavigator() {
       />
       <Tab.Screen
         name="Appointment"
-        component={AllAppointments}
+        component={AppointmentStack}
         options={{
           tabBarIcon: ({ color }) => (
             <Icon name="calendar" size={20} color={color} />
@@ -167,10 +191,37 @@ function AuthStack() {
 export default function App() {
   const { userData, loading } = useContext(AuthContext);
 
-  if (loading) {
+  useEffect(() => {
+    const initializeNotifications = async () => {
+      // if (!notificationSetupComplete) {
+      try {
+        FirebaseNotificationService.setupNotificationHandlers();
+        // FirebaseNotificationService.listenForTokenRefresh();
+        const hasPermission =
+          await FirebaseNotificationService.requestNotificationPermission();
+        console.log('userData------------', userData);
+        if (hasPermission && userData) {
+          await FirebaseNotificationService.getFCMToken(userData?.id);
+        }
+        // setNotificationSetupComplete(true);
+      } catch (error) {
+        console.error('App initialization error:', error);
+      }
+      // }
+    };
+    if (!loading) {
+      initializeNotifications();
+    }
+  }, [loading, userData]);
+
+  // ✅ Track whether the splash video has finished playing
+  const [videoFinished, setVideoFinished] = useState(false);
+
+  // ✅ Show splash as long as auth is loading OR video hasn't finished
+  if (loading || !videoFinished) {
     return (
       <GestureHandlerRootView style={{ flex: 1 }}>
-        <SplashScreen />
+        <SplashScreen onVideoEnd={() => setVideoFinished(true)} />
       </GestureHandlerRootView>
     );
   }

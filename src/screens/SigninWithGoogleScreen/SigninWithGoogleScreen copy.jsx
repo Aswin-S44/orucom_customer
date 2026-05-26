@@ -245,9 +245,9 @@ const SigninWithGoogleScreen = ({ navigation }) => {
                 )
               }
             >
-              Terms
+              Terms of Service
             </Text>{' '}
-            and{' '}
+            and acknowledge our
             <Text
               style={styles.linkText}
               onPress={() =>
@@ -256,7 +256,7 @@ const SigninWithGoogleScreen = ({ navigation }) => {
                 )
               }
             >
-              Privacy
+              Privacy Policy
             </Text>
           </Text>
         </View>

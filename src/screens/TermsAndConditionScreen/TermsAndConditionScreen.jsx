@@ -17,18 +17,18 @@ const TermsAndConditionScreen = () => {
         style={styles.contentContainer}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.mainTitle}>Terms and Conditions</Text>
+        <Text style={styles.mainTitle}>TERMS AND CONDITIONS</Text>
 
         <View style={styles.headerInfo}>
           <Text style={styles.headerText}>
-            <Text style={styles.bold}>Last Updated:</Text> April 11, 2026
+            <Text style={styles.bold}>Last Updated:</Text> May 18, 2026
           </Text>
         </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>1. Introduction</Text>
           <Text style={styles.paragraph}>
-            Welcome to Orucom, an application owned and operated by Nomino
+            Welcome to orucom, an application owned and operated by Nomino
             Innovations Private Limited ("Company"). By accessing or using our
             platform, you agree to be bound by these terms.
           </Text>
@@ -41,14 +41,14 @@ const TermsAndConditionScreen = () => {
             intermediary connecting users with independent beauty parlours and
             salons ("Service Providers").
           </Text>
-          <BulletPoint text="We do not own, manage, or control the Service Providers listed on Orucom." />
+          <BulletPoint text="We do not own, manage, or control the Service Providers listed on orucom." />
           <BulletPoint text="We do not directly provide beauty, grooming, or wellness services." />
           <BulletPoint text="We are not liable for the quality, safety, or standard of services rendered by the Service Providers." />
         </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>3. User Accounts & Login</Text>
-          <BulletPoint text="Google Login: Access to the platform requires authentication via your Google Account. You are responsible for maintaining the security of your Google account credentials." />
+          <BulletPoint text="Google Login: Customer access to the platform requires authentication exclusively via your Google Account. You are responsible for maintaining the security of your Google account credentials." />
           <BulletPoint text="Accuracy: You agree to provide accurate contact information (such as your phone number) to ensure Service Providers can fulfill your bookings." />
         </View>
 
@@ -64,7 +64,7 @@ const TermsAndConditionScreen = () => {
             5. Business Partner (Salon) Obligations
           </Text>
           <Text style={styles.paragraph}>
-            Service Fulfillment: Salons registered on Orucom agree to honor all
+            Service Fulfillment: Salons registered on orucom agree to honor all
             confirmed bookings.
           </Text>
           <BulletPoint text="Accuracy of Information: Salons are solely responsible for maintaining accurate pricing, availability, and service descriptions." />
@@ -73,18 +73,19 @@ const TermsAndConditionScreen = () => {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>6. Limitation of Liability</Text>
           <Text style={styles.paragraph}>
-            The Orucom platform is provided on an "AS IS" basis. To the maximum
+            The orucom platform is provided on an "AS IS" basis. To the maximum
             extent permitted by law, Nomino Innovations Private Limited shall
             not be held liable for any direct, indirect, or consequential
             damages, disputes, or injuries arising between users and Service
             Providers.
           </Text>
         </View>
+
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>6. Governing Law</Text>
+          <Text style={styles.sectionTitle}>7. Governing Law</Text>
           <Text style={styles.paragraph}>
             These terms are governed by the laws of India. Any disputes are
-            subject to the exclusive jurisdiction of the courts in Kerala
+            subject to the exclusive jurisdiction of the courts in Kerala.
           </Text>
         </View>
 

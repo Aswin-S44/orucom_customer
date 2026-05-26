@@ -73,11 +73,6 @@ const ProfileScreen = ({ navigation }) => {
   const { user, userData, loading, refreshUser, logout, userId } =
     useContext(AuthContext);
 
-  console.log(
-    'userData=======================',
-    userData ? userData : 'no userData',
-  );
-
   const [refreshing, setRefreshing] = useState(false);
   const [isImageViewerVisible, setIsImageViewerVisible] = useState(false);
 

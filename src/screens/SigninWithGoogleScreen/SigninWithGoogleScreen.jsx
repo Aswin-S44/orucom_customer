@@ -44,6 +44,7 @@ const SigninWithGoogleScreen = ({ navigation }) => {
   async function onGoogleButtonPress() {
     setLoading(true);
     try {
+      console.log('CLIEKD==============');
       const signInResult = await GoogleSignin.signIn();
       const googleIdToken = signInResult.data?.idToken || signInResult.idToken;
       if (!googleIdToken) throw new Error('No Google ID token received');
@@ -53,7 +54,9 @@ const SigninWithGoogleScreen = ({ navigation }) => {
         googleCredential,
       );
       const firebaseIdToken = await userCredential.user.getIdToken();
+      console.log('firebaseIdToken------------', firebaseIdToken);
 
+      console.log('GOOGLE_SIGNIN_URL----------------', GOOGLE_SIGNIN_URL);
       const response = await fetch(GOOGLE_SIGNIN_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -64,6 +67,12 @@ const SigninWithGoogleScreen = ({ navigation }) => {
       });
 
       const backendData = await response.json();
+
+      console.log(
+        'bCKEND DDATA-0---------------',
+        backendData ? backendData : 'no backend data',
+      );
+
       if (!backendData.success)
         throw new Error(backendData.message || 'Login failed');
 
@@ -71,17 +80,14 @@ const SigninWithGoogleScreen = ({ navigation }) => {
       await refreshUser();
     } catch (error) {
       // Alert.alert('Sign In Error', error.message);
-      console.log('Error=-----------------', error.message);
+      console.log('Error while signin in---------------------', error);
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <LinearGradient
-      colors={['#0D0618', '#D41172']}
-      style={styles.container}
-    >
+    <LinearGradient colors={['#0D0618', '#D41172']} style={styles.container}>
       <StatusBar backgroundColor={primaryColor} barStyle="light-content" />
       <View style={styles.contentContainer}>
         <Image
@@ -115,9 +121,9 @@ const SigninWithGoogleScreen = ({ navigation }) => {
                 )
               }
             >
-              Terms
+              Terms of Service
             </Text>{' '}
-            and{' '}
+            and acknowledge our
             <Text
               style={styles.linkText}
               onPress={() =>
@@ -126,7 +132,7 @@ const SigninWithGoogleScreen = ({ navigation }) => {
                 )
               }
             >
-              Privacy
+              {' '}Privacy Policy
             </Text>
           </Text>
         </View>
@@ -182,7 +188,12 @@ const styles = StyleSheet.create({
     elevation: 10,
   },
   googleIcon: { width: 22, height: 22, marginRight: 12 },
-  signInButtonText: { color: '#D41172', fontSize: 16, fontWeight: '700', letterSpacing: 0.4 },
+  signInButtonText: {
+    color: '#D41172',
+    fontSize: 16,
+    fontWeight: '700',
+    letterSpacing: 0.4,
+  },
   emailLinkContainer: { marginVertical: 18 },
   emailLinkText: {
     color: 'rgba(255,255,255,0.85)',
@@ -194,7 +205,12 @@ const styles = StyleSheet.create({
     paddingBottom: 2,
   },
   footerContainer: { marginTop: 20, width: '85%' },
-  footerText: { color: 'rgba(255,255,255,0.5)', fontSize: 12, textAlign: 'center', lineHeight: 19 },
+  footerText: {
+    color: 'rgba(255,255,255,0.5)',
+    fontSize: 12,
+    textAlign: 'center',
+    lineHeight: 19,
+  },
   linkText: {
     color: 'rgba(255,255,255,0.9)',
     fontWeight: '700',

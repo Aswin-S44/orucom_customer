@@ -39,8 +39,6 @@ const AllNotificationScreen = ({ navigation }) => {
 
       const url = `${BACKEND_URL}/api/v1/notifications`;
 
-      console.log('notifications url------------', url);
-
       const response = await fetch(url, {
         method: 'GET',
         headers: {
@@ -51,10 +49,7 @@ const AllNotificationScreen = ({ navigation }) => {
 
       const result = await response.json();
 
-      console.log(
-        'notifications response============',
-        JSON.stringify(result, null, 2),
-      );
+      console.log('result------------------', result);
 
       if (!response.ok) {
         throw new Error(result?.message || 'Failed to fetch notifications');
@@ -62,7 +57,6 @@ const AllNotificationScreen = ({ navigation }) => {
 
       setNotifications(result?.data || []);
     } catch (e) {
-      console.log('notifications fetch error-----------', e);
       setNotifications([]);
     } finally {
       setLoading(false);
@@ -108,9 +102,7 @@ const AllNotificationScreen = ({ navigation }) => {
           Authorization: `${token}`,
         },
       });
-    } catch (e) {
-      console.log('mark notification read error-----------', e);
-    }
+    } catch (e) {}
   };
 
   const deleteNotification = async id => {
@@ -130,9 +122,7 @@ const AllNotificationScreen = ({ navigation }) => {
           Authorization: `${token}`,
         },
       });
-    } catch (e) {
-      console.log('delete notification error------------', e);
-    }
+    } catch (e) {}
   };
 
   const renderRightActions = (progress, dragX, notification) => {

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React from 'react';
 import {
   View,
   Text,
@@ -8,22 +8,13 @@ import {
   StatusBar,
   Linking,
   Image,
-  Platform,
-  PermissionsAndroid,
-  ActivityIndicator,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import Icon from 'react-native-vector-icons/MaterialIcons';
-import { useRoute } from '@react-navigation/native';
-import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
-import Geolocation from '@react-native-community/geolocation';
-
-import { getDocumentFieldById, getParlourById } from '../../apis/services';
-import { DEFAULT_AVATAR } from '../../constants/images';
+import { useRoute, useNavigation } from '@react-navigation/native';
+import { DEFAULT_AVATAR, NO_IMAGE } from '../../constants/images';
 import { formatDate } from '../../utils/utils';
-import ProfileScreenSkeleton from '../../components/ProfileScreenSkeleton/ProfileScreenSkeleton';
 import { primaryColor } from '../../constants/colors';
-import LocationPrompt from '../../components/LocationPrompt/LocationPrompt';
 
 const Row = ({ label, value }) => (
   <View style={styles.row}>
@@ -32,89 +23,25 @@ const Row = ({ label, value }) => (
   </View>
 );
 
-const AppointmentSummaryScreen = ({ navigation }) => {
+const AppointmentSummaryScreen = () => {
+  const navigation = useNavigation();
   const route = useRoute();
-  const appointmentDetails = route?.params?.item;
-  const shopId = route.params.item?.shopId;
+  const item = route?.params?.item;
 
-  const [shop, setShop] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [userLocation, setUserLocation] = useState(null);
-  const [distance, setDistance] = useState(null);
-  const [locationPermissionGranted, setLocationPermissionGranted] =
-    useState(false);
-  const [locationServicesEnabled, setLocationServicesEnabled] = useState(true);
-  const mapRef = useRef(null);
+  const shop = item?.shop;
+  const appointment = item?.appointment;
+  const expert = item?.expert;
+  const slot = item?.slot;
+  const status = item?.status?.name || 'pending';
 
-  const calculateDistance = (lat1, lon1, lat2, lon2) => {
-    const toRad = val => (val * Math.PI) / 180;
-    const R = 6371;
-    const dLat = toRad(lat2 - lat1);
-    const dLon = toRad(lon2 - lon1);
-    const a =
-      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos(toRad(lat1)) *
-        Math.cos(toRad(lat2)) *
-        Math.sin(dLon / 2) *
-        Math.sin(dLon / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return +(R * c).toFixed(1);
-  };
-
-  const handleOpenGoogleMaps = googleReviewUrl => {
-    if (googleReviewUrl) {
-      // Linking.openURL(googleReviewUrl).catch(err =>
-      //   console.error("Couldn't load page", err),
-      // );
-
-      Linking.openURL(googleReviewUrl);
-    }
-  };
-
-  useEffect(() => {
-    const requestLocationPermission = async () => {
-      if (Platform.OS === 'android') {
-        const granted = await PermissionsAndroid.request(
-          PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
-        );
-        setLocationPermissionGranted(
-          granted === PermissionsAndroid.RESULTS.GRANTED,
-        );
-      } else {
-        setLocationPermissionGranted(true);
-      }
-    };
-    requestLocationPermission();
-  }, []);
-
-  useEffect(() => {
-    if (shopId) {
-      const fetchShop = async () => {
-        try {
-          setLoading(true);
-          const res = await getParlourById(shopId);
-          if (res) {
-            setShop(res);
-          }
-        } catch (error) {
-          // Error while fetching shop
-        } finally {
-          setLoading(false);
-        }
-      };
-      fetchShop();
-    } else {
-      setLoading(false);
-    }
-  }, [shopId]);
-
-  const getStatusStyle = status => {
-    switch (status) {
+  const getStatusStyle = statusName => {
+    switch (statusName?.toLowerCase()) {
       case 'confirmed':
         return styles.statusConfirmed;
       case 'pending':
         return styles.statusPending;
       case 'cancelled':
+      case 'canceled':
         return styles.statusCancelled;
       default:
         return styles.statusDefault;
@@ -122,16 +49,18 @@ const AppointmentSummaryScreen = ({ navigation }) => {
   };
 
   const handleCall = phoneNumber => {
-    if (phoneNumber && phoneNumber.trim() !== '') {
+    if (phoneNumber) {
       Linking.openURL(`tel:${phoneNumber}`);
-    } else {
-      alert('Phone number not available');
     }
   };
 
-  if (loading) {
-    return <ProfileScreenSkeleton />;
-  }
+  const handleOpenGoogleMaps = address => {
+    const url = Platform.select({
+      ios: `maps:0,0?q=${address}`,
+      android: `geo:0,0?q=${address}`,
+    });
+    Linking.openURL(url);
+  };
 
   return (
     <View style={styles.outerContainer}>
@@ -154,79 +83,59 @@ const AppointmentSummaryScreen = ({ navigation }) => {
 
           <View style={styles.profileSection}>
             <Image
-              source={{ uri: shop?.profileImage ?? DEFAULT_AVATAR }}
+              source={{ uri: shop?.shopImage || NO_IMAGE }}
               style={styles.avatar}
             />
-            <Text style={styles.expertName}>{shop?.parlourName ?? '-'}</Text>
+            <Text style={styles.expertName}>{shop?.parlourName || 'N/A'}</Text>
           </View>
 
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Appointment Details</Text>
             <Row
               label="Date"
-              value={
-                appointmentDetails?.selectedDate
-                  ? formatDate(appointmentDetails?.selectedDate)
-                  : 'N/A'
-              }
+              value={slot?.slotDate ? formatDate(slot.slotDate) : 'N/A'}
             />
             <Row
               label="Time"
-              value={appointmentDetails?.selectedTime ?? 'N/A'}
+              value={
+                slot?.startTime ? `${slot.startTime} - ${slot.endTime}` : 'N/A'
+              }
             />
+            <Row label="Expert" value={expert?.name || 'N/A'} />
+            <Row label="Total Rate" value={`₹${appointment?.rate || 0}`} />
             <View style={styles.row}>
               <Text style={styles.text}>Status</Text>
-              <Text
-                style={[
-                  styles.statusText,
-                  getStatusStyle(appointmentDetails?.appointmentStatus),
-                ]}
-              >
-                {appointmentDetails?.appointmentStatus
-                  ? appointmentDetails?.appointmentStatus.toUpperCase()
-                  : 'N/A'}
+              <Text style={[styles.statusText, getStatusStyle(status)]}>
+                {status.toUpperCase()}
               </Text>
             </View>
           </View>
 
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Shop Details</Text>
-            <Row label="Address" value={shop?.address ?? 'N/A'} />
+            <Row label="Address" value={shop?.address || 'N/A'} />
 
-            <View style={styles.row}>
-              <Text style={styles.text}>Phone</Text>
-              {shop?.phone?.trim() === '' || !shop?.phone ? (
-                <Text style={styles.valueText}>Unavailable</Text>
-              ) : (
+            {shop?.phone && (
+              <View style={styles.row}>
+                <Text style={styles.text}>Phone</Text>
                 <TouchableOpacity
-                  onPress={() => {
-                    handleCall(shop?.phone.trim());
-                  }}
+                  onPress={() => handleCall(shop.phone)}
                   style={styles.phoneButton}
                 >
-                  <Text style={styles.phoneText}>{shop?.phone ?? '-'}</Text>
+                  <Text style={styles.phoneText}>{shop.phone}</Text>
                   <Icon name="call" size={20} color="green" />
                 </TouchableOpacity>
-              )}
-            </View>
-
-            <Row
-              label="Email"
-              value={
-                shop?.email?.trim() === '' || !shop?.email ? 'N/A' : shop?.email
-              }
-            />
+              </View>
+            )}
           </View>
 
-          {shop?.googleReviewUrl && (
-            <TouchableOpacity
-              style={styles.visitUsButton}
-              onPress={() => handleOpenGoogleMaps(shop.googleReviewUrl)}
-            >
-              <Text style={styles.visitUsButtonText}>View Location</Text>
-              <Ionicons name="chevron-forward-outline" size={20} color="#fff" />
-            </TouchableOpacity>
-          )}
+          <TouchableOpacity
+            style={styles.visitUsButton}
+            onPress={() => handleOpenGoogleMaps(shop?.address)}
+          >
+            <Text style={styles.visitUsButtonText}>View Location</Text>
+            <Ionicons name="location-outline" size={20} color="#fff" />
+          </TouchableOpacity>
         </ScrollView>
       </View>
     </View>
@@ -264,31 +173,27 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   mainTitle: {
-    fontSize: 26,
-    fontWeight: '600',
+    fontSize: 24,
+    fontWeight: 'bold',
     color: '#333',
     textAlign: 'center',
     marginBottom: 30,
   },
   section: {
-    marginBottom: 30,
+    marginBottom: 20,
     backgroundColor: '#f9f9f9',
     borderRadius: 15,
     padding: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 3,
+    elevation: 2,
   },
   sectionTitle: {
-    fontSize: 20,
-    fontWeight: '600',
+    fontSize: 18,
+    fontWeight: '700',
     color: '#333',
     marginBottom: 15,
     borderBottomWidth: 1,
     borderBottomColor: '#eee',
-    paddingBottom: 10,
+    paddingBottom: 8,
   },
   row: {
     flexDirection: 'row',
@@ -297,140 +202,88 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   text: {
-    fontSize: 16,
-    color: '#555',
+    fontSize: 15,
+    color: '#666',
     fontWeight: '500',
   },
   valueText: {
-    fontSize: 16,
+    fontSize: 15,
     color: '#333',
-    fontWeight: 'normal',
+    fontWeight: '600',
     textAlign: 'right',
     flexShrink: 1,
     marginLeft: 10,
   },
   profileSection: {
     alignItems: 'center',
-    marginBottom: 30,
+    marginBottom: 25,
   },
   expertName: {
-    fontSize: 24,
-    fontWeight: '700',
+    fontSize: 20,
+    fontWeight: 'bold',
     color: '#333',
-    marginTop: 15,
+    marginTop: 12,
+    textAlign: 'center',
   },
   avatar: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    borderWidth: 3,
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+    borderWidth: 2,
     borderColor: primaryColor,
   },
   statusText: {
-    fontSize: 15,
+    fontSize: 13,
     fontWeight: 'bold',
     paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
+    paddingVertical: 5,
+    borderRadius: 12,
     overflow: 'hidden',
-    minWidth: 90,
-    textAlign: 'center',
   },
   statusConfirmed: {
-    backgroundColor: '#e6ffe6',
-    color: '#008000',
+    backgroundColor: '#E8F5E9',
+    color: '#2E7D32',
   },
   statusPending: {
-    backgroundColor: '#fffbe6',
-    color: '#ffbf00',
+    backgroundColor: '#FFF8E1',
+    color: '#F9A825',
   },
   statusCancelled: {
-    backgroundColor: '#ffe6e6',
-    color: '#cc0000',
+    backgroundColor: '#FFEBEE',
+    color: '#C62828',
   },
   statusDefault: {
-    backgroundColor: '#f0f0f0',
-    color: '#555',
+    backgroundColor: '#F5F5F5',
+    color: '#616161',
   },
   phoneButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#e6ffe6',
-    paddingVertical: 5,
-    paddingHorizontal: 10,
+    backgroundColor: '#E8F5E9',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
     borderRadius: 20,
   },
   phoneText: {
-    fontSize: 16,
-    color: 'green',
-    marginRight: 8,
-    fontWeight: '600',
-  },
-  locationSection: {
-    backgroundColor: '#ffff',
-    borderRadius: 15,
-    padding: 10,
-    marginBottom: 30,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 1,
-  },
-  locationSectionTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: primaryColor,
-    marginBottom: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#cfe2f3',
-    paddingBottom: 10,
-  },
-  locationMessage: {
     fontSize: 15,
-    color: 'red',
-    textAlign: 'center',
-    marginBottom: 15,
-    fontStyle: 'italic',
-  },
-  distanceText: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#333',
-    textAlign: 'center',
-    marginBottom: 15,
-  },
-  mapContainer: {
-    height: 350,
-    borderRadius: 12,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: '#ddd',
-  },
-  map: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  center: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#fff',
+    color: '#2E7D32',
+    marginRight: 6,
+    fontWeight: '600',
   },
   visitUsButton: {
     flexDirection: 'row',
     backgroundColor: primaryColor,
-    paddingVertical: 12,
-    paddingHorizontal: 15,
-    borderRadius: 8,
-    marginTop: 15,
+    paddingVertical: 14,
+    borderRadius: 12,
+    marginTop: 10,
     alignItems: 'center',
     justifyContent: 'center',
   },
   visitUsButtonText: {
     color: '#fff',
     fontSize: 16,
-    fontWeight: '600',
-    marginRight: 5,
+    fontWeight: 'bold',
+    marginRight: 8,
   },
 });
 

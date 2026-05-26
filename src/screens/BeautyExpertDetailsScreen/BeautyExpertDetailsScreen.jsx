@@ -85,7 +85,6 @@ const BeautyExpertDetailsScreen = ({ navigation, route }) => {
           setData(result);
         }
       } catch (error) {
-        console.log('Error fetching expert details:', error);
       } finally {
         setLoading(false);
       }

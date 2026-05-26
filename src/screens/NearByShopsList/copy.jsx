@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 import Geolocation from '@react-native-community/geolocation';
-import { getReviews } from '../../apis/services';
+import { getAllParlours } from '../../apis/services';
 import { AuthContext } from '../../context/AuthContext';
 import { primaryColor } from '../../constants/colors';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -22,6 +22,7 @@ import NoShopsAvailable from '../../components/NoShopsAvailable/NoShopsAvailable
 import Card from '../../components/Card/Card';
 import { isShopOpen } from '../../utils/utils';
 import LocationEnabler from '../../../android/app/src/LocationEnabler';
+import { GOOGLE_MAPS_API_KEY, CLOUDINARY_DOC } from '@env';
 import { GET_ALL_SHOPS } from '../../services/apis';
 
 const NearByShopsList = ({ navigation }) => {
@@ -53,6 +54,9 @@ const NearByShopsList = ({ navigation }) => {
     Geolocation.getCurrentPosition(
       pos => {
         const { latitude, longitude } = pos.coords;
+
+        console.log(' pos.coords----------------', pos.coords);
+
         const userRegion = {
           latitude,
           longitude,
@@ -66,7 +70,7 @@ const NearByShopsList = ({ navigation }) => {
         setShops(prevShops => {
           if (!prevShops || prevShops.length === 0) return prevShops;
           return prevShops.map(shop => {
-            if (shop.latitude && shop.longitude) {
+            if (shop?.latitude && shop?.longitude) {
               return {
                 ...shop,
                 distance: calculateDistance(
@@ -77,17 +81,16 @@ const NearByShopsList = ({ navigation }) => {
                 ),
               };
             }
+            console.log('SHOP****************', shop);
             return shop;
           });
         });
 
         if (mapRef.current) {
-          const markers = shops
-            .filter(shop => shop.latitude && shop.longitude)
-            .map(shop => ({
-              latitude: parseFloat(shop.latitude),
-              longitude: parseFloat(shop.longitude),
-            }));
+          const markers = shops.filter(shop).map(shop => ({
+            latitude: parseFloat(shop.latitude),
+            longitude: parseFloat(shop.longitude),
+          }));
           markers.push({ latitude, longitude });
           if (markers.length > 0) {
             mapRef.current.fitToCoordinates(markers, {
@@ -123,42 +126,6 @@ const NearByShopsList = ({ navigation }) => {
         await checkLocationStatus();
         checkLocation();
       } catch (e) {}
-    }
-  };
-
-  const fetchShops = async () => {
-    try {
-      setLoadingShops(true);
-      const response = await fetch(GET_ALL_SHOPS, { method: 'GET' });
-      const shopsData = await response.json();
-
-      if (shopsData?.shops?.length > 0) {
-        const transformedShops = shopsData.shops
-          .filter(item => item.shop !== null)
-          .map(item => item.shop);
-
-        const shopsWithRatings = await Promise.all(
-          transformedShops.map(async shop => {
-            let totalRating = 0;
-            if (shop.placeId) {
-              try {
-                const reviewData = await getReviews(shop.placeId);
-                totalRating = reviewData?.rating || 0;
-              } catch (e) {
-                totalRating = 0;
-              }
-            }
-            return { ...shop, totalRating };
-          }),
-        );
-        setShops(shopsWithRatings);
-      } else {
-        setShops([]);
-      }
-    } catch (err) {
-      setShops([]);
-    } finally {
-      setLoadingShops(false);
     }
   };
 
@@ -198,6 +165,26 @@ const NearByShopsList = ({ navigation }) => {
   }, [permissionGranted]);
 
   useEffect(() => {
+    const fetchShops = async () => {
+      try {
+        const response = await fetch(GET_ALL_SHOPS, {
+          method: 'GET',
+        });
+        const shopsData = await response.json();
+
+        if (shopsData && shopsData?.shops?.length > 0) {
+          const shopsArray = shopsData.shops.map(item => item.shop);
+
+          setShops(shopsArray || []);
+        }
+
+        // const res = await getAllParlours();
+        // setShops(res || []);
+      } catch (err) {
+      } finally {
+        setLoadingShops(false);
+      }
+    };
     fetchShops();
   }, []);
 
@@ -218,6 +205,9 @@ const NearByShopsList = ({ navigation }) => {
           <Text style={{ marginTop: 10, color: '#666' }}>
             Waiting for location...
           </Text>
+          {/* <TouchableOpacity onPress={enableLocation} style={styles.retryButton}>
+            <Text style={{ color: '#fff' }}>Enable Location</Text>
+          </TouchableOpacity> */}
         </View>
       </View>
     );
@@ -234,29 +224,31 @@ const NearByShopsList = ({ navigation }) => {
           region || {
             latitude: 20.5937,
             longitude: 78.9629,
-            latitudeDelta: 0.5,
-            longitudeDelta: 0.5,
+            latitudeDelta: 10,
+            longitudeDelta: 10,
           }
         }
         showsUserLocation
         zoomEnabled
       >
-        {shops.map(
-          shop =>
-            shop.latitude &&
-            shop.longitude && (
-              <Marker
-                key={shop.id}
-                coordinate={{
-                  latitude: parseFloat(shop.latitude),
-                  longitude: parseFloat(shop.longitude),
-                }}
-                title={`${shop.parlourName}`}
-              />
-            ),
-        )}
+        {shops &&
+          shops?.length > 0 &&
+          shops.map(
+            shop =>
+              shop?.latitude &&
+              shop?.longitude && (
+                <Marker
+                  key={shop.id}
+                  coordinate={{
+                    latitude: parseFloat(shop.latitude),
+                    longitude: parseFloat(shop.longitude),
+                  }}
+                  title={shop.parlourName}
+                />
+              ),
+          )}
       </MapView>
-
+      {console.log('shops----------------', shops)}
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.searchBar}
@@ -271,7 +263,7 @@ const NearByShopsList = ({ navigation }) => {
           <Ionicons name="search" size={24} color="#fff" />
         </TouchableOpacity>
       </View>
-      {console.log('SHOPS-----------------------', shops ? shops : 'no shops')}
+
       <View style={styles.cardListContainer}>
         {loadingShops ? (
           <CardSkeleton />
@@ -284,30 +276,68 @@ const NearByShopsList = ({ navigation }) => {
             )}
             horizontal
             showsHorizontalScrollIndicator={false}
-            keyExtractor={item => item.id.toString()}
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                onPress={() =>
-                  navigation.navigate('ParlourDetails', {
-                    parlourData: item,
-                  })
-                }
-              >
-                <Card
-                  image={item?.shopImage}
-                  title={item?.parlourName}
-                  location={item?.address}
-                  rating={item?.totalRating ?? 0}
-                  //  status={isShopOpen(item?.openingHours) ? 'open' : 'closed'}
-                  status={'open'}
-                  distance={
-                    item?.distance
-                      ? `${item.distance.toFixed(2)} km`
-                      : 'Calculating...'
+            keyExtractor={item => item.id}
+            renderItem={({ item }) => {
+              // Normalize data for the Detail screen
+              const normalizedItem = {
+                ...item,
+                id: item.id || item._id, // Ensure there is an 'id' property
+                shopImage: item.profileImage || item.shopImage, // Map profileImage to shopImage
+              };
+
+              return (
+                <TouchableOpacity
+                  onPress={() =>
+                    navigation.navigate('ParlourDetails', {
+                      parlourData: normalizedItem,
+                    })
                   }
-                />
-              </TouchableOpacity>
-            )}
+                >
+                  <Card
+                    image={normalizedItem.shopImage}
+                    title={normalizedItem.parlourName}
+                    location={normalizedItem.address}
+                    rating={normalizedItem.totalRating ?? 0}
+                    // status={
+                    //   isShopOpen(normalizedItem.openingHours)
+                    //     ? 'open'
+                    //     : 'closed'
+                    // }
+                    status={'Open'}
+                    distance={
+                      normalizedItem.distance
+                        ? `${normalizedItem.distance.toFixed(2)} km`
+                        : 'Calculating...'
+                    }
+                  />
+                </TouchableOpacity>
+              );
+            }}
+            // renderItem={({ item }) => (
+            //   <TouchableOpacity
+            //     onPress={
+            //       () =>
+            //         navigation.navigate('ParlourDetails', {
+            //           parlourData: item,
+            //         })
+
+            //       // console.log('CLICKED------------', item)
+            //     }
+            //   >
+            //     <Card
+            //       image={item?.profileImage}
+            //       title={item?.parlourName}
+            //       location={item?.address}
+            //       rating={item?.totalRating ?? 0}
+            //       status={isShopOpen(item?.openingHours) ? 'open' : 'closed'}
+            //       distance={
+            //         item?.distance
+            //           ? `${item.distance.toFixed(2)} km`
+            //           : 'Calculating...'
+            //       }
+            //     />
+            //   </TouchableOpacity>
+            // )}
             contentContainerStyle={styles.cardListContent}
           />
         )}

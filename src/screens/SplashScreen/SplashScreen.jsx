@@ -1,68 +1,91 @@
-import React, { useEffect, useRef } from 'react';
-import {
-  View,
-  Animated,
-  Easing,
-  StyleSheet,
-  Image,
-  Dimensions,
-  StatusBar,
-} from 'react-native';
+import React, { useRef, useEffect } from 'react';
+import { View, StyleSheet, StatusBar, Dimensions } from 'react-native';
+import Video from 'react-native-video';
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 
-const SplashScreen = ({ navigation }) => {
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const scaleAnim = useRef(new Animated.Value(0.8)).current;
-  const translateYAnim = useRef(new Animated.Value(30)).current;
+const SplashScreen = ({ onVideoEnd }) => {
+  const hasFinished = useRef(false);
+  const videoRef = useRef(null);
+  const timeoutRef = useRef(null);
 
+  // Function to handle navigation
+  const handleNavigation = () => {
+    if (!hasFinished.current) {
+      hasFinished.current = true;
+
+      // Clear timeout if it exists
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+
+      onVideoEnd?.();
+    }
+  };
+
+  // Set a timeout to redirect after 7 seconds
   useEffect(() => {
-    Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 2000,
-        useNativeDriver: true,
-        easing: Easing.out(Easing.quad),
-      }),
-      Animated.spring(scaleAnim, {
-        toValue: 1,
-        friction: 4,
-        tension: 40,
-        useNativeDriver: true,
-      }),
-      Animated.timing(translateYAnim, {
-        toValue: 0,
-        duration: 2000,
-        easing: Easing.out(Easing.back(1.5)),
-        useNativeDriver: true,
-      }),
-    ]).start();
+    // Redirect after 7 seconds regardless of video status
+    timeoutRef.current = setTimeout(() => {
+      if (!hasFinished.current) {
+        console.log('7 seconds completed - forcing navigation');
+        handleNavigation();
+      }
+    }, 7000); // 7 seconds timeout
 
-    const timer = setTimeout(() => {
-      navigation?.replace('MainApp');
-    }, 3800);
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
 
-    return () => clearTimeout(timer);
-  }, [fadeAnim, scaleAnim, translateYAnim, navigation]);
+  const handleEnd = () => {
+    console.log('Video ended naturally');
+    handleNavigation();
+  };
+
+  const handleError = error => {
+    console.error('Video error:', error);
+    // Navigate even if video fails to load/play
+    handleNavigation();
+  };
+
+  const handleLoad = () => {
+    console.log('Video loaded successfully');
+  };
+
+  const handleBuffer = bufferData => {
+    console.log('Buffering:', bufferData);
+  };
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-      <Animated.View
-        style={[
-          styles.animationWrapper,
-          {
-            opacity: fadeAnim,
-            transform: [{ scale: scaleAnim }, { translateY: translateYAnim }],
-          },
-        ]}
-      >
-        <Image
-          source={require('../../assets/images/orucom.png')}
-          style={styles.logo}
-          resizeMode="contain"
-        />
-      </Animated.View>
+      <StatusBar hidden={true} />
+      <Video
+        ref={videoRef}
+        source={require('../../assets/images/welcome_image.mp4')}
+        style={styles.video}
+        resizeMode="cover"
+        onEnd={handleEnd}
+        onError={handleError}
+        onLoad={handleLoad}
+        onBuffer={handleBuffer}
+        muted={true}
+        repeat={false}
+        paused={false}
+        rate={1.0}
+        playInBackground={false}
+        playWhenInactive={false}
+        ignoreSilentSwitch="obey"
+        bufferConfig={{
+          minBufferMs: 15000,
+          maxBufferMs: 50000,
+          bufferForPlaybackMs: 2500,
+          bufferForPlaybackAfterRebufferMs: 5000,
+        }}
+        progressUpdateInterval={250}
+      />
     </View>
   );
 };
@@ -70,19 +93,16 @@ const SplashScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
     backgroundColor: '#FFFFFF',
   },
-  animationWrapper: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: width * 0.85,
-    height: 200,
-  },
-  logo: {
-    width: '100%',
-    height: '100%',
+  video: {
+    width: width,
+    height: height,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    bottom: 0,
+    right: 0,
   },
 });
 

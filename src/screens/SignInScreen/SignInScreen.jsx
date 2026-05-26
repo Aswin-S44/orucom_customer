@@ -268,12 +268,12 @@ const SignInScreen = ({ navigation }) => {
             </Text>
           </TouchableOpacity>
 
-          <View style={styles.signUpContainer}>
+          {/* <View style={styles.signUpContainer}>
             <Text style={styles.signUpText}>If you have no account? </Text>
             <TouchableOpacity onPress={() => navigation.navigate('SignUp')}>
               <Text style={styles.signUpLink}>Sign Up</Text>
             </TouchableOpacity>
-          </View>
+          </View> */}
         </ScrollView>
       </View>
 
@@ -289,7 +289,7 @@ const SignInScreen = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  outerContainer: { flex: 1, backgroundColor: '#0D0618' },
+  outerContainer: { flex: 1, backgroundColor: primaryColor },
   backButton: {
     position: 'absolute',
     top: 55,
@@ -298,7 +298,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     zIndex: 10,
   },
-  backButtonText: { color: '#fff', fontSize: 18, marginLeft: 5, fontWeight: '500' },
+  backButtonText: {
+    color: '#fff',
+    fontSize: 18,
+    marginLeft: 5,
+    fontWeight: '500',
+  },
   container: {
     flex: 1,
     marginTop: 100,
@@ -329,7 +334,12 @@ const styles = StyleSheet.create({
     borderColor: '#FFE0EF',
     alignItems: 'center',
   },
-  loginErrorText: { color: '#D41172', fontSize: 14, textAlign: 'center', fontWeight: '500' },
+  loginErrorText: {
+    color: '#D41172',
+    fontSize: 14,
+    textAlign: 'center',
+    fontWeight: '500',
+  },
   inputGroup: { marginBottom: 20 },
   inputLabel: {
     fontSize: 15,
@@ -370,11 +380,16 @@ const styles = StyleSheet.create({
     marginBottom: 30,
     shadowColor: '#D41172',
     shadowOffset: { width: 0, height: 14 },
-    shadowOpacity: 0.40,
+    shadowOpacity: 0.4,
     shadowRadius: 40,
     elevation: 12,
   },
-  signInButtonText: { color: '#fff', fontSize: 16, fontWeight: '700', letterSpacing: 0.5 },
+  signInButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  },
   signUpContainer: {
     flexDirection: 'row',
     justifyContent: 'center',

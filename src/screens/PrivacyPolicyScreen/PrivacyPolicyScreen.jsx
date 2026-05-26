@@ -5,9 +5,8 @@ import {
   StyleSheet,
   ScrollView,
   StatusBar,
-  TouchableOpacity,
+  Linking,
 } from 'react-native';
-import Icon from 'react-native-vector-icons/Ionicons';
 import { primaryColor } from '../../constants/colors';
 
 const BulletPoint = ({ text }) => (
@@ -17,7 +16,7 @@ const BulletPoint = ({ text }) => (
   </View>
 );
 
-const PrivacyPolicyScreen = ({ navigation }) => {
+const PrivacyPolicyScreen = () => {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" />
@@ -29,14 +28,14 @@ const PrivacyPolicyScreen = ({ navigation }) => {
 
         <View style={styles.headerInfo}>
           <Text style={styles.headerText}>
-            <Text style={styles.bold}>App Name:</Text> Orucom
+            <Text style={styles.bold}>App Name:</Text> orucom
           </Text>
           <Text style={styles.headerText}>
             <Text style={styles.bold}>Company:</Text> Nomino Innovations Private
             Limited
           </Text>
           <Text style={styles.headerText}>
-            <Text style={styles.bold}>Last Updated:</Text> March 05, 2026
+            <Text style={styles.bold}>Last Updated:</Text> May 19, 2026
           </Text>
         </View>
 
@@ -44,96 +43,155 @@ const PrivacyPolicyScreen = ({ navigation }) => {
           <Text style={styles.sectionTitle}>1. Introduction</Text>
           <Text style={styles.paragraph}>
             Nomino Innovations Private Limited ("we," "our," or "us") operates
-            the Orucom mobile application. We are committed to protecting your
-            personal information and your right to privacy. If you have any
-            questions or concerns about this policy, or our practices with
-            regards to your personal information, please contact us at
-            nominoinnovations@gmail.com.
+            the orucom mobile application. We are committed to protecting your
+            personal information and your right to privacy. This privacy policy
+            explains what data we collect, why we collect it, and how we keep it
+            safe.
           </Text>
         </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>2. Information We Collect</Text>
           <Text style={styles.paragraph}>
-            We collect personal information that you voluntarily provide to us
-            when you register on Orucom.
+            We only collect data that is strictly necessary to provide our slot
+            booking services.
           </Text>
-          <BulletPoint text="Personal Data: Name, Email, Phone Number, and Profile Picture (optional)." />
-          <BulletPoint text="Booking Data: Details of appointments you book (Date, Time, Service, Salon Name)." />
-          <BulletPoint text="Device Information: We automatically collect certain information when you visit, use, or navigate the App. This includes device characteristics, operating system, and IP address." />
-          <BulletPoint text="Location Data: We request access to your location to suggest Salons near you. You can revoke this access at any time in your device settings." />
+
+          <Text style={[styles.paragraph, styles.bold, { marginBottom: 5 }]}>
+            Data from Google Sign-In:
+          </Text>
+          <Text style={styles.paragraph}>
+            Our application exclusively uses Google Login for customer
+            authentication. We do not offer or process public account
+            registrations via standard email and password. When you log in, we
+            securely receive basic profile information from your Google account,
+            specifically your Name and Email Address.
+          </Text>
+
+          <BulletPoint text="Personal Data: To facilitate salon bookings and coordination, we will additionally request your Phone Number." />
+          <BulletPoint text="Booking Data: Details of appointments you book (Date, Time, Service requested, and the Salon Name)." />
+          <BulletPoint text="Device Information: We automatically collect basic device and usage information (such as your IP address, operating system, and app crash logs) to diagnose technical issues and improve app stability." />
+          <BulletPoint text="Location Data: We request access to your location to suggest Service Providers near you. This is only collected if you grant explicit permission." />
         </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>
             3. How We Use Your Information
           </Text>
-          <BulletPoint text="To facilitate account creation and logon process." />
-          <BulletPoint text="To fulfill and manage your bookings. We share your Name and Phone number with the Salon Partner you select solely for the purpose of the appointment." />
-          <BulletPoint text="To send administrative information, booking confirmations, reminders, and updates via Push Notifications or WhatsApp." />
-          <BulletPoint text="To protect our Services and for fraud monitoring and prevention." />
+          <Text style={styles.paragraph}>
+            We use the information we collect to:
+          </Text>
+          <BulletPoint text="Facilitate account creation and secure login via your Google Account." />
+          <BulletPoint text="Fulfill and manage your salon bookings." />
+          <BulletPoint text="Send administrative notifications, including booking confirmations and reminders via App Notifications or WhatsApp." />
+          <BulletPoint text="Monitor app performance and prevent fraudulent activities." />
         </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>
-            4. Will Your Information be Shared?
+            4. Analytics and Tracking Technologies
           </Text>
-          <BulletPoint text="Service Providers (Salons): We share booking details with the specific Salon you have chosen." />
-          <BulletPoint text="Legal Obligations: We may disclose information where legally required to comply with applicable laws or governmental requests." />
+          <Text style={styles.paragraph}>
+            We partner with Microsoft Clarity and Microsoft Advertising to
+            capture how you use and interact with our app/website through
+            behavioral metrics, heatmaps, and session replay to improve and
+            market our products/services. Usage data is captured using first and
+            third-party cookies and other tracking technologies to determine the
+            popularity of products/services and online activity. Additionally,
+            we use this information for site optimization, fraud/security
+            purposes, and advertising. For more information about how Microsoft
+            collects and uses your data, visit the{' '}
+            <Text
+              style={{ color: primaryColor, textDecorationLine: 'underline' }}
+              onPress={() =>
+                Linking.openURL(
+                  'https://www.microsoft.com/privacy/privacystatement',
+                )
+              }
+            >
+              Microsoft Privacy Statement
+            </Text>
+            .
+          </Text>
         </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>
-            5. Data Retention and Deletion
+            5. Data Sharing and Third Parties
           </Text>
           <Text style={styles.paragraph}>
-            We keep your information for as long as necessary to fulfill the
-            purposes outlined in this policy unless otherwise required by law.
+            We do not sell your personal data. We only share your data in the
+            following specific scenarios:
           </Text>
-          <BulletPoint text="Request Deletion: You can request the deletion of your account via Settings > Delete Account in the app, or by emailing us at nominoinnovations@gmail.com." />
+          <BulletPoint text="Service Providers (Salons): We share your Name and Phone Number with the specific Salon you have chosen to book with, so they can manage your appointment." />
+          <BulletPoint text="Analytics Partners: We share usage and behavioral data with Microsoft as detailed in Section 4." />
+          <BulletPoint text="Legal Obligations: We may disclose your information where legally required to comply with applicable laws or governmental requests." />
         </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>
-            6. Security of Your Information
+            6. Data Retention and Account Deletion (User Rights)
           </Text>
           <Text style={styles.paragraph}>
-            We use administrative, technical, and physical security measures to
-            protect your personal information. However, transmission of personal
-            information to and from our App is at your own risk as no internet
-            transmission is 100% secure.
+            You have full control over your data. We retain your data only for
+            as long as your account is active.
+          </Text>
+          <Text style={[styles.paragraph, styles.bold]}>
+            How to Delete Your Account & Data:
+          </Text>
+          <Text style={styles.paragraph}>
+            You can request the complete deletion of your account and all
+            associated personal data at any time by using the dedicated Account
+            Deletion Link provided within the app (Menu {'>'} Delete Account) or
+            by requesting account deletion by contacting
+            nominoinnovations@gmail.com.
+          </Text>
+          <Text style={styles.paragraph}>
+            Upon submitting the deletion request through the provided link, all
+            your personal information, booking history, and Google Login
+            associations will be permanently removed from our active databases.
           </Text>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>7. Children's Privacy</Text>
+          <Text style={styles.sectionTitle}>
+            7. Security of Your Information
+          </Text>
           <Text style={styles.paragraph}>
-            We do not knowingly solicit data from or market to children under 18
-            years of age. By using the App, you represent that you are at least
-            18 years old.
+            We implement industry-standard security measures to protect your
+            personal information during transmission and storage. However, no
+            digital platform can guarantee 100% security.
           </Text>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>8. Updates to This Policy</Text>
+          <Text style={styles.sectionTitle}>8. Children's Privacy</Text>
           <Text style={styles.paragraph}>
-            We may update this privacy policy from time to time. The updated
-            version will be effective as soon as it is accessible.
+            orucom is not intended for children under the age of 18. We do not
+            knowingly collect personal data from minors.
           </Text>
         </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>9. Contact Us</Text>
           <Text style={styles.paragraph}>
-            Email: nominoinnovations@gmail.com
+            If you have questions, concerns, or requests regarding this policy,
+            please contact us at:
           </Text>
           <Text style={styles.paragraph}>
-            Address: NOMINO INNOVATIONS PRIVATE LIMITED{'\n'}
-            Door No: 155, Building ID: 50916010009071{'\n'}
-            Ward No: 6-Neerad, Kondotty{'\n'}
-            Malappuram, Kerala - 673638
+            <Text style={styles.bold}>Email:</Text> nominoinnovations@gmail.com
+          </Text>
+          <Text style={styles.paragraph}>
+            <Text style={styles.bold}>Address:</Text>
+            {'\n'}NOMINO INNOVATIONS PRIVATE LIMITED
+            {'\n'}Door No: 155,
+            {'\n'}Building ID: 50916010009071
+            {'\n'}Ward No: 6-Neerad, Kondotty
+            {'\n'}Malappuram
+            {'\n'}Kerala - 673638
           </Text>
         </View>
+
         <View style={{ height: 50 }} />
       </ScrollView>
     </View>

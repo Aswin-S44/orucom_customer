@@ -61,7 +61,6 @@ const CustomDrawerContent = props => {
   return (
     <View style={styles.container}>
       <DrawerContentScrollView {...props}>
-        {console.log('userData---------------', userData)}
         <View style={styles.profileContainer}>
           <Image
             source={{ uri: userData?.profileImage ?? DEFAULT_AVATAR }}

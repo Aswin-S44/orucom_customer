@@ -1,6 +1,7 @@
 import { Platform, PermissionsAndroid, Alert } from 'react-native';
 import messaging from '@react-native-firebase/messaging';
 import { auth, firestore } from '../config/firebase';
+import { updateUserData } from './services';
 
 class FirebaseNotificationService {
   static async requestNotificationPermission() {
@@ -34,7 +35,7 @@ class FirebaseNotificationService {
   }
 
   // Get FCM token
-  static async getFCMToken() {
+  static async getFCMToken(id) {
     try {
       if (Platform.OS === 'ios') {
         await messaging().registerDeviceForRemoteMessages();
@@ -42,8 +43,10 @@ class FirebaseNotificationService {
 
       const token = await messaging().getToken();
 
+      console.log('FCM TOKEN---------------------', token);
+
       // Store token in Firestore for the current user
-      await this.storeFCMToken(token);
+      await this.storeFCMToken(token, id);
 
       return token;
     } catch (error) {
@@ -90,32 +93,9 @@ class FirebaseNotificationService {
   }
 
   // Store FCM token in Firestore
-  static async storeFCMToken(token) {
+  static async storeFCMToken(token, id) {
     try {
-      const currentUser = auth().currentUser;
-
-      if (currentUser) {
-        const userDoc = await firestore()
-          .collection('customers')
-          .doc(currentUser.uid)
-          .get();
-
-        if (userDoc.exists) {
-          const userData = userDoc.data();
-
-          const fcmToken = userData?.fcmToken;
-
-          if (!fcmToken || fcmToken == null || fcmToken !== token) {
-            await firestore().collection('customers').doc(currentUser.uid).set(
-              {
-                fcmToken: token,
-                updatedAt: firestore.FieldValue.serverTimestamp(),
-              },
-              { merge: true },
-            );
-          }
-        }
-      }
+      await updateUserData(id, { fcmToken: token });
     } catch (error) {
       // Error storing fcm token
     }

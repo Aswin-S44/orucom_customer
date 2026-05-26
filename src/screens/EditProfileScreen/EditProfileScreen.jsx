@@ -129,7 +129,7 @@ const EditProfileScreen = ({ navigation }) => {
     try {
       await updateUserData(userData?.id, updatedData);
 
-      // await refreshUser();
+      await refreshUser();
       setToastMessage('Profile updated successfully!');
       // navigation.goBack(); // Keep user on screen to see toast
     } catch (error) {

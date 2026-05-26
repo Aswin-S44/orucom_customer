@@ -11,6 +11,7 @@ import {
   RefreshControl,
   FlatList,
   Dimensions,
+  ImageBackground,
 } from 'react-native';
 import EvilIcons from 'react-native-vector-icons/EvilIcons';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -36,7 +37,8 @@ import {
   OFFER_CARD_IMAGE,
 } from '../../constants/images';
 import client from '../../services/contentful';
-import { GET_ALL_SHOPS } from '../../services/apis';
+import { BACKEND_URL, GET_ALL_SHOPS } from '../../services/apis';
+import LinearGradient from 'react-native-linear-gradient';
 
 const { width } = Dimensions.get('window');
 
@@ -49,6 +51,9 @@ const HomeScreen = ({ navigation }) => {
   const [welcomeMessage, setWelcomeMessage] = useState('Welcome Back!');
   const [offers, setOffers] = useState([]);
   const [specialOffers, setSpeicalOffers] = useState([]);
+
+  const [banner, setBanner] = useState([]);
+  const [bannerLoading, setBannerLoading] = useState(false);
 
   const eidOffer = {
     id: 1,
@@ -112,21 +117,9 @@ const HomeScreen = ({ navigation }) => {
     } catch (err) {}
   }, [user, userId]);
 
-  // const fetchShops = async () => {
-  //   try {
-  //     setLoading(true);
-  //     const res = await getAllParlours();
-  //     setShops(res || []);
-  //   } catch (err) {
-  //     setShops([]);
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
-
   const fetchShops = async () => {
     try {
-      setLoading(true);
+      setLoading(true); 
 
       const response = await fetch(GET_ALL_SHOPS, {
         method: 'GET',
@@ -135,16 +128,22 @@ const HomeScreen = ({ navigation }) => {
       const shopsData = await response.json();
 
       if (shopsData?.shops?.length > 0) {
-        const transformedShops = shopsData.shops.map(item => item.shop);
+        const transformedShops = shopsData.shops
+          .filter(item => item.shop !== null)
+          .map(item => item.shop);
 
         const shopsWithRatings = await Promise.all(
           transformedShops.map(async shop => {
             if (shop.placeId) {
-              const reviewData = await getReviews(shop.placeId);
-              return {
-                ...shop,
-                totalRating: reviewData?.rating || 0,
-              };
+              try {
+                const reviewData = await getReviews(shop.placeId);
+                return {
+                  ...shop,
+                  totalRating: reviewData?.rating || 0,
+                };
+              } catch (e) {
+                return { ...shop, totalRating: 0 };
+              }
             }
             return {
               ...shop,
@@ -153,10 +152,6 @@ const HomeScreen = ({ navigation }) => {
           }),
         );
 
-        console.log(
-          'transformedShopsWithRatings---------------',
-          shopsWithRatings,
-        );
         setShops(shopsWithRatings);
       } else {
         setShops([]);
@@ -174,6 +169,62 @@ const HomeScreen = ({ navigation }) => {
       if (res !== undefined) setNotificationCount(res);
     }
   };
+
+  const fetchBanner = async () => {
+    try {
+      const bannerUrl = `${BACKEND_URL}/api/v1/admin/banners`;
+      setBannerLoading(true);
+
+      const response = await fetch(bannerUrl, {
+        method: 'GET',
+      });
+
+      setBannerLoading(false);
+      const bannerData = await response.json();
+
+      if (bannerData && bannerData?.banners?.length > 0) {
+        setBanner(bannerData?.banners);
+      }
+    } catch (err) {
+      setBanner([]);
+    } finally {
+      setBannerLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchBanner();
+  }, []);
+
+  const [offerBanner, setOfferBanner] = useState([]);
+  const [offerLoading, setOfferLoading] = useState(false);
+
+  const fetchOfferBanner = async () => {
+    try {
+      const offerUrl = `${BACKEND_URL}/api/v1/admin/offers`;
+
+      setOfferLoading(true);
+
+      const response = await fetch(offerUrl, {
+        method: 'GET',
+      });
+
+      setOfferLoading(false);
+      const offerData = await response.json();
+
+      if (offerData && offerData?.offers?.length > 0) {
+        setOfferBanner(offerData?.offers);
+      }
+    } catch (err) {
+      setOfferBanner([]);
+    } finally {
+      setOfferLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchOfferBanner();
+  }, []);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -226,7 +277,6 @@ const HomeScreen = ({ navigation }) => {
     }
   }, [loading, userData?.uid]);
 
-  // Fix for the date function (Must be sync, not async)
   const displayDate = dateStr => {
     if (!dateStr) return '';
     const date = new Date(dateStr);
@@ -251,18 +301,32 @@ const HomeScreen = ({ navigation }) => {
         }
       >
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.openDrawer()}>
-            <Feather name="menu" size={24} color="#333" />
-          </TouchableOpacity>
-          <View style={styles.headerTitleContainer}>
-            <Text style={styles.headerGreeting}>{welcomeMessage}</Text>
-            <Text style={styles.headerSubTitle}>Find your perfect look!</Text>
+          <View style={styles.headerLeft}>
+            <TouchableOpacity
+              onPress={() => navigation.openDrawer()}
+              style={styles.menuBtn}
+            >
+              <Feather name="menu" size={22} color="#333" />
+            </TouchableOpacity>
+            <View style={styles.headerTitleContainer}>
+              <Text style={styles.headerGreeting}>{welcomeMessage}</Text>
+              <View style={styles.locationContainer}>
+                <Ionicons
+                  name="location-sharp"
+                  size={12}
+                  color={primaryColor}
+                />
+                <Text style={styles.headerSubTitle}>
+                  Find your perfect look
+                </Text>
+              </View>
+            </View>
           </View>
           <TouchableOpacity
             style={styles.notificationButton}
             onPress={() => navigation.navigate('AllNotificationScreen')}
           >
-            <Ionicons name="notifications-outline" size={24} color="#333" />
+            <Ionicons name="notifications-outline" size={22} color="#333" />
             {notificationCount > 0 && (
               <View style={styles.badgeContainer}>
                 <Text style={styles.badgeText}>{notificationCount}</Text>
@@ -275,52 +339,63 @@ const HomeScreen = ({ navigation }) => {
           <TouchableOpacity
             style={styles.searchBar}
             onPress={() => navigation.navigate('SearchResultsScreen')}
+            activeOpacity={0.9}
           >
-            <EvilIcons
-              name="search"
-              size={28}
-              color="#888"
-              style={styles.searchIcon}
-            />
-            <TextInput
-              placeholder="Search Salon, Specialist..."
-              style={styles.searchInput}
-              placeholderTextColor="#888"
-              editable={false}
-              pointerEvents="none"
-            />
+            <EvilIcons name="search" size={26} color="#94A3B8" />
+            <Text style={styles.searchPlaceholder}>
+              Search Salon, Specialist...
+            </Text>
+            <View style={styles.filterIcon}>
+              <Ionicons name="options-outline" size={20} color="#FFF" />
+            </View>
           </TouchableOpacity>
         </View>
 
         {offers?.length > 0 && (
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>#SpecialForYou</Text>
+              <Text style={styles.sectionTitle}>Exclusive Deals</Text>
+              <TouchableOpacity>
+                <Text style={styles.seeAllText}>See All</Text> 
+              </TouchableOpacity>
             </View>
+
             <FlatList
               horizontal
               showsHorizontalScrollIndicator={false}
-              data={offers}
+              data={banner ?? []}
               keyExtractor={(item, index) => index.toString()}
               renderItem={({ item }) => (
-                <View style={styles.offerCard}>
-                  <Image
+                <TouchableOpacity
+                  activeOpacity={0.95}
+                  style={styles.offerCardWrapper}
+                >
+                  <ImageBackground
                     source={require('../../assets/images/banner1-old.jpg')}
-                    style={styles.offerCardImage}
-                  />
-                  <View style={styles.offerContent}>
-                    <View style={styles.limitedTimeTag}>
-                      <Text style={styles.limitedTimeText}>Limited time!</Text>
-                    </View>
-                    <Text style={styles.offerTitle}>{item.fields.title}</Text>
-                    <Text style={styles.offerDiscount}>
-                      Upto {item.fields.offer}% Offer
-                    </Text>
-                    <Text style={styles.offerDescription}>
-                      {item.fields.offerDescription}
-                    </Text>
-                  </View>
-                </View>
+                    style={styles.offerCard}
+                    imageStyle={{ borderRadius: 20 }}
+                  >
+                    <LinearGradient
+                      colors={['rgba(0,0,0,0.1)', 'rgba(212, 17, 114, 0.8)']}
+                      style={styles.offerGradient}
+                    >
+                      <View style={styles.offerContent}>
+                        <View style={styles.limitedTimeTag}>
+                          <Text style={styles.limitedTimeText}>
+                            LIMITED OFFER
+                          </Text>
+                        </View>
+                        <Text style={styles.offerTitle} numberOfLines={1}>
+                          {item?.title ?? ''}
+                        </Text>
+                        <Text style={styles.offerDiscount}>UP TO 15% OFF</Text>
+                        <Text style={styles.offerDescription} numberOfLines={2}>
+                          {item?.offerDescription}
+                        </Text>
+                      </View>
+                    </LinearGradient>
+                  </ImageBackground>
+                </TouchableOpacity>
               )}
               contentContainerStyle={styles.offerCarouselContainer}
             />
@@ -330,6 +405,9 @@ const HomeScreen = ({ navigation }) => {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Top Rated Salons</Text>
+            <TouchableOpacity>
+              <Text style={styles.seeAllText}>Explore</Text>
+            </TouchableOpacity>
           </View>
 
           {loading ? (
@@ -339,7 +417,7 @@ const HomeScreen = ({ navigation }) => {
               horizontal
               showsHorizontalScrollIndicator={false}
               data={shops}
-              keyExtractor={item => item.id}
+              keyExtractor={item => item.id.toString()}
               renderItem={({ item }) => (
                 <TouchableOpacity
                   onPress={() =>
@@ -354,7 +432,6 @@ const HomeScreen = ({ navigation }) => {
                     title={item.parlourName}
                     location={item.address}
                     rating={item.totalRating ?? 0}
-                    // status={isShopOpen(item.openingHours) ? 'Open' : 'Closed'}
                     status={true}
                     servicesOffered={item.services
                       ?.map(s => s.serviceName)
@@ -371,36 +448,58 @@ const HomeScreen = ({ navigation }) => {
           )}
         </View>
 
-        {specialOffers?.length > 0 && (
+        {offerBanner?.length > 0 && (
           <View style={styles.eidOfferSection}>
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Special offers</Text>
+              <Text style={styles.sectionTitle}>Special For You</Text>
             </View>
-            {specialOffers.map((off, index) => (
-              <TouchableOpacity key={index} style={styles.eidOfferCard}>
-                <View style={styles.eidOfferContent}>
-                  <Text style={styles.eidOfferTag}>
-                    {off?.fields?.serviceName}
-                  </Text>
-                  <Text style={styles.eidOfferDiscount}>
-                    {off?.fields?.offer}% Off
-                  </Text>
-                  <Text style={styles.eidOfferDate}>
-                    {off?.fields?.fromTime
-                      ? displayDate(off.fields.fromTime)
-                      : ''}
-                    {off?.fields?.fromTime && off?.fields?.toTime ? ' - ' : ''}
-                    {off?.fields?.toTime ? displayDate(off.fields.toTime) : ''}
-                  </Text>
-                </View>
-                <Image
-                  source={{ uri: eidOffer.image }}
-                  style={styles.eidOfferImage}
-                />
-              </TouchableOpacity>
-            ))}
+            <FlatList
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              data={offerBanner}
+              keyExtractor={(item, index) => index.toString()}
+              renderItem={({ item, index }) => (
+                <TouchableOpacity
+                  activeOpacity={0.9}
+                  style={styles.eidOfferCard}
+                >
+                  <View style={styles.eidOfferContent}>
+                    <View style={styles.serviceTag}>
+                      <Text style={styles.eidOfferTag}>
+                        {item?.title ?? ''}
+                      </Text>
+                    </View>
+                    <Text style={styles.eidOfferDiscount}>
+                      {item?.offer ?? ''}% OFF
+                    </Text>
+                    <View style={styles.dateRow}>
+                      <Feather
+                        name="calendar"
+                        size={14}
+                        color="#6B7280"
+                        style={{ marginRight: 5 }}
+                      />
+                      <Text style={styles.eidOfferDate}>
+                        {item?.fromDate ? displayDate(item.fromDate) : ''}
+                        {item?.fromDate && item?.toDate ? ' - ' : ''}
+                        {item?.toDate ? displayDate(item.toDate) : ''}
+                      </Text>
+                    </View>
+                    <TouchableOpacity style={styles.claimButton}>
+                      <Text style={styles.claimButtonText}>Claim Now</Text>
+                    </TouchableOpacity>
+                  </View>
+                  <Image
+                    source={{ uri: item.image ?? NO_IMAGE }}
+                    style={styles.eidOfferImage}
+                  />
+                </TouchableOpacity>
+              )}
+              contentContainerStyle={styles.offerCarouselContainer}
+            />
           </View>
         )}
+        <View style={{ height: 30 }} />
       </ScrollView>
     </View>
   );
@@ -408,70 +507,103 @@ const HomeScreen = ({ navigation }) => {
 
 const styles = StyleSheet.create({
   fullContainer: { flex: 1, backgroundColor: '#FFFBF6' },
-  container: { flex: 1, backgroundColor: '#FFFBF6' },
+  container: { flex: 1 },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingTop: 50,
-    paddingBottom: 10,
-    backgroundColor: '#FFFBF6',
+    paddingBottom: 15,
   },
-  headerTitleContainer: { flex: 1, alignItems: 'flex-start', marginLeft: 40 },
-  headerGreeting: { fontSize: 22, fontWeight: '800', color: '#160B26', letterSpacing: 0.3 },
-  headerSubTitle: { fontSize: 13, color: '#6B7280', marginTop: 3, letterSpacing: 0.2 },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  menuBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: '#FFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  headerTitleContainer: { marginLeft: 15 },
+  headerGreeting: { fontSize: 20, fontWeight: 'bold', color: '#1E293B' },
+  locationContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 2,
+  },
+  headerSubTitle: { fontSize: 12, color: '#64748B', marginLeft: 4 },
   notificationButton: {
     width: 42,
     height: 42,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 21,
-    backgroundColor: '#FFF0F7',
-    borderWidth: 1.5,
-    borderColor: '#FFE0EF',
-    shadowColor: '#D41172',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
-    shadowRadius: 10,
-    elevation: 3,
+    borderRadius: 12,
+    backgroundColor: '#FFF',
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
   },
   badgeContainer: {
     position: 'absolute',
-    right: 0,
-    top: 0,
-    backgroundColor: '#D41172',
-    borderRadius: 8,
-    width: 16,
-    height: 16,
+    right: 8,
+    top: 8,
+    backgroundColor: primaryColor,
+    borderRadius: 6,
+    width: 12,
+    height: 12,
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: '#FFF',
   },
-  badgeText: { color: '#fff', fontSize: 10, fontWeight: 'bold' },
+  badgeText: { color: '#fff', fontSize: 7, fontWeight: 'bold' },
   searchSection: {
-    flexDirection: 'row',
-    alignItems: 'center',
     paddingHorizontal: 20,
-    marginBottom: 20,
+    marginBottom: 25,
   },
   searchBar: {
-    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
-    borderRadius: 50,
-    paddingHorizontal: 20,
-    height: 52,
-    borderWidth: 1.5,
-    borderColor: '#E2E8F0',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.06,
-    shadowRadius: 12,
+    borderRadius: 15,
+    paddingLeft: 15,
+    paddingRight: 6,
+    height: 54,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
     elevation: 3,
+    shadowColor: '#94A3B8',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
   },
-  searchIcon: { marginRight: 10 },
-  searchInput: { flex: 1, fontSize: 15, color: '#1A1A1A' },
-  section: { marginBottom: 20 },
+  searchPlaceholder: {
+    flex: 1,
+    color: '#94A3B8',
+    fontSize: 14,
+    marginLeft: 10,
+  },
+  filterIcon: {
+    backgroundColor: primaryColor,
+    width: 42,
+    height: 42,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  section: { marginBottom: 25 },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -482,113 +614,118 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: '800',
-    color: '#160B26',
-    letterSpacing: 0.3,
-    borderLeftWidth: 3,
-    borderLeftColor: '#D41172',
-    paddingLeft: 10,
+    color: '#1E293B',
+    letterSpacing: -0.5,
   },
-  eidOfferSection: { marginBottom: 20 },
-  eidOfferCard: {
-    backgroundColor: '#FAECD8',
-    borderRadius: 16,
-    marginHorizontal: 20,
-    marginBottom: 15,
-    flexDirection: 'row',
-    alignItems: 'center',
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.07,
-    shadowRadius: 24,
-    elevation: 5,
-    borderWidth: 1,
-    borderColor: '#F1F5F9',
-  },
-  eidOfferContent: { flex: 1, padding: 15, justifyContent: 'center' },
-  eidOfferTag: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#D41172',
-    marginBottom: 5,
-  },
-  eidOfferDiscount: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#160B26',
-    marginBottom: 2,
-  },
-  eidOfferDate: { fontSize: 13, color: '#6B7280', marginBottom: 10 },
-  getOfferButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#D41172',
-    borderRadius: 25,
-    paddingVertical: 8,
-    paddingHorizontal: 15,
-    alignSelf: 'flex-start',
-  },
-  getOfferButtonText: {
-    color: '#fff',
+  seeAllText: {
+    color: primaryColor,
     fontSize: 14,
     fontWeight: '600',
-    marginRight: 5,
   },
-  getOfferButtonIcon: { marginLeft: 5 },
-  eidOfferImage: {
-    width: width * 0.4,
-    height: 150,
-    resizeMode: 'cover',
-    borderTopRightRadius: 16,
-    borderBottomRightRadius: 16,
-  },
-  offerCarouselContainer: { paddingHorizontal: 20 },
-  offerCard: {
-    width: 300,
-    height: 180,
-    borderRadius: 16,
-    overflow: 'hidden',
+  offerCarouselContainer: { paddingLeft: 20 },
+  offerCardWrapper: {
     marginRight: 15,
-    position: 'relative',
-    backgroundColor: '#160B26',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.07,
-    shadowRadius: 24,
-    elevation: 5,
+    borderRadius: 20,
+    overflow: 'hidden',
   },
-  offerCardImage: {
-    position: 'absolute',
-    width: '100%',
-    height: '100%',
-    resizeMode: 'cover',
-    opacity: 0.6,
+  offerCard: {
+    width: width * 0.75,
+    height: 180,
+    overflow: 'hidden',
   },
-  offerContent: { padding: 15, justifyContent: 'space-between', flex: 1 },
+  offerGradient: {
+    flex: 1,
+    padding: 18,
+    justifyContent: 'flex-end',
+  },
+  offerContent: { width: '100%' },
   limitedTimeTag: {
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    borderRadius: 5,
+    backgroundColor: '#FFF',
+    borderRadius: 6,
     paddingHorizontal: 8,
     paddingVertical: 3,
     alignSelf: 'flex-start',
-    marginBottom: 5,
+    marginBottom: 8,
   },
-  limitedTimeText: { fontSize: 12, color: '#D41172', fontWeight: '600' },
+  limitedTimeText: { fontSize: 9, color: primaryColor, fontWeight: '800' },
   offerTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
+    fontSize: 18,
+    fontWeight: '800',
     color: '#fff',
     marginBottom: 2,
   },
   offerDiscount: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 5,
+    fontSize: 22,
+    fontWeight: '900',
+    color: '#FFD700',
+    marginBottom: 4,
   },
-  offerDescription: { fontSize: 12, color: 'rgba(255,255,255,0.85)', marginBottom: 10 },
-  shopsCarouselContainer: { paddingHorizontal: 20 },
+  offerDescription: {
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.9)',
+    fontWeight: '500',
+  },
+  shopsCarouselContainer: { paddingLeft: 20 },
   parlourCardWrapper: { marginRight: 15 },
+  eidOfferSection: { paddingBottom: 10 },
+  eidOfferCard: {
+    backgroundColor: '#FFF',
+    borderRadius: 20,
+    marginRight: 15,
+    width: width * 0.85,
+    flexDirection: 'row',
+    alignItems: 'center',
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+  },
+  eidOfferContent: { flex: 1, padding: 18 },
+  serviceTag: {
+    backgroundColor: '#FFF0F7',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+    alignSelf: 'flex-start',
+    marginBottom: 8,
+  },
+  eidOfferTag: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: primaryColor,
+    textTransform: 'uppercase',
+  },
+  eidOfferDiscount: {
+    fontSize: 26,
+    fontWeight: '800',
+    color: '#1E293B',
+    marginBottom: 4,
+  },
+  dateRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  eidOfferDate: { fontSize: 12, color: '#64748B', fontWeight: '500' },
+  claimButton: {
+    backgroundColor: primaryColor,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    alignSelf: 'flex-start',
+  },
+  claimButtonText: {
+    color: '#FFF',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  eidOfferImage: {
+    width: 120,
+    height: '100%',
+    resizeMode: 'cover',
+  },
 });
 
 export default HomeScreen;
