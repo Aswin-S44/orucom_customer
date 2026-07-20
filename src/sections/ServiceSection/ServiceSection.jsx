@@ -24,9 +24,66 @@ const subtleGray = '#EEEEEE'; // For backgrounds/separators
 const mediumGray = '#757575'; // For subtitles/secondary text
 const successGreen = '#4CAF50'; // For 'Booked' or savings
 
+const ServiceImageCarousel = ({ images }) => {
+  const [activeIndex, setActiveIndex] = useState(0);
+
+  if (!images || images.length <= 1) {
+    return (
+      <Image
+        source={{ uri: images && images[0] ? images[0] : NO_IMAGE }}
+        style={styles.listItemImage}
+      />
+    );
+  }
+
+  const handleScroll = e => {
+    const idx = Math.round(
+      e.nativeEvent.contentOffset.x / styles.listItemImage.width,
+    );
+    if (idx !== activeIndex) setActiveIndex(idx);
+  };
+
+  return (
+    <View style={styles.carouselWrapper}>
+      <FlatList
+        data={images}
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        keyExtractor={(uri, index) => `${uri}-${index}`}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
+        renderItem={({ item: uri }) => (
+          <Image
+            source={{ uri: uri || NO_IMAGE }}
+            style={styles.listItemImage}
+          />
+        )}
+      />
+      <View style={styles.dotsContainer}>
+        {images.map((_, index) => (
+          <View
+            key={index}
+            style={[styles.dot, index === activeIndex && styles.activeDot]}
+          />
+        ))}
+      </View>
+    </View>
+  );
+};
+
 const ServiceItem = ({ item, shopId, experts, offers }) => {
   const navigation = useNavigation();
   const animatedValue = new Animated.Value(0);
+
+  const matchedOffer = offers?.find(o => o.serviceId === item.id);
+
+  const serviceImages =
+    item?.images && item.images.length > 0
+      ? item.images
+      : item?.imageUrl
+      ? [item.imageUrl]
+      : ['https://via.placeholder.com/80/EEEEEE/808080?text=Service'];
 
   // Simple animation for press feedback
   const handlePressIn = () => {
@@ -74,23 +131,29 @@ const ServiceItem = ({ item, shopId, experts, offers }) => {
         }}
         style={styles.listItemTouchable}
       >
-        <Image
-          source={{
-            uri:
-              typeof item.imageUrl === 'string' && item.imageUrl
-                ? item.imageUrl
-                : 'https://via.placeholder.com/80/EEEEEE/808080?text=Service',
-          }}
-          style={styles.listItemImage}
-        />
+        <ServiceImageCarousel images={serviceImages} />
         <View style={styles.listItemContent}>
+          {matchedOffer && (
+            <View style={styles.offerTag}>
+              <Text style={styles.offerTagText}>OFFER</Text>
+            </View>
+          )}
           <Text style={styles.listItemTitle} numberOfLines={1}>
             {item?.name ?? ''}
           </Text>
           <Text style={styles.listItemSubtitle}>
             {item.category?.name ?? ''}
           </Text>
-          <Text style={styles.listItemPrice}>₹{item?.rate ?? 0}</Text>
+          {matchedOffer ? (
+            <View style={styles.priceContainer}>
+              <Text style={styles.originalPrice}>₹{item?.rate ?? 0}</Text>
+              <Text style={styles.offerPrice}>
+                ₹{matchedOffer?.offerPrice ?? 0}
+              </Text>
+            </View>
+          ) : (
+            <Text style={styles.listItemPrice}>₹{item?.rate ?? 0}</Text>
+          )}
         </View>
         <Ionicons name="chevron-forward-outline" size={24} color={mediumGray} />
       </TouchableOpacity>
@@ -143,6 +206,7 @@ const OfferItem = ({ item, shopId, experts, offers }) => {
             experts,
             service: item,
             offers,
+            serviceName: item?.service?.name ?? '',
           })
         }
         style={styles.listItemTouchable}
@@ -375,6 +439,29 @@ const styles = StyleSheet.create({
     height: 60,
     borderRadius: 8,
     marginRight: 15,
+  },
+  carouselWrapper: {
+    width: 60,
+    height: 60,
+    marginRight: 15,
+  },
+  dotsContainer: {
+    position: 'absolute',
+    bottom: 3,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    justifyContent: 'center',
+  },
+  dot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: 'rgba(255,255,255,0.6)',
+    marginHorizontal: 2,
+  },
+  activeDot: {
+    backgroundColor: '#FFFFFF',
   },
   listItemContent: {
     flex: 1,

@@ -16,10 +16,10 @@ import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { GoogleAuthProvider } from '@react-native-firebase/auth';
 import { AuthContext } from '../../context/AuthContext';
 import { GOOGLE_ICON } from '../../constants/images';
-import { lightPurple, primaryColor, white } from '../../constants/colors';
+import { primaryColor, white } from '../../constants/colors';
 import LinearGradient from 'react-native-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { GOOGLE_SIGNIN_URL } from '../../services/apis';
+import { CLIENT_ID, GOOGLE_SIGNIN_URL } from '../../services/apis';
 
 const SigninWithGoogleScreen = ({ navigation }) => {
   const { refreshUser } = useContext(AuthContext);
@@ -27,8 +27,7 @@ const SigninWithGoogleScreen = ({ navigation }) => {
 
   useEffect(() => {
     GoogleSignin.configure({
-      webClientId:
-        '273666754104-8kqhpnril7nlsnvgf7mmddsc1mbf9r91.apps.googleusercontent.com',
+      webClientId: CLIENT_ID,
       offlineAccess: false,
     });
   }, []);
@@ -44,7 +43,6 @@ const SigninWithGoogleScreen = ({ navigation }) => {
   async function onGoogleButtonPress() {
     setLoading(true);
     try {
-      console.log('CLIEKD==============');
       const signInResult = await GoogleSignin.signIn();
       const googleIdToken = signInResult.data?.idToken || signInResult.idToken;
       if (!googleIdToken) throw new Error('No Google ID token received');
@@ -54,9 +52,7 @@ const SigninWithGoogleScreen = ({ navigation }) => {
         googleCredential,
       );
       const firebaseIdToken = await userCredential.user.getIdToken();
-      console.log('firebaseIdToken------------', firebaseIdToken);
 
-      console.log('GOOGLE_SIGNIN_URL----------------', GOOGLE_SIGNIN_URL);
       const response = await fetch(GOOGLE_SIGNIN_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -68,19 +64,13 @@ const SigninWithGoogleScreen = ({ navigation }) => {
 
       const backendData = await response.json();
 
-      console.log(
-        'bCKEND DDATA-0---------------',
-        backendData ? backendData : 'no backend data',
-      );
-
       if (!backendData.success)
         throw new Error(backendData.message || 'Login failed');
 
       await AsyncStorage.setItem('token', backendData.data.token);
       await refreshUser();
     } catch (error) {
-      // Alert.alert('Sign In Error', error.message);
-      console.log('Error while signin in---------------------', error);
+      Alert.alert('Sign In Error', error.message);
     } finally {
       setLoading(false);
     }
@@ -132,7 +122,8 @@ const SigninWithGoogleScreen = ({ navigation }) => {
                 )
               }
             >
-              {' '}Privacy Policy
+              {' '}
+              Privacy Policy
             </Text>
           </Text>
         </View>

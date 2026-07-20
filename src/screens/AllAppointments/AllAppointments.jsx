@@ -69,6 +69,25 @@ const HistoryItem = ({ item, navigation }) => {
       ? item.expert.image
       : NO_IMAGE;
 
+  const numberOfPeople = item?.appointment?.numberOfPeople || 1;
+  const totalRate = item?.appointment?.rate || 0;
+  const unitPrice =
+    numberOfPeople > 0 ? Math.round(totalRate / numberOfPeople) : totalRate;
+
+  // Handle specialist field - it could be array, string, or undefined
+  const getSpecialistText = specialist => {
+    if (!specialist) return 'Stylist';
+    if (Array.isArray(specialist)) {
+      return specialist.length > 0 ? specialist.join(', ') : 'Stylist';
+    }
+    if (typeof specialist === 'string') {
+      return formatText(specialist);
+    }
+    return 'Stylist';
+  };
+
+  const specialistText = getSpecialistText(item?.expert?.specialist);
+
   return (
     <TouchableOpacity
       style={styles.card}
@@ -81,7 +100,7 @@ const HistoryItem = ({ item, navigation }) => {
         <View style={styles.shopInfo}>
           <Ionicons name="business" size={16} color={primaryColor} />
           <Text style={styles.shopName} numberOfLines={1}>
-            {item?.shop?.parlourName}
+            {item?.shop?.parlourName || 'Unknown Shop'}
           </Text>
         </View>
         <View
@@ -103,8 +122,8 @@ const HistoryItem = ({ item, navigation }) => {
           <Text style={styles.expertName}>
             {item?.expert?.name || 'Unknown Expert'}
           </Text>
-          <Text style={styles.specialtyText}>
-            {formatText(item?.expert?.specialist ?? 'Stylist')}
+          <Text style={styles.specialtyText} numberOfLines={1}>
+            {specialistText}
           </Text>
 
           <View style={styles.dateTimeRow}>
@@ -113,17 +132,20 @@ const HistoryItem = ({ item, navigation }) => {
               {formatTimestamp(item?.appointment?.createdAt)}
             </Text>
           </View>
+
+          <View style={styles.quantityRow}>
+            <Ionicons name="people-outline" size={14} color="#6B7280" />
+            <Text style={styles.quantityText}>Quantity: {numberOfPeople}</Text>
+          </View>
         </View>
         <View style={styles.priceContainer}>
           <Text style={styles.priceLabel}>Total</Text>
-          <Text style={styles.priceValue}>₹{item?.appointment?.rate ?? 0}</Text>
+          <Text style={styles.priceValue}>₹{totalRate}</Text>
+          {numberOfPeople > 1 && (
+            <Text style={styles.unitPriceText}>₹{unitPrice} each</Text>
+          )}
         </View>
       </View>
-
-      {/* <View style={styles.cardFooter}>
-        <Text style={styles.viewDetailsText}>View Summary</Text>
-        <Ionicons name="chevron-forward" size={14} color="#9CA3AF" />
-      </View> */}
     </TouchableOpacity>
   );
 };
@@ -333,8 +355,18 @@ const styles = StyleSheet.create({
     color: '#6B7280',
     marginLeft: 4,
   },
+  quantityRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  quantityText: {
+    fontSize: 12,
+    color: '#6B7280',
+    marginLeft: 4,
+  },
   priceContainer: {
-    alignItems: 'flex-end',
+    alignItems: 'flex-end', 
   },
   priceLabel: {
     fontSize: 11,
@@ -344,6 +376,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '800',
     color: primaryColor,
+  },
+  unitPriceText: {
+    fontSize: 10,
+    color: '#9CA3AF',
+    marginTop: 2,
   },
   cardFooter: {
     flexDirection: 'row',

@@ -1,0 +1,190 @@
+{
+  "project_info": {
+    "project_number": "273666754104",
+    "project_id": "glamio-689aa",
+    "storage_bucket": "glamio-689aa.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:273666754104:android:b6fee57848215ef1ee48cd",
+        "android_client_info": {
+          "package_name": "com.glamio.customer"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "273666754104-5guilff2bqalv2nnksu80o3qhbtusg79.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.glamio.customer",
+            "certificate_hash": "ff8d4b4b6b1260b2b10c91edc850e46279fbf90f"
+          }
+        },
+        {
+          "client_id": "273666754104-jimrrrb29fs7c1qp1je7nrvq7eges8or.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.glamio.customer",
+            "certificate_hash": "b3dd3c4d13e75a5beff98ad9c3140820dd16931e"
+          }
+        },
+        {
+          "client_id": "273666754104-tpehvdtsa1t5gursf00m2idnk6dd8bab.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.glamio.customer",
+            "certificate_hash": "2bfcea2e1284183f8e3f101c23770b47a90193e1"
+          }
+        },
+        {
+          "client_id": "273666754104-8kqhpnril7nlsnvgf7mmddsc1mbf9r91.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyByJyyfZXnEoA2lai5t_EQhEn3ZgCejlcw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "273666754104-8kqhpnril7nlsnvgf7mmddsc1mbf9r91.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "273666754104-he11ofefq49d6rd06rqhaotq684eitjo.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.app.beautyApp"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:273666754104:android:616ee7a20c2e59daee48cd",
+        "android_client_info": {
+          "package_name": "com.glamio.expert"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "273666754104-b78u2g3f4eqsim455vrqcflmdchr0vi8.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.glamio.expert",
+            "certificate_hash": "6b9476c9f30a1b5f4c96fc130ce867c8f7ca34d2"
+          }
+        },
+        {
+          "client_id": "273666754104-lapabgblbvpphguj3i777htj2ttsh82d.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.glamio.expert",
+            "certificate_hash": "e670e854f1e4d847e7a13ec6a0ceacaa4944efee"
+          }
+        },
+        {
+          "client_id": "273666754104-8kqhpnril7nlsnvgf7mmddsc1mbf9r91.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyByJyyfZXnEoA2lai5t_EQhEn3ZgCejlcw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "273666754104-8kqhpnril7nlsnvgf7mmddsc1mbf9r91.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "273666754104-he11ofefq49d6rd06rqhaotq684eitjo.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.app.beautyApp"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:273666754104:android:46159dd977fab69fee48cd",
+        "android_client_info": {
+          "package_name": "com.orucom.customer"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "273666754104-01dk6ja9gdtsur3mq2vtemmksu4emr69.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.orucom.customer",
+            "certificate_hash": "b3dd3c4d13e75a5beff98ad9c3140820dd16931e"
+          }
+        },
+        {
+          "client_id": "273666754104-36a5i0udj0aqers0bd459luf2mqolcpn.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.orucom.customer",
+            "certificate_hash": "2bfcea2e1284183f8e3f101c23770b47a90193e1"
+          }
+        },
+        {
+          "client_id": "273666754104-apkefvhug0e7un3e7dinbm8qqoc9qti7.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.orucom.customer",
+            "certificate_hash": "f17c1b1ddd4bb4b46ca4f083468e4dc4da68bdcc"
+          }
+        },
+        {
+          "client_id": "273666754104-fb1cbetllhu55a79bi7i1lsvnmd5mj5l.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.orucom.customer",
+            "certificate_hash": "ff8d4b4b6b1260b2b10c91edc850e46279fbf90f"
+          }
+        },
+        {
+          "client_id": "273666754104-8kqhpnril7nlsnvgf7mmddsc1mbf9r91.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyByJyyfZXnEoA2lai5t_EQhEn3ZgCejlcw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "273666754104-8kqhpnril7nlsnvgf7mmddsc1mbf9r91.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "273666754104-he11ofefq49d6rd06rqhaotq684eitjo.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.app.beautyApp"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

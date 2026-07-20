@@ -79,6 +79,10 @@ function ShopsStack() {
       <Stack.Screen name="ShopsMain" component={NearByShopsList} />
       <Stack.Screen name="ParlourDetails" component={ParlourDetails} />
       <Stack.Screen name="BookingScreen" component={BookingScreen} />
+      <Stack.Screen
+        name="SearchResultsScreen"
+        component={SearchResultsScreen}
+      />
       {/* Add any other screens reachable from Shops tab */}
     </Stack.Navigator>
   );

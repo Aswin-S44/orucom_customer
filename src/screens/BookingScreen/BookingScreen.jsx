@@ -34,6 +34,7 @@ const BookingScreen = ({ route, navigation }) => {
   const [selectedSlot, setSelectedSlot] = useState(null);
   const [expertsLoading, setExpertsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [quantity, setQuantity] = useState(1);
 
   const formattedDate = selectedDate;
   const slotsForDate = slots[formattedDate] || [];
@@ -111,9 +112,16 @@ const BookingScreen = ({ route, navigation }) => {
 
   useEffect(() => {
     if (service) {
-      setSelectedServices([service]);
+      const serviceWithQty = { ...service, qty: quantity };
+      setSelectedServices([serviceWithQty]);
     }
-  }, [route]);
+  }, [service, quantity]);
+
+  useEffect(() => {
+    if (!selectedExpert && experts.length > 0) {
+      setSelectedExpert(experts[0].id);
+    }
+  }, [experts]);
 
   useEffect(() => {
     if (!selectedExpert) {
@@ -135,15 +143,34 @@ const BookingScreen = ({ route, navigation }) => {
   };
 
   const handleNext = () => {
+    const totalAmount = calculateTotal();
+    const updatedServices = selectedServices?.map(service => ({
+      ...service,
+      qty: quantity,
+      totalPrice: (service.rate || 0) * quantity,
+    }));
+
     navigation.navigate('BookingSummaryScreen', {
       selectedDate: selectedDate,
       selectedTime: selectedTime,
-      selectedServices: selectedServices,
+      selectedServices: updatedServices,
       selectedExpert: experts.find(expert => expert.id === selectedExpert),
       shopId,
       offers: route.params.offers,
       selectedSlot,
+      quantity: quantity,
+      totalAmount: totalAmount,
     });
+  };
+
+  const incrementQuantity = () => {
+    setQuantity(prev => prev + 1);
+  };
+
+  const decrementQuantity = () => {
+    if (quantity > 1) {
+      setQuantity(prev => prev - 1);
+    }
   };
 
   const markedDates = {
@@ -197,6 +224,12 @@ const BookingScreen = ({ route, navigation }) => {
     setSelectedSlot(slot);
   };
 
+  const calculateTotal = () => {
+    if (!selectedServices || selectedServices.length === 0) return 0;
+    const rate = selectedServices[0]?.rate || 0;
+    return rate * quantity;
+  };
+
   return (
     <View style={styles.outerContainer}>
       <StatusBar backgroundColor={primaryColor} barStyle="light-content" />
@@ -233,7 +266,11 @@ const BookingScreen = ({ route, navigation }) => {
                   <View key={expert.id} style={styles.expertItem}>
                     <TouchableOpacity
                       style={styles.expertCard}
-                      onPress={() => setSelectedExpert(expert.id)}
+                      onPress={() =>
+                        setSelectedExpert(prev =>
+                          prev === expert.id ? null : expert.id,
+                        )
+                      }
                     >
                       <View style={styles.avatarContainer}>
                         <Image
@@ -271,6 +308,39 @@ const BookingScreen = ({ route, navigation }) => {
                 ))
               )}
             </ScrollView>
+          </View>
+
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Quantity</Text>
+            <View style={styles.quantityWrapper}>
+              <View style={styles.quantityContainer}>
+                <TouchableOpacity
+                  style={[
+                    styles.quantityButton,
+                    quantity <= 1 && styles.quantityButtonDisabled,
+                  ]}
+                  onPress={decrementQuantity}
+                  disabled={quantity <= 1}
+                >
+                  <Ionicons
+                    name="remove"
+                    size={20}
+                    color={quantity <= 1 ? '#CCC' : '#D41172'}
+                  />
+                </TouchableOpacity>
+                <Text style={styles.quantityText}>{quantity}</Text>
+                <TouchableOpacity
+                  style={styles.quantityButton}
+                  onPress={incrementQuantity}
+                >
+                  <Ionicons name="add" size={20} color="#D41172" />
+                </TouchableOpacity>
+              </View>
+              <View style={styles.priceSummary}>
+                <Text style={styles.priceLabel}>Total Amount</Text>
+                <Text style={styles.priceValue}>₹{calculateTotal()}</Text>
+              </View>
+            </View>
           </View>
 
           <View style={styles.section}>
@@ -397,16 +467,16 @@ const BookingScreen = ({ route, navigation }) => {
               {selectedServices?.map(service => (
                 <View key={service.id} style={styles.tableRow}>
                   <Text style={[styles.tableCell, { flex: 2 }]}>
-                    {service.serviceName}
+                    {service.name}
                   </Text>
-                  <Text style={styles.tableCell}>{service.qty ?? 1}</Text>
+                  <Text style={styles.tableCell}>{quantity}</Text>
                   <Text
                     style={[
                       styles.tableCell,
                       { textAlign: 'right', color: primaryColor },
                     ]}
                   >
-                    ₹{service.servicePrice}
+                    ₹{(service?.rate || 0) * quantity}
                   </Text>
                 </View>
               ))}
@@ -664,6 +734,59 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 14,
     fontWeight: 'bold',
+  },
+  quantityWrapper: {
+    backgroundColor: '#F8FAFC',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    padding: 16,
+  },
+  quantityContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  quantityButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#FFF0F7',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#FFD6E8',
+  },
+  quantityButtonDisabled: {
+    backgroundColor: '#F5F5F5',
+    borderColor: '#E5E5E5',
+  },
+  quantityText: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#160B26',
+    marginHorizontal: 30,
+    minWidth: 40,
+    textAlign: 'center',
+  },
+  priceSummary: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 14,
+    paddingTop: 14,
+    borderTopWidth: 1,
+    borderTopColor: '#E2E8F0',
+  },
+  priceLabel: {
+    fontSize: 14,
+    color: '#6B7280',
+    fontWeight: '500',
+  },
+  priceValue: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#D41172',
   },
 });
 

@@ -29,7 +29,7 @@ import { AuthContext } from '../../context/AuthContext';
 import EmptyComponent from '../../components/EmptyComponent/EmptyComponent';
 import { getLocationPermission } from '../../apis/permissions';
 import Geolocation from '@react-native-community/geolocation';
-import { formattedDate, isShopOpen } from '../../utils/utils';
+import { formattedDate, getCloudinaryUrl, isShopOpen } from '../../utils/utils';
 import FirebaseNotificationService from '../../apis/FirebaseNotificationService';
 import {
   DEFAULT_AVATAR,
@@ -60,6 +60,16 @@ const HomeScreen = ({ navigation }) => {
     discount: '33.33% Free',
     dateRange: 'Jan 01 - Feb 28',
     image: OFFER_CARD_IMAGE,
+  };
+
+  const fetchReviewsForShop = async placeId => {
+    try {
+      if (!placeId) return 0;
+      const reviewData = await getReviews(placeId);
+      return reviewData?.rating || 0;
+    } catch (error) {
+      return 0;
+    }
   };
 
   const fetchOffers = async () => {
@@ -119,50 +129,39 @@ const HomeScreen = ({ navigation }) => {
 
   const fetchShops = async () => {
     try {
-      setLoading(true); 
+      const url = `${BACKEND_URL}/api/v1/customer/shops`;
 
-      const response = await fetch(GET_ALL_SHOPS, {
-        method: 'GET',
-      });
+      const res = await fetch(url);
 
-      const shopsData = await response.json();
+      if (!res.ok) {
+        throw new Error(`Request failed with status ${res.status}`);
+      }
 
-      if (shopsData?.shops?.length > 0) {
-        const transformedShops = shopsData.shops
-          .filter(item => item.shop !== null)
-          .map(item => item.shop);
+      const data = await res.json();
 
+      if (data?.shops?.length > 0) {
         const shopsWithRatings = await Promise.all(
-          transformedShops.map(async shop => {
+          data.shops.map(async shop => {
+            let totalRating = 0;
             if (shop.placeId) {
-              try {
-                const reviewData = await getReviews(shop.placeId);
-                return {
-                  ...shop,
-                  totalRating: reviewData?.rating || 0,
-                };
-              } catch (e) {
-                return { ...shop, totalRating: 0 };
-              }
+              totalRating = await fetchReviewsForShop(shop.placeId);
             }
             return {
               ...shop,
-              totalRating: 0,
+              totalRating,
             };
           }),
         );
-
         setShops(shopsWithRatings);
       } else {
         setShops([]);
       }
-    } catch (err) {
+    } catch (error) {
       setShops([]);
     } finally {
       setLoading(false);
     }
   };
-
   const fetchNotificationCount = async () => {
     if (userId) {
       const res = await getNotificationsCountByCustomerId(userId);
@@ -356,10 +355,9 @@ const HomeScreen = ({ navigation }) => {
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>Exclusive Deals</Text>
               <TouchableOpacity>
-                <Text style={styles.seeAllText}>See All</Text> 
+                <Text style={styles.seeAllText}>See All</Text>
               </TouchableOpacity>
             </View>
-
             <FlatList
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -371,7 +369,11 @@ const HomeScreen = ({ navigation }) => {
                   style={styles.offerCardWrapper}
                 >
                   <ImageBackground
-                    source={require('../../assets/images/banner1-old.jpg')}
+                    source={
+                      item?.image
+                        ? { uri: getCloudinaryUrl(item.image) }
+                        : require('../../assets/images/banner1-old.jpg')
+                    }
                     style={styles.offerCard}
                     imageStyle={{ borderRadius: 20 }}
                   >
@@ -409,7 +411,6 @@ const HomeScreen = ({ navigation }) => {
               <Text style={styles.seeAllText}>Explore</Text>
             </TouchableOpacity>
           </View>
-
           {loading ? (
             <CardSkeleton />
           ) : shops && shops.length > 0 ? (
@@ -431,13 +432,11 @@ const HomeScreen = ({ navigation }) => {
                     image={item?.shopImage || NO_IMAGE}
                     title={item.parlourName}
                     location={item.address}
-                    rating={item.totalRating ?? 0}
+                    rating={item?.totalRating ?? 0}
                     status={true}
-                    servicesOffered={item.services
-                      ?.map(s => s.serviceName)
-                      .join(', ')}
-                    offers={item.offers}
-                    placeId={item?.placeId}
+                    servicesOffered={item.services?.map(s => s.name).join(', ')}
+                    offers={[]}
+                    placeId={item?.placeId ?? ''}
                   />
                 </TouchableOpacity>
               )}

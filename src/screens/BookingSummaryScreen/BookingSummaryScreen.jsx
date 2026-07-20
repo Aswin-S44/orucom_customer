@@ -19,19 +19,11 @@ import { AuthContext } from '../../context/AuthContext';
 import {
   createAppointment,
   createNotification,
-  sendAppointmentNofification,
   sendAppointmentNotification,
   updateSlotInFirestore,
 } from '../../apis/services';
 import { DEFAULT_AVATAR } from '../../constants/images';
-import firestore, {
-  doc,
-  getDoc,
-  getFirestore,
-  updateDoc,
-} from '@react-native-firebase/firestore';
-import { BACKEND_URL } from '../../services/apis';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import firestore from '@react-native-firebase/firestore';
 
 const Row = ({ icon, label, value }) => (
   <View style={styles.row}>
@@ -70,9 +62,8 @@ const AmountRow = ({ service, qty, price, isBold = false }) => (
 );
 
 const BookingSummaryScreen = ({ route, navigation }) => {
-  const { userId, userData, user } = useContext(AuthContext);
+  const { userId, userData } = useContext(AuthContext);
   const [modalVisible, setModalVisible] = useState(false);
-  const [showWarningModal, setShowWarningModal] = useState(false);
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedTime, setSelectedTime] = useState('');
   const [selectedServices, setSelectedServices] = useState([]);
@@ -81,6 +72,7 @@ const BookingSummaryScreen = ({ route, navigation }) => {
   const [selectedExpert, setSelectedExpert] = useState('');
   const [selectedSlot, setSelectedSlot] = useState('');
   const [loadingSummary, setLoadingSummary] = useState(true);
+  const [quantity, setQuantity] = useState(1);
 
   useEffect(() => {
     if (route.params) {
@@ -92,7 +84,11 @@ const BookingSummaryScreen = ({ route, navigation }) => {
           selectedServices,
           selectedExpert,
           offers,
+          totalAmount,
+          quantity: qty,
         } = route.params;
+
+        setQuantity(qty || 1);
 
         const [year, month, day] = selectedDate.split('-');
         const formattedDate = `${day}-${month}-${year}`;
@@ -112,14 +108,19 @@ const BookingSummaryScreen = ({ route, navigation }) => {
 
         const updatedServices = await Promise.all(
           selectedServices.map(async service => {
+            const serviceQty = service.qty || qty || 1;
             if (
               offers &&
               offers.length > 0 &&
               offers[0].offerPrice !== undefined
             ) {
-              return { ...service, offerPrice: offers[0].offerPrice };
+              return {
+                ...service,
+                offerPrice: offers[0].offerPrice,
+                qty: serviceQty,
+              };
             }
-            return { ...service, offerPrice: 0 };
+            return { ...service, offerPrice: 0, qty: serviceQty };
           }),
         );
         setSelectedServices(updatedServices);
@@ -127,11 +128,15 @@ const BookingSummaryScreen = ({ route, navigation }) => {
         setSelectedExpert(selectedExpert.id);
         setSelectedSlot(selectedTime);
 
-        const calculatedSubtotal = updatedServices.reduce(
-          (sum, service) => sum + (service.offerPrice || service.servicePrice),
-          0,
-        );
-        setSubtotal(calculatedSubtotal);
+        const calculatedTotal =
+          totalAmount ||
+          updatedServices.reduce(
+            (sum, service) =>
+              sum +
+              (service.offerPrice || service.rate || 0) * (service.qty || 1),
+            0,
+          );
+        setSubtotal(calculatedTotal);
         setLoadingSummary(false);
       };
       fetchData();
@@ -141,15 +146,10 @@ const BookingSummaryScreen = ({ route, navigation }) => {
   const total = subtotal;
 
   const handleConfirmBooking = async () => {
-    const token = await AsyncStorage.getItem('token');
-
-    if (!userId || !token) return;
-    // setConfirming(true);
+    if (!userId) return;
+    setConfirming(true);
 
     const serviceIds = selectedServices.map(s => s.id);
-    const currentSlot = route?.params?.selectedSlot;
-    const updatedSlotCount = currentSlot?.bookedCount + 1;
-
     const bookingData = {
       serviceIds,
       selectedDate,
@@ -159,238 +159,28 @@ const BookingSummaryScreen = ({ route, navigation }) => {
       totalAmount: subtotal,
       shopId: route.params.shopId,
       expertId: selectedExpert,
-      bookedCount: updatedSlotCount,
-    };
-
-    const newAppointment = {
-      shopId: route.params.shopId,
-      expertId: selectedExpert,
-      serviceIds,
-      slotId: currentSlot?.id,
+      quantity: quantity,
+      services: selectedServices.map(s => ({
+        id: s.id,
+        name: s.name,
+        rate: s.rate,
+        qty: s.qty || quantity || 1,
+        totalPrice: (s.rate || 0) * (s.qty || quantity || 1),
+      })),
     };
 
     try {
-      setConfirming(true);
-
-      const newBookingUrl = `${BACKEND_URL}/api/v1/customer/booking`;
-
-      const response = await fetch(newBookingUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `${token}`,
-        },
-        body: JSON.stringify(newAppointment),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result?.message || 'Booking failed');
-      }
-
-      if (!userData?.phone || userData?.phone?.trim() == '') {
-        setShowWarningModal(true);
-        return;
-      }
-
-      const notificationUrl = `${BACKEND_URL}/api/v1/notifications`;
-
-      // const notificationPayload = {
-      //   notificationTypeId: 1,
-      //   toId: route?.params?.shopId,
-      //   message: `${userData?.username || 'Customer'} sent a booking request`,
-      //   shopId: route?.params?.shopId,
-      // };
-
-      // console.log('notificationPayload----------------', notificationPayload);
-
-      // const notificationResponse = await fetch(notificationUrl, {
-      //   method: 'POST',
-      //   headers: {
-      //     'Content-Type': 'application/json',
-      //     Authorization: `${token}`,
-      //   },
-      //   body: JSON.stringify(notificationPayload),
-      // });
-
-      // const notificationResult = await notificationResponse.json();
-
-      // console.log('notificationResult----------------', notificationResult);
-
       setModalVisible(true);
     } catch (error) {
       console.error('Error creating appointment:', error);
     } finally {
       setConfirming(false);
     }
-
-    // try {
-    //   const newBookingUrl = `${BACKEND_URL}/api/v1/customer/booking`;
-    //   const response = await fetch(newBookingUrl, {
-    //     method: 'POST',
-    //     headers: {
-    //       'Content-Type': 'application/json',
-    //       Authorization: `${token}`,
-    //     },
-    //     body: JSON.stringify(newAppointment),
-    //   });
-
-    //   const result = await response.json();
-
-    //   console.log('result ---------------', result ? result : 'no result');
-
-    //   // const updateSlotUrl = `${BACKEND_URL}/api/v1/slots/${currentSlot?.id}`;
-
-    //   // const slotResponse = await fetch(updateSlotUrl, {
-    //   //   method: 'PATCH',
-    //   //   headers: {
-    //   //     'Content-Type': 'application/json',
-    //   //     Authorization: `${token}`,
-    //   //   },
-    //   //   body: JSON.stringify({
-    //   //     isAvailable: false,
-    //   //   }),
-    //   // });
-
-    //   // console.log(
-    //   //   'slotResponse -----------',
-    //   //   slotResponse ? slotResponse : 'no slotResponse',
-    //   // );
-
-    //   // const appointmentRes = await createAppointment(userId, bookingData);
-    //   if (!userData?.phone || userData?.phone?.trim() == '') {
-    //     setShowWarningModal(true);
-    //     return;
-    //   }
-    //   // const appointmentRes = firestore().collection('appointments').doc();
-    //   // await appointmentRes.set({
-    //   //   ...bookingData,
-    //   //   userId,
-    //   //   createdAt: new Date(),
-    //   // });
-    //   setModalVisible(true);
-    //   // const availabilityStatus =
-    //   //   currentSlot?.bookedCount < currentSlot?.maxCapacity ? true : false;
-    //   // updateSlotInFirestore(selectedSlot.id, {
-    //   //   bookedCount: updatedSlotCount,
-    //   //   isAvailable: availabilityStatus,
-    //   // });
-    //   // await createNotification(
-    //   //   userId,
-    //   //   route.params.shopId,
-    //   //   appointmentRes.id ?? null,
-    //   //   userData?.fullName ?? '',
-    //   //   userData?.profileImage ?? DEFAULT_AVATAR,
-    //   // );
-    //   // sendAppointmentNotification(
-    //   //   userId,
-    //   //   route.params.shopId,
-    //   //   APPOINTMENT_TYPES.BOOKING_REQUEST_SENT,
-    //   //   appointmentRes.id ?? null,
-    //   // );
-    // } catch (error) {
-    //   console.error('Error creating appointment:', error);
-    // } finally {
-    //   setConfirming(false);
-    // }
   };
-
-  // const handleConfirmBooking = async () => {
-  //   console.log('11111111111111111');
-  //   const token = await AsyncStorage.getItem('token');
-  //   console.log('token--------------', token ? token : 'no token');
-  //   console.log('user id---------', userId, token);
-  //   if (!userId || !token) return;
-  //   // setConfirming(true);
-
-  //   const serviceIds = selectedServices.map(s => s.id);
-  //   const currentSlot = route?.params?.selectedSlot;
-  //   const updatedSlotCount = currentSlot?.bookedCount + 1;
-
-  //   const bookingData = {
-  //     serviceIds,
-  //     selectedDate,
-  //     selectedTime,
-  //     appointmentStatus: APPOINTMENT_STATUSES.PENDING,
-  //     customerId: userId,
-  //     totalAmount: subtotal,
-  //     shopId: route.params.shopId,
-  //     expertId: selectedExpert,
-  //     bookedCount: updatedSlotCount,
-  //   };
-
-  //   console.log('bookingData---------------', bookingData);
-
-  //   const newAppointment = {
-  //     shopId: route.params.shopId,
-  //     expertId: selectedExpert,
-  //     serviceIds,
-  //     slotId: currentSlot?.id,
-  //   };
-
-  //   console.log('newAppointment-----------------', newAppointment);
-
-  //   try {
-  //     const newBookingUrl = `${BACKEND_URL}/api/v1/customer/booking`;
-  //     const response = await fetch(newBookingUrl, {
-  //       method: 'POST',
-  //       headers: {
-  //         'Content-Type': 'application/json',
-  //         Authorization: `${token}`,
-  //       },
-  //       body: JSON.stringify(newAppointment),
-  //     });
-
-  //     const result = await response.json();
-
-  //     console.log('result ---------------', result ? result : 'no result');
-
-  //     // const appointmentRes = await createAppointment(userId, bookingData);
-  //     // if (!userData?.phone || userData?.phone?.trim() == '') {
-  //     //   setShowWarningModal(true);
-  //     //   return;
-  //     // }
-  //     // const appointmentRes = firestore().collection('appointments').doc();
-  //     // await appointmentRes.set({
-  //     //   ...bookingData,
-  //     //   userId,
-  //     //   createdAt: new Date(),
-  //     // });
-  //     // setModalVisible(true);
-  //     // const availabilityStatus =
-  //     //   currentSlot?.bookedCount < currentSlot?.maxCapacity ? true : false;
-  //     // updateSlotInFirestore(selectedSlot.id, {
-  //     //   bookedCount: updatedSlotCount,
-  //     //   isAvailable: availabilityStatus,
-  //     // });
-  //     // await createNotification(
-  //     //   userId,
-  //     //   route.params.shopId,
-  //     //   appointmentRes.id ?? null,
-  //     //   userData?.fullName ?? '',
-  //     //   userData?.profileImage ?? DEFAULT_AVATAR,
-  //     // );
-  //     // sendAppointmentNotification(
-  //     //   userId,
-  //     //   route.params.shopId,
-  //     //   APPOINTMENT_TYPES.BOOKING_REQUEST_SENT,
-  //     //   appointmentRes.id ?? null,
-  //     // );
-  //   } catch (error) {
-  //     console.error('Error creating appointment:', error);
-  //   } finally {
-  //     setConfirming(false);
-  //   }
-  // };
 
   const handleModalClose = () => {
     setModalVisible(false);
     navigation.navigate('Appointment', { newAppointment: true });
-  };
-
-  const handleClosWarningModalClose = () => {
-    setShowWarningModal(false);
   };
 
   return (
@@ -421,41 +211,6 @@ const BookingSummaryScreen = ({ route, navigation }) => {
         </View>
       </Modal>
 
-      <Modal
-        transparent={true}
-        visible={showWarningModal}
-        animationType="fade"
-        onRequestClose={handleClosWarningModalClose}
-      >
-        <View style={styles.modalBackdrop}>
-          <View style={styles.modalContainer}>
-            <View style={styles.warningIconContainer}>
-              <Ionicons name="warning-outline" size={36} color="#fff" />
-            </View>
-            <Text style={styles.modalText}>
-              Please add your mobile number to continue with the booking.
-            </Text>
-            <View style={styles.spaceBetween}>
-              <TouchableOpacity
-                style={styles.button}
-                onPress={handleClosWarningModalClose}
-              >
-                <Text style={styles.cancelText}>Cancel</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.button, { backgroundColor: primaryColor }]}
-                onPress={() => {
-                  navigation.navigate('EditProfileScreen');
-                }}
-              >
-                <Text style={styles.okText}>Go to profile</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
-
       <TouchableOpacity
         style={styles.backButton}
         onPress={() => navigation.goBack()}
@@ -479,6 +234,7 @@ const BookingSummaryScreen = ({ route, navigation }) => {
               <Text style={styles.sectionTitle}>Appointment Details</Text>
               <Row icon="calendar-outline" label="Date" value={selectedDate} />
               <Row icon="time-outline" label="Time" value={selectedTime} />
+              <Row icon="person-outline" label="Quantity" value={quantity} />
             </View>
 
             <View style={styles.section}>
@@ -498,27 +254,27 @@ const BookingSummaryScreen = ({ route, navigation }) => {
                   Price
                 </Text>
               </View>
-              {selectedServices.map((service, index) => (
-                <AmountRow
-                  key={index}
-                  service={service.serviceName}
-                  qty="01"
-                  price={`${service.offerPrice || service.servicePrice}`}
-                />
-              ))}
+              {selectedServices.map((service, index) => {
+                const serviceQty = service.qty || quantity || 1;
+                const unitPrice = service.offerPrice || service.rate || 0;
+                const totalPrice = unitPrice * serviceQty;
+                return (
+                  <AmountRow
+                    key={index}
+                    service={service.name}
+                    qty={serviceQty}
+                    price={totalPrice}
+                  />
+                );
+              })}
 
               <View style={styles.separator} />
 
-              <AmountRow service="Subtotal" qty="" price={`${subtotal}`} />
+              <AmountRow service="Subtotal" qty="" price={subtotal} />
 
               <View style={styles.separator} />
 
-              <AmountRow
-                service="Total"
-                qty=""
-                price={`${total}`}
-                isBold={true}
-              />
+              <AmountRow service="Total" qty="" price={total} isBold={true} />
             </View>
           </ScrollView>
         )}
@@ -563,23 +319,18 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     marginTop: 100,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#fff',
     borderTopLeftRadius: 40,
     borderTopRightRadius: 40,
     paddingHorizontal: 25,
     paddingTop: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 20,
   },
   mainTitle: {
-    fontSize: 30,
-    fontWeight: '800',
-    color: '#160B26',
+    fontSize: 28,
+    fontWeight: '500',
+    color: '#333',
     textAlign: 'center',
     marginVertical: 25,
-    letterSpacing: 0.3,
   },
   section: {
     marginBottom: 25,
@@ -587,11 +338,11 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 22,
-    fontWeight: '600',
-    color: '#160B26',
+    fontWeight: '500',
+    color: '#333',
     marginBottom: 20,
     borderBottomWidth: 1,
-    borderBottomColor: '#E2E8F0',
+    borderBottomColor: '#eee',
     paddingBottom: 10,
   },
   row: {
@@ -609,23 +360,23 @@ const styles = StyleSheet.create({
   },
   text: {
     fontSize: 17,
-    color: '#6B7280',
+    color: '#555',
     fontWeight: '400',
   },
   textValue: {
     fontSize: 17,
-    color: '#374151',
+    color: '#333',
     fontWeight: '500',
   },
   amountHeader: {
     flexDirection: 'row',
     paddingBottom: 10,
     borderBottomWidth: 1,
-    borderBottomColor: '#E2E8F0',
+    borderBottomColor: '#eee',
     marginBottom: 10,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#f8f8f8',
     paddingVertical: 10,
-    borderRadius: 12,
+    borderRadius: 8,
     paddingHorizontal: 10,
   },
   amountRow: {
@@ -637,49 +388,47 @@ const styles = StyleSheet.create({
   amountCell: {
     flex: 1,
     fontSize: 16,
-    color: '#6B7280',
+    color: '#555',
   },
   currencyIcon: {
     fontSize: 16,
-    color: '#6B7280',
+    color: '#555',
     marginRight: 2,
   },
   amountText: {
     fontSize: 16,
-    color: '#6B7280',
+    color: '#555',
     textAlign: 'right',
   },
   boldText: {
-    fontWeight: '600',
-    color: '#160B26',
+    fontWeight: '500',
+    color: '#333',
     fontSize: 17,
   },
   separator: {
     height: 1,
-    backgroundColor: '#E2E8F0',
+    backgroundColor: '#eee',
     marginVertical: 15,
   },
   confirmButton: {
-    backgroundColor: '#D41172',
-    paddingVertical: 18,
-    paddingHorizontal: 28,
-    borderRadius: 50,
+    backgroundColor: primaryColor,
+    padding: 18,
+    borderRadius: 15,
     alignItems: 'center',
     marginVertical: 20,
-    shadowColor: '#D41172',
-    shadowOffset: { width: 0, height: 14 },
-    shadowOpacity: 0.4,
-    shadowRadius: 40,
-    elevation: 12,
+    shadowColor: primaryColor,
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 5,
   },
   confirmButtonText: {
     color: '#fff',
-    fontSize: 17,
-    fontWeight: '600',
-    letterSpacing: 0.2,
+    fontSize: 19,
+    fontWeight: '500',
   },
   disabledButton: {
-    backgroundColor: '#94A3B8',
+    backgroundColor: '#b0b0b0',
     shadowOpacity: 0,
     elevation: 0,
   },
@@ -690,29 +439,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   modalContainer: {
-    backgroundColor: '#FFFBF6',
+    backgroundColor: 'white',
     borderRadius: 20,
     width: '85%',
     alignItems: 'center',
     overflow: 'hidden',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 20 },
-    shadowOpacity: 0.1,
-    shadowRadius: 48,
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
     elevation: 10,
   },
   successIconContainer: {
-    backgroundColor: '#D41172',
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 35,
-    marginBottom: 15,
-  },
-  warningIconContainer: {
-    backgroundColor: '#D41172',
+    backgroundColor: primaryColor,
     width: 70,
     height: 70,
     borderRadius: 35,
@@ -722,25 +461,24 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   modalText: {
-    fontSize: 17,
+    fontSize: 19,
     fontWeight: '500',
-    color: '#374151',
+    color: '#333',
     textAlign: 'center',
     marginBottom: 30,
     paddingHorizontal: 25,
-    lineHeight: 27,
+    lineHeight: 28,
   },
   okButton: {
-    backgroundColor: '#D41172',
+    backgroundColor: '#333',
     width: '100%',
     padding: 20,
     alignItems: 'center',
   },
   okButtonText: {
-    color: '#fff',
-    fontSize: 17,
-    fontWeight: '600',
-    letterSpacing: 0.2,
+    color: 'white',
+    fontSize: 19,
+    fontWeight: '500',
   },
   summaryLoadingContainer: {
     flex: 1,
@@ -749,35 +487,9 @@ const styles = StyleSheet.create({
   },
   summaryLoadingText: {
     marginTop: 15,
-    fontSize: 17,
-    color: '#6B7280',
+    fontSize: 19,
+    color: '#555',
     fontWeight: '500',
-  },
-  spaceBetween: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    width: '100%',
-    paddingHorizontal: 20,
-    marginTop: 20,
-  },
-  button: {
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 50,
-    backgroundColor: '#F1F5F9',
-    marginBottom: 20,
-    alignContent: 'center',
-  },
-  cancelText: {
-    fontSize: 16,
-    color: '#D41172',
-    fontWeight: '600',
-  },
-  okText: {
-    fontSize: 16,
-    color: '#fff',
-    fontWeight: '600',
   },
 });
 

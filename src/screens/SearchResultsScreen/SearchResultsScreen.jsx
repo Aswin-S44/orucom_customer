@@ -20,7 +20,8 @@ import { AuthContext } from '../../context/AuthContext';
 import ServiceCardSkeleton from '../../components/ServiceCardSkeleton/ServiceCardSkeleton';
 import LocationPrompt from '../../components/LocationPrompt/LocationPrompt';
 import SearchPrompt from '../../components/SearchPrompt/SearchPrompt';
-import { GET_ALL_SHOPS } from '../../services/apis';
+import { BACKEND_URL, GET_ALL_SHOPS } from '../../services/apis';
+import { getReviews } from '../../apis/services';
 
 const debounce = (func, wait) => {
   let timeout;
@@ -88,10 +89,21 @@ const SearchResultsScreen = ({ navigation }) => {
   const [searchCount, setSearchCount] = useState(0);
   const { userData } = useContext(AuthContext);
 
+  const fetchReviewsForShop = async placeId => {
+    try {
+      if (!placeId) return 0;
+      const reviewData = await getReviews(placeId);
+      return reviewData?.rating || 0;
+    } catch (error) {
+      return 0;
+    }
+  };
+
   const performSearch = async term => {
     try {
       setLoading(true);
-      const response = await fetch(GET_ALL_SHOPS, {
+      const url = `${BACKEND_URL}/api/v1/customer/shops`;
+      const response = await fetch(url, {
         method: 'GET',
       });
 
@@ -99,7 +111,19 @@ const SearchResultsScreen = ({ navigation }) => {
       let transformedShops = [];
 
       if (shopsData?.shops?.length > 0) {
-        transformedShops = shopsData.shops.map(item => item.shop);
+        const shopsWithRatings = await Promise.all(
+          shopsData.shops.map(async shop => {
+            let totalRating = 0;
+            if (shop.placeId) {
+              totalRating = await fetchReviewsForShop(shop.placeId);
+            }
+            return {
+              ...shop,
+              totalRating,
+            };
+          }),
+        );
+        transformedShops = shopsWithRatings;
       }
 
       if (!term.trim()) {
@@ -123,7 +147,6 @@ const SearchResultsScreen = ({ navigation }) => {
         setSearchCount(filtered.length);
       }
     } catch (error) {
-      console.error('Search error:', error);
       setSearchResults([]);
       setSearchCount(0);
     } finally {
@@ -181,7 +204,6 @@ const SearchResultsScreen = ({ navigation }) => {
         <Text style={styles.searchTitle}>
           Show Search Result ({searchCount})
         </Text>
-
         {loading ? (
           <SearchPrompt title="Searching shops" fileName="Searching.json" />
         ) : searchResults?.length === 0 ? (
@@ -215,7 +237,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     zIndex: 10,
   },
-  backButtonText: { color: '#fff', fontSize: 18, marginLeft: 5, fontWeight: '500' },
+  backButtonText: {
+    color: '#fff',
+    fontSize: 18,
+    marginLeft: 5,
+    fontWeight: '500',
+  },
   container: {
     flex: 1,
     marginTop: 100,

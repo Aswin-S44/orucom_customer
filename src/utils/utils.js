@@ -2,7 +2,7 @@ import { format, isValid } from 'date-fns';
 
 export const formatText = text =>
   text
-    .split('_')
+    ?.split('_')
     .map(word => word.charAt(0).toUpperCase() + word.slice(1))
     .join(' ');
 
@@ -90,4 +90,24 @@ export const formattedDate = incomingDate => {
     month: 'short',
     day: '2-digit',
   });
+};
+
+export const getCloudinaryUrl = url => {
+  if (!url) return null;
+
+  // If it's a Cloudinary URL with invalid version
+  if (url.includes('cloudinary.com') && url.includes('/v')) {
+    // Extract the path after the version
+    const parts = url.split('/');
+    const versionIndex = parts.findIndex(p => p.startsWith('v'));
+    if (versionIndex !== -1) {
+      // Remove the version part
+      const cleanedParts = [
+        ...parts.slice(0, versionIndex),
+        ...parts.slice(versionIndex + 1),
+      ];
+      return cleanedParts.join('/');
+    }
+  }
+  return url;
 };

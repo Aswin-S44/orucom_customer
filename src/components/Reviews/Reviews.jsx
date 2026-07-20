@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import {
   View,
   Text,
@@ -9,7 +9,6 @@ import {
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { primaryColor, starColor } from '../../constants/colors';
-import { getReviews } from '../../apis/services';
 import { DEFAULT_AVATAR } from '../../constants/images';
 import ServiceCardSkeleton from '../ServiceCardSkeleton/ServiceCardSkeleton';
 import EmptyComponent from '../EmptyComponent/EmptyComponent';
@@ -91,96 +90,55 @@ const ReviewItem = ({ item }) => (
   </View>
 );
 
-const Reviews = ({ placeId }) => {
-  const [reviews, setReviews] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [error, setError] = useState(null);
-  const [avgRating, setAvgRating] = useState(0);
-  const [page, setPage] = useState(0);
-  const [hasMore, setHasMore] = useState(true);
+const Reviews = ({
+  reviews = [],
+  avgRating = 0,
+  totalReviews = 0,
+  loading = false,
+  loadingMore = false,
+  error = null,
+  onLoadMore = null,
+  hasMore = true,
+}) => {
+  if (loading) {
+    return <ServiceCardSkeleton />;
+  }
 
-  const fetchReviews = async (pageNum = 0) => {
-    try {
-      if (pageNum === 0) setLoading(true);
-      else setLoadingMore(true);
-
-      const res = await getReviews(placeId, pageNum);
-
-      if (res && res.reviews && res.reviews.length > 0) {
-        setReviews(prev =>
-          pageNum === 0 ? res.reviews : [...prev, ...res.reviews],
-        );
-        setAvgRating(res.rating);
-        setHasMore(res.reviews.length === 5);
-      } else {
-        setHasMore(false);
-        if (pageNum === 0) setReviews([]);
-      }
-    } catch (err) {
-      setError(err);
-    } finally {
-      setLoading(false);
-      setLoadingMore(false);
-    }
-  };
-
-  useEffect(() => {
-    if (placeId) {
-      setPage(0);
-      setReviews([]);
-      setHasMore(true);
-      fetchReviews(0);
-    }
-  }, [placeId]);
-
-  const handleLoadMore = () => {
-    if (!loadingMore && hasMore && reviews.length > 0) {
-      const nextPage = page + 1;
-      setPage(nextPage);
-      fetchReviews(nextPage);
-    }
-  };
+  if (error || reviews.length === 0) {
+    return <EmptyComponent />;
+  }
 
   return (
     <View style={styles.container}>
-      {loading ? (
-        <ServiceCardSkeleton />
-      ) : reviews.length === 0 ? (
-        <EmptyComponent />
-      ) : (
-        <>
-          <FlatList
-            data={reviews}
-            renderItem={({ item }) => <ReviewItem item={item} />}
-            keyExtractor={(item, index) => item.id ?? index.toString()}
-            ItemSeparatorComponent={() => <View style={styles.separator} />}
-            onEndReached={handleLoadMore}
-            onEndReachedThreshold={0.5}
-            ListFooterComponent={
-              loadingMore ? (
-                <ActivityIndicator size="small" color={primaryColor} />
-              ) : null
-            }
-          />
-          <View style={styles.overallRatingContainer}>
-            <View style={styles.overallHeader}>
-              <Text style={styles.overallRatingNumber}>{avgRating}</Text>
-              <View>
-                <Text style={styles.overallRatingTitle}>Overall Rating</Text>
-                <View style={styles.overallStarsRow}>
-                  <StarRating rating={avgRating} size={18} />
-                  <Text style={styles.reviewCountText}>({reviews.length})</Text>
-                </View>
-              </View>
-            </View>
-            <View style={styles.progressSection}>
-              <ProgressBar label="Service" percentage={90} />
-              <ProgressBar label="Price" percentage={75} />
+      <FlatList
+        data={reviews}
+        renderItem={({ item }) => <ReviewItem item={item} />}
+        keyExtractor={(item, index) => item.id ?? index.toString()}
+        ItemSeparatorComponent={() => <View style={styles.separator} />}
+        onEndReached={onLoadMore}
+        onEndReachedThreshold={0.5}
+        ListFooterComponent={
+          loadingMore ? (
+            <ActivityIndicator size="small" color={primaryColor} />
+          ) : null
+        }
+      />
+      <View style={styles.overallRatingContainer}>
+        <View style={styles.overallHeader}>
+          <Text style={styles.overallRatingNumber}>{avgRating}</Text>
+          <View>
+            <Text style={styles.overallRatingTitle}>Overall Rating</Text>
+            <View style={styles.overallStarsRow}>
+              <StarRating rating={avgRating} size={18} />
+              <Text style={styles.reviewCountText}>({totalReviews})</Text>
             </View>
           </View>
-        </>
-      )}
+        </View>
+        <View style={styles.progressSection}>
+          <ProgressBar label="Service" percentage={90} />
+          <ProgressBar label="Price" percentage={75} />
+        </View>
+      </View>
     </View>
   );
 };

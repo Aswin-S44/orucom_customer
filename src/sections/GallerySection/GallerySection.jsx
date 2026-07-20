@@ -28,29 +28,11 @@ const GalleryItem = ({ item, onPress }) => {
   );
 };
 
-const GallerySection = ({ placeId }) => {
-  const [loading, setLoading] = useState(true);
-  const [images, setImages] = useState([]);
+const GallerySection = ({ placeId, images }) => {
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const flatListRef = useRef(null);
   const swipeHintAnim = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    const fetchGallery = async () => {
-      if (placeId) {
-        setLoading(true);
-        const res = await getGalleryImages(placeId);
-        if (res && res.length > 0) {
-          setImages(res);
-        }
-        setLoading(false);
-      } else {
-        setImages([]);
-      }
-    };
-    fetchGallery();
-  }, [placeId]);
 
   const handleImagePress = imageUrl => {
     const index = images.indexOf(imageUrl);
@@ -109,9 +91,7 @@ const GallerySection = ({ placeId }) => {
 
   return (
     <>
-      {loading ? (
-        <ServiceCardSkeleton />
-      ) : images.length === 0 ? (
+      {images.length === 0 ? (
         <EmptyComponent />
       ) : (
         <FlatList

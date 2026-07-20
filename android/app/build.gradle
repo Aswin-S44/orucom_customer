@@ -81,7 +81,7 @@ android {
 
     namespace "com.app" 
     defaultConfig {
-        applicationId "com.orucom.customer"
+        applicationId "com.orucom_customer"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 12
@@ -153,9 +153,9 @@ dependencies {
 
 }
 
-// project.ext.react = [
-//   enableHermes: true,  // should be true for faster JS performance
-// ]
+project.ext.react = [
+  enableHermes: false,  // should be true for faster JS performance
+]
 
 // project.ext.react = [
 //     enableHermes: true,  // Required for worklets

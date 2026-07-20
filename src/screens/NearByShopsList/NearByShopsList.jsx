@@ -22,7 +22,9 @@ import NoShopsAvailable from '../../components/NoShopsAvailable/NoShopsAvailable
 import Card from '../../components/Card/Card';
 import { isShopOpen } from '../../utils/utils';
 import LocationEnabler from '../../../android/app/src/LocationEnabler';
-import { GET_ALL_SHOPS } from '../../services/apis';
+import { BACKEND_URL, GET_ALL_SHOPS } from '../../services/apis';
+
+// import haversine from 'haversine-distance';
 
 const NearByShopsList = ({ navigation }) => {
   const [region, setRegion] = useState(null);
@@ -33,8 +35,11 @@ const NearByShopsList = ({ navigation }) => {
   const mapRef = useRef(null);
   const { user, userData } = useContext(AuthContext);
   const [locationStatus, setLocationStatus] = useState('Checking...');
+  const [userLocation, setUserLocation] = useState(null);
+  const [mapReady, setMapReady] = useState(false);
 
   const calculateDistance = (lat1, lon1, lat2, lon2) => {
+    if (!lat1 || !lon1 || !lat2 || !lon2) return null;
     const toRad = val => (val * Math.PI) / 180;
     const R = 6371;
     const dLat = toRad(lat2 - lat1);
@@ -49,10 +54,51 @@ const NearByShopsList = ({ navigation }) => {
     return +(R * c).toFixed(1);
   };
 
+  const fetchReviewsForShop = async placeId => {
+    try {
+      if (!placeId) return 0;
+      const reviewData = await getReviews(placeId);
+      return reviewData?.rating || 0;
+    } catch (error) {
+      return 0;
+    }
+  };
+
+  const fitMapToMarkers = () => {
+    if (!mapRef.current || !mapReady) return;
+
+    const allMarkers = [];
+
+    if (userLocation) {
+      allMarkers.push({
+        latitude: userLocation.latitude,
+        longitude: userLocation.longitude,
+      });
+    }
+
+    shops.forEach(shop => {
+      if (shop.latitude && shop.longitude) {
+        allMarkers.push({
+          latitude: parseFloat(shop.latitude),
+          longitude: parseFloat(shop.longitude),
+        });
+      }
+    });
+
+    if (allMarkers.length > 0) {
+      mapRef.current.fitToCoordinates(allMarkers, {
+        edgePadding: { top: 100, right: 50, bottom: 200, left: 50 },
+        animated: true,
+      });
+    }
+  };
+
   const checkLocation = () => {
     Geolocation.getCurrentPosition(
       pos => {
         const { latitude, longitude } = pos.coords;
+        setUserLocation({ latitude, longitude });
+
         const userRegion = {
           latitude,
           longitude,
@@ -65,42 +111,35 @@ const NearByShopsList = ({ navigation }) => {
 
         setShops(prevShops => {
           if (!prevShops || prevShops.length === 0) return prevShops;
-          return prevShops.map(shop => {
-            if (shop.latitude && shop.longitude) {
+          const updatedShops = prevShops.map(shop => {
+            const shopLat = parseFloat(shop.latitude);
+            const shopLon = parseFloat(shop.longitude);
+
+            if (shopLat && shopLon) {
+              const distance = calculateDistance(
+                latitude,
+                longitude,
+                shopLat,
+                shopLon,
+              );
               return {
                 ...shop,
-                distance: calculateDistance(
-                  latitude,
-                  longitude,
-                  parseFloat(shop.latitude),
-                  parseFloat(shop.longitude),
-                ),
+                distance: distance !== null ? distance : Infinity,
+                latitude: shopLat,
+                longitude: shopLon,
               };
             }
-            return shop;
+            return { ...shop, distance: Infinity };
           });
-        });
 
-        if (mapRef.current) {
-          const markers = shops
-            .filter(shop => shop.latitude && shop.longitude)
-            .map(shop => ({
-              latitude: parseFloat(shop.latitude),
-              longitude: parseFloat(shop.longitude),
-            }));
-          markers.push({ latitude, longitude });
-          if (markers.length > 0) {
-            mapRef.current.fitToCoordinates(markers, {
-              edgePadding: { top: 100, right: 100, bottom: 100, left: 100 },
-              animated: true,
-            });
-          }
-        }
+          setTimeout(() => fitMapToMarkers(), 300);
+          return updatedShops;
+        });
       },
       error => {
         setLocationEnabled(false);
       },
-      { enableHighAccuracy: false, timeout: 20000, maximumAge: 10000 },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 5000 },
     );
   };
 
@@ -129,29 +168,42 @@ const NearByShopsList = ({ navigation }) => {
   const fetchShops = async () => {
     try {
       setLoadingShops(true);
-      const response = await fetch(GET_ALL_SHOPS, { method: 'GET' });
+      const url = `${BACKEND_URL}/api/v1/customer/shops`;
+
+      const response = await fetch(url, { method: 'GET' });
       const shopsData = await response.json();
 
       if (shopsData?.shops?.length > 0) {
-        const transformedShops = shopsData.shops
-          .filter(item => item.shop !== null)
-          .map(item => item.shop);
-
         const shopsWithRatings = await Promise.all(
-          transformedShops.map(async shop => {
+          shopsData.shops.map(async shop => {
             let totalRating = 0;
+
             if (shop.placeId) {
-              try {
-                const reviewData = await getReviews(shop.placeId);
-                totalRating = reviewData?.rating || 0;
-              } catch (e) {
-                totalRating = 0;
-              }
+              totalRating = await fetchReviewsForShop(shop.placeId);
             }
-            return { ...shop, totalRating };
+
+            let distance = null;
+            if (userLocation && shop.latitude && shop.longitude) {
+              distance = calculateDistance(
+                userLocation.latitude,
+                userLocation.longitude,
+                parseFloat(shop.latitude),
+                parseFloat(shop.longitude),
+              );
+            }
+
+            return {
+              ...shop,
+              totalRating,
+              distance: distance || null,
+              latitude: shop.latitude ? parseFloat(shop.latitude) : null,
+              longitude: shop.longitude ? parseFloat(shop.longitude) : null,
+            };
           }),
         );
+
         setShops(shopsWithRatings);
+        setTimeout(() => fitMapToMarkers(), 500);
       } else {
         setShops([]);
       }
@@ -190,7 +242,7 @@ const NearByShopsList = ({ navigation }) => {
       checkLocation();
       interval = setInterval(() => {
         checkLocation();
-      }, 15000);
+      }, 30000);
     }
     return () => {
       if (interval) clearInterval(interval);
@@ -198,8 +250,16 @@ const NearByShopsList = ({ navigation }) => {
   }, [permissionGranted]);
 
   useEffect(() => {
-    fetchShops();
-  }, []);
+    if (userLocation) {
+      fetchShops();
+    }
+  }, [userLocation]);
+
+  useEffect(() => {
+    if (mapReady && userLocation) {
+      fitMapToMarkers();
+    }
+  }, [mapReady, userLocation, shops]);
 
   if (!permissionGranted) {
     return (
@@ -223,6 +283,10 @@ const NearByShopsList = ({ navigation }) => {
     );
   }
 
+  const sortedShops = [...shops]
+    .filter(shop => shop.distance !== null && shop.distance !== Infinity)
+    .sort((a, b) => (a.distance || Infinity) - (b.distance || Infinity));
+
   return (
     <View style={styles.container}>
       <StatusBar backgroundColor={primaryColor} barStyle="light-content" />
@@ -230,16 +294,17 @@ const NearByShopsList = ({ navigation }) => {
       <MapView
         ref={mapRef}
         style={styles.map}
-        initialRegion={
-          region || {
-            latitude: 20.5937,
-            longitude: 78.9629,
-            latitudeDelta: 0.5,
-            longitudeDelta: 0.5,
-          }
-        }
-        showsUserLocation
+        region={region}
+        onMapReady={() => setMapReady(true)}
+        showsUserLocation={true}
+        showsMyLocationButton={true}
         zoomEnabled
+        zoomControlEnabled={true}
+        userLocationPriority="high"
+        userLocationUpdateInterval={5000}
+        loadingEnabled={true}
+        loadingIndicatorColor={primaryColor}
+        loadingBackgroundColor="#FFFFFF"
       >
         {shops.map(
           shop =>
@@ -271,7 +336,7 @@ const NearByShopsList = ({ navigation }) => {
           <Ionicons name="search" size={24} color="#fff" />
         </TouchableOpacity>
       </View>
-      {console.log('SHOPS-----------------------', shops ? shops : 'no shops')}
+
       <View style={styles.cardListContainer}>
         {loadingShops ? (
           <CardSkeleton />
@@ -279,9 +344,7 @@ const NearByShopsList = ({ navigation }) => {
           <NoShopsAvailable />
         ) : (
           <FlatList
-            data={[...shops].sort(
-              (a, b) => (a.distance || Infinity) - (b.distance || Infinity),
-            )}
+            data={sortedShops}
             horizontal
             showsHorizontalScrollIndicator={false}
             keyExtractor={item => item.id.toString()}
@@ -298,12 +361,11 @@ const NearByShopsList = ({ navigation }) => {
                   title={item?.parlourName}
                   location={item?.address}
                   rating={item?.totalRating ?? 0}
-                  //  status={isShopOpen(item?.openingHours) ? 'open' : 'closed'}
                   status={'open'}
                   distance={
-                    item?.distance
+                    item?.distance !== null && item?.distance !== Infinity
                       ? `${item.distance.toFixed(2)} km`
-                      : 'Calculating...'
+                      : 'Not available'
                   }
                 />
               </TouchableOpacity>

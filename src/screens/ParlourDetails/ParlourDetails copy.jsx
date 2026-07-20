@@ -17,7 +17,7 @@ import GallerySection from '../../sections/GallerySection/GallerySection';
 import { NO_IMAGE } from '../../constants/images';
 import StarRating from '../../components/StarRating/StarRating';
 import AboutSection from '../../sections/AboutSection/AboutSection';
-import { updateShopViewers, getReviews } from '../../apis/services';
+import { updateShopViewers } from '../../apis/services';
 import { BACKEND_URL } from '../../services/apis';
 
 const ParlourDetails = ({ route, navigation }) => {
@@ -27,21 +27,11 @@ const ParlourDetails = ({ route, navigation }) => {
     routeParlourData?.id || routeParlourData?._id || routeParlourData?.uid;
 
   const [activeTab, setActiveTab] = useState('Service');
-  const [parlourData, setParlourData] = useState(null);
+  const [parlourData, setParlourData] = useState(routeParlourData);
   const [services, setServices] = useState([]);
   const [offers, setOffers] = useState([]);
   const [experts, setExperts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [images, setImages] = useState([]);
-  const [placeId, setPlaceId] = useState(null);
-  const [reviews, setReviews] = useState([]);
-  const [avgRating, setAvgRating] = useState(0);
-  const [totalReviews, setTotalReviews] = useState(0);
-  const [reviewsLoading, setReviewsLoading] = useState(true);
-  const [reviewsError, setReviewsError] = useState(null);
-  const [page, setPage] = useState(0);
-  const [hasMore, setHasMore] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
 
   const fetchShopData = useCallback(async () => {
     if (!shopId) {
@@ -63,19 +53,6 @@ const ParlourDetails = ({ route, navigation }) => {
         setServices(data.services || []);
         setOffers(data.offers || []);
         setExperts(data.shop.experts || []);
-
-        let allImages = [];
-        if (data.shop.shopImage) {
-          allImages.push(data.shop.shopImage);
-        }
-        if (data?.shop?.galleryImages?.length) {
-          allImages = [...allImages, ...data.shop.galleryImages];
-        }
-        setImages(allImages);
-
-        if (data.shop.placeId) {
-          setPlaceId(data.shop.placeId);
-        }
       }
     } catch (err) {
       console.error('Error fetching shop details:', err);
@@ -84,67 +61,12 @@ const ParlourDetails = ({ route, navigation }) => {
     }
   }, [shopId]);
 
-  const fetchReviews = async (pageNum = 0) => {
-    try {
-      if (!placeId) {
-        setReviewsLoading(false);
-        setReviews([]);
-        return;
-      }
-      if (pageNum === 0) setReviewsLoading(true);
-      else setLoadingMore(true);
-
-      const res = await getReviews(placeId, pageNum);
-
-      if (res && res.reviews && res.reviews.length > 0) {
-        setReviews(prev =>
-          pageNum === 0 ? res.reviews : [...prev, ...res.reviews],
-        );
-        setAvgRating(res.rating || 0);
-        setTotalReviews(res.reviews.length);
-        setHasMore(res.reviews.length === 5);
-      } else {
-        setHasMore(false);
-        if (pageNum === 0) {
-          setReviews([]);
-          setAvgRating(0);
-          setTotalReviews(0);
-        }
-      }
-    } catch (err) {
-      setReviewsError(err);
-    } finally {
-      setReviewsLoading(false);
-      setLoadingMore(false);
-    }
-  };
-
   useEffect(() => {
     fetchShopData();
     if (shopId) {
       updateShopViewers(shopId);
     }
   }, [fetchShopData, shopId]);
-
-  useEffect(() => {
-    if (placeId) {
-      setPage(0);
-      setReviews([]);
-      setHasMore(true);
-      fetchReviews(0);
-    } else {
-      setReviewsLoading(false);
-      setReviews([]);
-    }
-  }, [placeId]);
-
-  const handleLoadMore = () => {
-    if (!loadingMore && hasMore && reviews.length > 0) {
-      const nextPage = page + 1;
-      setPage(nextPage);
-      fetchReviews(nextPage);
-    }
-  };
 
   if (loading && !parlourData) {
     return (
@@ -200,35 +122,19 @@ const ParlourDetails = ({ route, navigation }) => {
       case 'Gallery':
         return (
           <View style={styles.content}>
-            <GallerySection
-              shopId={shopId}
-              placeId={parlourData?.placeId}
-              images={parlourData?.galleryImages ?? []}
-            />
+            <GallerySection shopId={shopId} placeId={parlourData?.placeId} />
           </View>
         );
       case 'Review':
         return (
           <View style={styles.content}>
-            <Reviews
-              reviews={reviews}
-              avgRating={avgRating}
-              totalReviews={totalReviews}
-              loading={reviewsLoading}
-              loadingMore={loadingMore}
-              error={reviewsError}
-              onLoadMore={handleLoadMore}
-              hasMore={hasMore}
-            />
+            <Reviews placeId={parlourData?.placeId ?? null} />
           </View>
         );
       default:
         return null;
     }
   };
-
-  const ratingToDisplay =
-    avgRating > 0 ? avgRating : parlourData?.totalRating ?? 0;
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
@@ -259,10 +165,7 @@ const ParlourDetails = ({ route, navigation }) => {
               {parlourData?.address ?? ''}
             </Text>
             <View style={styles.ratingContainer}>
-              <StarRating rating={ratingToDisplay} />
-              {totalReviews > 0 && (
-                <Text style={styles.reviewCountText}>({totalReviews})</Text>
-              )}
+              <StarRating rating={parlourData?.totalRating ?? 0} />
             </View>
           </View>
         </View>
@@ -339,11 +242,6 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   ratingContainer: { flexDirection: 'row', alignItems: 'center' },
-  reviewCountText: {
-    color: '#fff',
-    fontSize: 14,
-    marginLeft: 5,
-  },
   tabContainer: { flexDirection: 'row', backgroundColor: '#0D0618' },
   tab: {
     flex: 1,
