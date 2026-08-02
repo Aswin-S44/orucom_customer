@@ -6,7 +6,6 @@ import {
   Image,
   ScrollView,
   TouchableOpacity,
-  TextInput,
   StatusBar,
   RefreshControl,
   FlatList,
@@ -16,31 +15,46 @@ import {
 import EvilIcons from 'react-native-vector-icons/EvilIcons';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import Feather from 'react-native-vector-icons/Feather';
-import Card from '../../components/Card/Card';
-import { primaryColor } from '../../constants/colors';
-import {
-  getAllParlours,
-  getNotificationsCountByCustomerId,
-  updateCustomer,
-  getReviews,
-} from '../../apis/services';
+import LinearGradient from 'react-native-linear-gradient';
+import Geolocation from '@react-native-community/geolocation';
 import CardSkeleton from '../../components/CardSkeleton/CardSkeleton';
 import { AuthContext } from '../../context/AuthContext';
 import EmptyComponent from '../../components/EmptyComponent/EmptyComponent';
 import { getLocationPermission } from '../../apis/permissions';
-import Geolocation from '@react-native-community/geolocation';
-import { formattedDate, getCloudinaryUrl, isShopOpen } from '../../utils/utils';
+import { getCloudinaryUrl } from '../../utils/utils';
 import FirebaseNotificationService from '../../apis/FirebaseNotificationService';
-import {
-  DEFAULT_AVATAR,
-  NO_IMAGE,
-  OFFER_CARD_IMAGE,
-} from '../../constants/images';
 import client from '../../services/contentful';
-import { BACKEND_URL, GET_ALL_SHOPS } from '../../services/apis';
-import LinearGradient from 'react-native-linear-gradient';
+import { BACKEND_URL } from '../../services/apis';
+import {
+  getNotificationsCountByCustomerId,
+  updateCustomer,
+  getReviews,
+} from '../../apis/services';
+import { NO_IMAGE } from '../../constants/images';
 
 const { width } = Dimensions.get('window');
+
+const APP_COLORS = {
+  primary: '#F05E5E',
+  secondary: '#18181B',
+  bg: '#FFFFFF',
+  textGray: '#71717A',
+  lightPink: '#FFF1F2',
+  cardBg: '#F4F4F5',
+};
+
+const SERVICE_CATEGORIES = [
+  { id: 'haircuts', label: 'Haircuts', icon: 'scissors', iconSet: 'feather' },
+  { id: 'makeup', label: 'Make Up', icon: 'brush-outline', iconSet: 'ion' },
+  { id: 'shaving', label: 'Shaving', icon: 'razor', iconSet: 'feather' },
+  { id: 'massage', label: 'Massage', icon: 'hand-peace', iconSet: 'feather' },
+  {
+    id: 'haircolor',
+    label: 'Hair',
+    icon: 'color-palette-outline',
+    iconSet: 'ion',
+  },
+];
 
 const HomeScreen = ({ navigation }) => {
   const { user, userData, userId } = useContext(AuthContext);
@@ -48,19 +62,8 @@ const HomeScreen = ({ navigation }) => {
   const [loading, setLoading] = useState(true);
   const [notificationCount, setNotificationCount] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
-  const [welcomeMessage, setWelcomeMessage] = useState('Welcome Back!');
-  const [offers, setOffers] = useState([]);
-  const [specialOffers, setSpeicalOffers] = useState([]);
-
+  const [welcomeMessage, setWelcomeMessage] = useState('New York, USA');
   const [banner, setBanner] = useState([]);
-  const [bannerLoading, setBannerLoading] = useState(false);
-
-  const eidOffer = {
-    id: 1,
-    discount: '33.33% Free',
-    dateRange: 'Jan 01 - Feb 28',
-    image: OFFER_CARD_IMAGE,
-  };
 
   const fetchReviewsForShop = async placeId => {
     try {
@@ -72,46 +75,10 @@ const HomeScreen = ({ navigation }) => {
     }
   };
 
-  const fetchOffers = async () => {
-    try {
-      const response = await client.getEntries({
-        content_type: 'special_offers',
-      });
-      if (response && response.items) {
-        setOffers(response.items);
-      }
-    } catch (error) {
-      try {
-        const retryResponse = await client.getEntries({
-          content_type: 'specialOffers',
-        });
-        if (retryResponse && retryResponse.items) {
-          setOffers(retryResponse.items);
-        }
-      } catch (err) {
-        setOffers([]);
-      }
-    }
-  };
-
-  const fetchSpecialOffers = async () => {
-    try {
-      const response = await client.getEntries({
-        content_type: 'offers',
-      });
-      if (response && response.items) {
-        setSpeicalOffers(response.items);
-      }
-    } catch (error) {
-      setSpeicalOffers([]);
-    }
-  };
-
   const getCurrentLocation = useCallback(async () => {
     try {
       const granted = await getLocationPermission();
       if (!granted) return;
-
       Geolocation.getCurrentPosition(
         async position => {
           const { latitude, longitude } = position.coords;
@@ -121,7 +88,7 @@ const HomeScreen = ({ navigation }) => {
             });
           }
         },
-        error => {},
+        () => {},
         { enableHighAccuracy: false, timeout: 15000, maximumAge: 10000 },
       );
     } catch (err) {}
@@ -130,26 +97,15 @@ const HomeScreen = ({ navigation }) => {
   const fetchShops = async () => {
     try {
       const url = `${BACKEND_URL}/api/v1/customer/shops`;
-
       const res = await fetch(url);
-
-      if (!res.ok) {
-        throw new Error(`Request failed with status ${res.status}`);
-      }
-
       const data = await res.json();
-
       if (data?.shops?.length > 0) {
         const shopsWithRatings = await Promise.all(
           data.shops.map(async shop => {
             let totalRating = 0;
-            if (shop.placeId) {
+            if (shop.placeId)
               totalRating = await fetchReviewsForShop(shop.placeId);
-            }
-            return {
-              ...shop,
-              totalRating,
-            };
+            return { ...shop, totalRating };
           }),
         );
         setShops(shopsWithRatings);
@@ -162,6 +118,7 @@ const HomeScreen = ({ navigation }) => {
       setLoading(false);
     }
   };
+
   const fetchNotificationCount = async () => {
     if (userId) {
       const res = await getNotificationsCountByCustomerId(userId);
@@ -172,558 +129,414 @@ const HomeScreen = ({ navigation }) => {
   const fetchBanner = async () => {
     try {
       const bannerUrl = `${BACKEND_URL}/api/v1/admin/banners`;
-      setBannerLoading(true);
-
-      const response = await fetch(bannerUrl, {
-        method: 'GET',
-      });
-
-      setBannerLoading(false);
+      const response = await fetch(bannerUrl);
       const bannerData = await response.json();
-
-      if (bannerData && bannerData?.banners?.length > 0) {
-        setBanner(bannerData?.banners);
-      }
+      if (bannerData && bannerData?.banners?.length > 0)
+        setBanner(bannerData.banners);
     } catch (err) {
       setBanner([]);
-    } finally {
-      setBannerLoading(false);
     }
   };
-
-  useEffect(() => {
-    fetchBanner();
-  }, []);
-
-  const [offerBanner, setOfferBanner] = useState([]);
-  const [offerLoading, setOfferLoading] = useState(false);
-
-  const fetchOfferBanner = async () => {
-    try {
-      const offerUrl = `${BACKEND_URL}/api/v1/admin/offers`;
-
-      setOfferLoading(true);
-
-      const response = await fetch(offerUrl, {
-        method: 'GET',
-      });
-
-      setOfferLoading(false);
-      const offerData = await response.json();
-
-      if (offerData && offerData?.offers?.length > 0) {
-        setOfferBanner(offerData?.offers);
-      }
-    } catch (err) {
-      setOfferBanner([]);
-    } finally {
-      setOfferLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchOfferBanner();
-  }, []);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await Promise.all([
-      fetchShops(),
-      fetchNotificationCount(),
-      fetchOffers(),
-      fetchSpecialOffers(),
-    ]);
+    await Promise.all([fetchShops(), fetchNotificationCount(), fetchBanner()]);
     setRefreshing(false);
   }, [userId]);
 
   useEffect(() => {
     getCurrentLocation();
-    fetchOffers();
-    fetchSpecialOffers();
-  }, []);
-
-  useEffect(() => {
+    fetchBanner();
     fetchShops();
     fetchNotificationCount();
   }, [userId]);
 
-  useEffect(() => {
-    if (userData?.fullName) {
-      setWelcomeMessage(`Hello, ${userData.fullName.split(' ')[0]}!`);
-    } else if (user?.email) {
-      setWelcomeMessage(`Hello, ${user.email.split('@')[0]}!`);
-    } else {
-      setWelcomeMessage('Welcome Back!');
-    }
-  }, [userData?.fullName, user?.email]);
+  const renderServiceIcon = item => {
+    if (item.label === 'Haircuts')
+      return (
+        <Image
+          source={require('../../assets/images/bg.png')}
+          style={styles.catImg}
+        />
+      );
+    if (item.label === 'Make Up')
+      return (
+        <Image
+          source={require('../../assets/images/bg.png')}
+          style={styles.catImg}
+        />
+      );
+    if (item.label === 'Shaving')
+      return (
+        <Image
+          source={require('../../assets/images/bg.png')}
+          style={styles.catImg}
+        />
+      );
+    if (item.label === 'Massage')
+      return (
+        <Image
+          source={require('../../assets/images/bg.png')}
+          style={styles.catImg}
+        />
+      );
 
-  useEffect(() => {
-    const initializeNotifications = async () => {
-      if (userData?.uid) {
-        try {
-          FirebaseNotificationService.setupNotificationHandlers();
-          const hasPermission =
-            await FirebaseNotificationService.requestNotificationPermission();
-          if (hasPermission) {
-            await FirebaseNotificationService.updateFCMToken(userData.uid);
-          }
-        } catch (error) {}
-      }
-    };
-
-    if (!loading) {
-      initializeNotifications();
-    }
-  }, [loading, userData?.uid]);
-
-  const displayDate = dateStr => {
-    if (!dateStr) return '';
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: '2-digit',
-    });
+    return <Ionicons name={item.icon} size={24} color={APP_COLORS.primary} />;
   };
 
   return (
-    <View style={styles.fullContainer}>
-      <StatusBar backgroundColor="#FFFBF6" barStyle="dark-content" />
+    <View style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor="#FFF" />
+
+      <View style={styles.header}>
+        <View style={styles.headerTop}>
+          <TouchableOpacity onPress={() => navigation.openDrawer()}>
+            <Feather name="menu" size={24} color={APP_COLORS.secondary} />
+          </TouchableOpacity>
+          <View style={styles.locationWrapper}>
+            <Text style={styles.locationLabel}>Location</Text>
+            <TouchableOpacity style={styles.locationRow}>
+              <Ionicons
+                name="location-sharp"
+                size={16}
+                color={APP_COLORS.primary}
+              />
+              <Text style={styles.locationText}>{welcomeMessage}</Text>
+              <Feather
+                name="chevron-down"
+                size={16}
+                color={APP_COLORS.textGray}
+              />
+            </TouchableOpacity>
+          </View>
+          <TouchableOpacity
+            style={styles.notifBtn}
+            onPress={() => navigation.navigate('AllNotificationScreen')}
+          >
+            <Feather name="bell" size={22} color={APP_COLORS.secondary} />
+            {notificationCount > 0 && <View style={styles.dot} />}
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.searchSection}>
+          <View style={styles.searchBox}>
+            <EvilIcons name="search" size={24} color={APP_COLORS.textGray} />
+            <Text style={styles.searchPlaceholder}>
+              Search Salon, Specialist...
+            </Text>
+          </View>
+          <TouchableOpacity style={styles.filterBtn}>
+            <Ionicons name="options-outline" size={20} color="#FFF" />
+          </TouchableOpacity>
+        </View>
+      </View>
+
       <ScrollView
-        style={styles.container}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor={primaryColor}
+            tintColor={APP_COLORS.primary}
           />
         }
       >
-        <View style={styles.header}>
-          <View style={styles.headerLeft}>
-            <TouchableOpacity
-              onPress={() => navigation.openDrawer()}
-              style={styles.menuBtn}
-            >
-              <Feather name="menu" size={22} color="#333" />
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>#SpecialForYou</Text>
+            <TouchableOpacity>
+              <Text style={styles.seeAll}>See All</Text>
             </TouchableOpacity>
-            <View style={styles.headerTitleContainer}>
-              <Text style={styles.headerGreeting}>{welcomeMessage}</Text>
-              <View style={styles.locationContainer}>
-                <Ionicons
-                  name="location-sharp"
-                  size={12}
-                  color={primaryColor}
-                />
-                <Text style={styles.headerSubTitle}>
-                  Find your perfect look
-                </Text>
-              </View>
-            </View>
           </View>
-          <TouchableOpacity
-            style={styles.notificationButton}
-            onPress={() => navigation.navigate('AllNotificationScreen')}
-          >
-            <Ionicons name="notifications-outline" size={22} color="#333" />
-            {notificationCount > 0 && (
-              <View style={styles.badgeContainer}>
-                <Text style={styles.badgeText}>{notificationCount}</Text>
-              </View>
-            )}
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.searchSection}>
-          <TouchableOpacity
-            style={styles.searchBar}
-            onPress={() => navigation.navigate('SearchResultsScreen')}
-            activeOpacity={0.9}
-          >
-            <EvilIcons name="search" size={26} color="#94A3B8" />
-            <Text style={styles.searchPlaceholder}>
-              Search Salon, Specialist...
-            </Text>
-            <View style={styles.filterIcon}>
-              <Ionicons name="options-outline" size={20} color="#FFF" />
-            </View>
-          </TouchableOpacity>
-        </View>
-
-        {offers?.length > 0 && (
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Exclusive Deals</Text>
-              <TouchableOpacity>
-                <Text style={styles.seeAllText}>See All</Text>
-              </TouchableOpacity>
-            </View>
-            <FlatList
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              data={banner ?? []}
-              keyExtractor={(item, index) => index.toString()}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  activeOpacity={0.95}
-                  style={styles.offerCardWrapper}
+          <FlatList
+            horizontal
+            data={banner.length > 0 ? banner : [1, 2]}
+            keyExtractor={(_, i) => i.toString()}
+            showsHorizontalScrollIndicator={false}
+            pagingEnabled
+            snapToInterval={width * 0.85 + 20}
+            decelerationRate="fast"
+            contentContainerStyle={{ paddingLeft: 20 }}
+            renderItem={({ item }) => (
+              <TouchableOpacity activeOpacity={0.9} style={styles.bannerCard}>
+                <ImageBackground
+                  source={
+                    item?.image
+                      ? { uri: getCloudinaryUrl(item.image) }
+                      : require('../../assets/images/banner1-old.jpg')
+                  }
+                  style={styles.bannerImg}
+                  imageStyle={{ borderRadius: 24 }}
                 >
-                  <ImageBackground
-                    source={
-                      item?.image
-                        ? { uri: getCloudinaryUrl(item.image) }
-                        : require('../../assets/images/banner1-old.jpg')
-                    }
-                    style={styles.offerCard}
-                    imageStyle={{ borderRadius: 20 }}
+                  <LinearGradient
+                    colors={['transparent', 'rgba(0,0,0,0.8)']}
+                    style={styles.bannerOverlay}
                   >
-                    <LinearGradient
-                      colors={['rgba(0,0,0,0.1)', 'rgba(212, 17, 114, 0.8)']}
-                      style={styles.offerGradient}
-                    >
-                      <View style={styles.offerContent}>
-                        <View style={styles.limitedTimeTag}>
-                          <Text style={styles.limitedTimeText}>
-                            LIMITED OFFER
-                          </Text>
-                        </View>
-                        <Text style={styles.offerTitle} numberOfLines={1}>
-                          {item?.title ?? ''}
-                        </Text>
-                        <Text style={styles.offerDiscount}>UP TO 15% OFF</Text>
-                        <Text style={styles.offerDescription} numberOfLines={2}>
-                          {item?.offerDescription}
-                        </Text>
-                      </View>
-                    </LinearGradient>
-                  </ImageBackground>
-                </TouchableOpacity>
-              )}
-              contentContainerStyle={styles.offerCarouselContainer}
+                    <View style={styles.limitedTag}>
+                      <Text style={styles.limitedText}>Limited time!</Text>
+                    </View>
+                    <Text style={styles.bannerTitle}>Get Special Discount</Text>
+                    <Text style={styles.bannerSubtitle}>
+                      Up to <Text style={styles.percentText}>40%</Text>
+                    </Text>
+                    <View style={styles.bannerFooter}>
+                      <Text style={styles.bannerTnc}>
+                        All Salons available | T&C Applied
+                      </Text>
+                      <TouchableOpacity style={styles.claimBtn}>
+                        <Text style={styles.claimText}>Claim</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </LinearGradient>
+                </ImageBackground>
+              </TouchableOpacity>
+            )}
+          />
+          <View style={styles.pagination}>
+            <View
+              style={[
+                styles.dotLine,
+                { backgroundColor: APP_COLORS.primary, width: 15 },
+              ]}
             />
+            <View style={styles.dotLine} />
+            <View style={styles.dotLine} />
           </View>
-        )}
+        </View>
+
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Services</Text>
+            <TouchableOpacity>
+              <Text style={styles.seeAll}>See All</Text>
+            </TouchableOpacity>
+          </View>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ paddingLeft: 20 }}
+          >
+            {SERVICE_CATEGORIES.map(cat => (
+              <View key={cat.id} style={styles.serviceItem}>
+                <TouchableOpacity style={styles.serviceIcon}>
+                  {renderServiceIcon(cat)}
+                </TouchableOpacity>
+                <Text style={styles.serviceLabel}>{cat.label}</Text>
+              </View>
+            ))}
+          </ScrollView>
+        </View>
 
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Top Rated Salons</Text>
             <TouchableOpacity>
-              <Text style={styles.seeAllText}>Explore</Text>
+              <Text style={styles.seeAll}>See All</Text>
             </TouchableOpacity>
           </View>
           {loading ? (
             <CardSkeleton />
-          ) : shops && shops.length > 0 ? (
+          ) : (
             <FlatList
               horizontal
               showsHorizontalScrollIndicator={false}
               data={shops}
-              keyExtractor={item => item.id.toString()}
+              contentContainerStyle={{ paddingLeft: 20 }}
               renderItem={({ item }) => (
                 <TouchableOpacity
+                  style={styles.salonCard}
                   onPress={() =>
-                    navigation.navigate('ParlourDetails', {
-                      parlourData: item,
-                    })
+                    navigation.navigate('ParlourDetails', { parlourData: item })
                   }
-                  style={styles.parlourCardWrapper}
                 >
-                  <Card
-                    image={item?.shopImage || NO_IMAGE}
-                    title={item.parlourName}
-                    location={item.address}
-                    rating={item?.totalRating ?? 0}
-                    status={true}
-                    servicesOffered={item.services?.map(s => s.name).join(', ')}
-                    offers={[]}
-                    placeId={item?.placeId ?? ''}
+                  <Image
+                    source={{ uri: item?.shopImage || NO_IMAGE }}
+                    style={styles.salonImg}
                   />
+                  <View style={styles.favBtn}>
+                    <Ionicons name="heart-outline" size={20} color="#FFF" />
+                  </View>
+                  <View style={styles.ratingBadge}>
+                    <Ionicons name="star" size={12} color="#FFA41B" />
+                    <Text style={styles.ratingText}>
+                      {item.totalRating?.toFixed(1) || '4.8'}
+                    </Text>
+                  </View>
                 </TouchableOpacity>
               )}
-              contentContainerStyle={styles.shopsCarouselContainer}
             />
-          ) : (
-            <EmptyComponent title="No shops available" />
           )}
         </View>
-
-        {offerBanner?.length > 0 && (
-          <View style={styles.eidOfferSection}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Special For You</Text>
-            </View>
-            <FlatList
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              data={offerBanner}
-              keyExtractor={(item, index) => index.toString()}
-              renderItem={({ item, index }) => (
-                <TouchableOpacity
-                  activeOpacity={0.9}
-                  style={styles.eidOfferCard}
-                >
-                  <View style={styles.eidOfferContent}>
-                    <View style={styles.serviceTag}>
-                      <Text style={styles.eidOfferTag}>
-                        {item?.title ?? ''}
-                      </Text>
-                    </View>
-                    <Text style={styles.eidOfferDiscount}>
-                      {item?.offer ?? ''}% OFF
-                    </Text>
-                    <View style={styles.dateRow}>
-                      <Feather
-                        name="calendar"
-                        size={14}
-                        color="#6B7280"
-                        style={{ marginRight: 5 }}
-                      />
-                      <Text style={styles.eidOfferDate}>
-                        {item?.fromDate ? displayDate(item.fromDate) : ''}
-                        {item?.fromDate && item?.toDate ? ' - ' : ''}
-                        {item?.toDate ? displayDate(item.toDate) : ''}
-                      </Text>
-                    </View>
-                    <TouchableOpacity style={styles.claimButton}>
-                      <Text style={styles.claimButtonText}>Claim Now</Text>
-                    </TouchableOpacity>
-                  </View>
-                  <Image
-                    source={{ uri: item.image ?? NO_IMAGE }}
-                    style={styles.eidOfferImage}
-                  />
-                </TouchableOpacity>
-              )}
-              contentContainerStyle={styles.offerCarouselContainer}
-            />
-          </View>
-        )}
-        <View style={{ height: 30 }} />
+        <View style={{ height: 100 }} />
       </ScrollView>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  fullContainer: { flex: 1, backgroundColor: '#FFFBF6' },
-  container: { flex: 1 },
-  header: {
+  container: { flex: 1, backgroundColor: '#FFFFFF' },
+  header: { paddingHorizontal: 20, paddingTop: 10, paddingBottom: 20 },
+  headerTop: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingTop: 50,
-    paddingBottom: 15,
-  },
-  headerLeft: {
-    flexDirection: 'row',
     alignItems: 'center',
   },
-  menuBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: '#FFF',
-    alignItems: 'center',
+  locationWrapper: { flex: 1, marginLeft: 15 },
+  locationLabel: { fontSize: 12, color: APP_COLORS.textGray },
+  locationRow: { flexDirection: 'row', alignItems: 'center', marginTop: 2 },
+  locationText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: APP_COLORS.secondary,
+    marginHorizontal: 5,
+  },
+  notifBtn: {
+    width: 44,
+    height: 44,
+    backgroundColor: '#F4F4F5',
+    borderRadius: 22,
     justifyContent: 'center',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-  headerTitleContainer: { marginLeft: 15 },
-  headerGreeting: { fontSize: 20, fontWeight: 'bold', color: '#1E293B' },
-  locationContainer: {
-    flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 2,
   },
-  headerSubTitle: { fontSize: 12, color: '#64748B', marginLeft: 4 },
-  notificationButton: {
-    width: 42,
-    height: 42,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 12,
-    backgroundColor: '#FFF',
-    borderWidth: 1,
-    borderColor: '#F1F5F9',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-  },
-  badgeContainer: {
+  dot: {
     position: 'absolute',
-    right: 8,
-    top: 8,
-    backgroundColor: primaryColor,
-    borderRadius: 6,
-    width: 12,
-    height: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
+    top: 12,
+    right: 14,
+    width: 7,
+    height: 7,
+    backgroundColor: APP_COLORS.primary,
+    borderRadius: 4,
     borderWidth: 1.5,
     borderColor: '#FFF',
   },
-  badgeText: { color: '#fff', fontSize: 7, fontWeight: 'bold' },
-  searchSection: {
-    paddingHorizontal: 20,
-    marginBottom: 25,
-  },
-  searchBar: {
+  searchSection: { flexDirection: 'row', marginTop: 20, alignItems: 'center' },
+  searchBox: {
+    flex: 1,
+    height: 50,
+    backgroundColor: '#FFF',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E4E4E7',
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 15,
-    paddingLeft: 15,
-    paddingRight: 6,
-    height: 54,
-    borderWidth: 1,
-    borderColor: '#F1F5F9',
-    elevation: 3,
-    shadowColor: '#94A3B8',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
+    paddingHorizontal: 15,
   },
   searchPlaceholder: {
-    flex: 1,
-    color: '#94A3B8',
-    fontSize: 14,
+    color: APP_COLORS.textGray,
     marginLeft: 10,
+    fontSize: 14,
   },
-  filterIcon: {
-    backgroundColor: primaryColor,
-    width: 42,
-    height: 42,
-    borderRadius: 10,
+  filterBtn: {
+    width: 50,
+    height: 50,
+    backgroundColor: APP_COLORS.primary,
+    borderRadius: 12,
+    marginLeft: 12,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  section: { marginBottom: 25 },
+  section: { marginTop: 25 },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
     paddingHorizontal: 20,
     marginBottom: 15,
+    alignItems: 'center',
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: '800',
-    color: '#1E293B',
-    letterSpacing: -0.5,
+    fontWeight: '700',
+    color: APP_COLORS.secondary,
   },
-  seeAllText: {
-    color: primaryColor,
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  offerCarouselContainer: { paddingLeft: 20 },
-  offerCardWrapper: {
-    marginRight: 15,
-    borderRadius: 20,
-    overflow: 'hidden',
-  },
-  offerCard: {
-    width: width * 0.75,
-    height: 180,
-    overflow: 'hidden',
-  },
-  offerGradient: {
-    flex: 1,
-    padding: 18,
-    justifyContent: 'flex-end',
-  },
-  offerContent: { width: '100%' },
-  limitedTimeTag: {
-    backgroundColor: '#FFF',
-    borderRadius: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
+  seeAll: { color: '#F87171', fontSize: 13, fontWeight: '500' },
+  bannerCard: { width: width * 0.85, height: 190, marginRight: 15 },
+  bannerImg: { width: '100%', height: '100%' },
+  bannerOverlay: { flex: 1, padding: 20, justifyContent: 'flex-end' },
+  limitedTag: {
+    backgroundColor: 'rgba(255,255,255,0.9)',
     alignSelf: 'flex-start',
-    marginBottom: 8,
-  },
-  limitedTimeText: { fontSize: 9, color: primaryColor, fontWeight: '800' },
-  offerTitle: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: '#fff',
-    marginBottom: 2,
-  },
-  offerDiscount: {
-    fontSize: 22,
-    fontWeight: '900',
-    color: '#FFD700',
-    marginBottom: 4,
-  },
-  offerDescription: {
-    fontSize: 12,
-    color: 'rgba(255,255,255,0.9)',
-    fontWeight: '500',
-  },
-  shopsCarouselContainer: { paddingLeft: 20 },
-  parlourCardWrapper: { marginRight: 15 },
-  eidOfferSection: { paddingBottom: 10 },
-  eidOfferCard: {
-    backgroundColor: '#FFF',
-    borderRadius: 20,
-    marginRight: 15,
-    width: width * 0.85,
-    flexDirection: 'row',
-    alignItems: 'center',
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: '#F1F5F9',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-  },
-  eidOfferContent: { flex: 1, padding: 18 },
-  serviceTag: {
-    backgroundColor: '#FFF0F7',
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 8,
-    alignSelf: 'flex-start',
+    borderRadius: 20,
+    marginBottom: 10,
+  },
+  limitedText: { fontSize: 10, fontWeight: '700', color: '#18181B' },
+  bannerTitle: { color: '#FFF', fontSize: 18, fontWeight: '700' },
+  bannerSubtitle: {
+    color: '#FFF',
+    fontSize: 24,
+    fontWeight: '400',
+    marginBottom: 10,
+  },
+  percentText: { fontWeight: '800', fontSize: 32 },
+  bannerFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  bannerTnc: { color: 'rgba(255,255,255,0.7)', fontSize: 10, flex: 1 },
+  claimBtn: {
+    backgroundColor: APP_COLORS.primary,
+    paddingHorizontal: 20,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  claimText: { color: '#FFF', fontWeight: '700', fontSize: 13 },
+  pagination: { flexDirection: 'row', justifyContent: 'center', marginTop: 15 },
+  dotLine: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#E4E4E7',
+    marginHorizontal: 3,
+  },
+  serviceItem: { alignItems: 'center', marginRight: 25 },
+  serviceIcon: {
+    width: 65,
+    height: 65,
+    borderRadius: 32.5,
+    backgroundColor: APP_COLORS.lightPink,
+    justifyContent: 'center',
+    alignItems: 'center',
     marginBottom: 8,
   },
-  eidOfferTag: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: primaryColor,
-    textTransform: 'uppercase',
+  catImg: { width: 30, height: 30, resizeMode: 'contain' },
+  serviceLabel: { fontSize: 13, fontWeight: '600', color: APP_COLORS.textGray },
+  salonCard: {
+    width: width * 0.55,
+    height: 160,
+    marginRight: 15,
+    borderRadius: 20,
+    overflow: 'hidden',
   },
-  eidOfferDiscount: {
-    fontSize: 26,
-    fontWeight: '800',
-    color: '#1E293B',
-    marginBottom: 4,
+  salonImg: { width: '100%', height: '100%', resizeMode: 'cover' },
+  favBtn: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: 'rgba(0,0,0,0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  dateRow: {
+  ratingBadge: {
+    position: 'absolute',
+    bottom: 12,
+    left: 12,
+    backgroundColor: '#FFF',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 15,
   },
-  eidOfferDate: { fontSize: 12, color: '#64748B', fontWeight: '500' },
-  claimButton: {
-    backgroundColor: primaryColor,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 10,
-    alignSelf: 'flex-start',
-  },
-  claimButtonText: {
-    color: '#FFF',
+  ratingText: {
     fontSize: 12,
     fontWeight: '700',
-  },
-  eidOfferImage: {
-    width: 120,
-    height: '100%',
-    resizeMode: 'cover',
+    color: '#18181B',
+    marginLeft: 4,
   },
 });
 
